@@ -1,6 +1,6 @@
 # MVP implementation tasks
 
-Status: MVP-01 reviewed (done after its first CI run passes); all other tasks planned. Created: 2026-09-26.
+Status: MVP-01 done; all other tasks planned. Created: 2026-09-26.
 
 This is the implementation queue for Claude. Codex maintains task scope and the Word report; Claude maintains execution status and evidence. The [roadmap](roadmap.md) groups milestones, while this file owns task order and status. Canonical feature specs remain the authority for behavior.
 
@@ -19,7 +19,7 @@ All implementation tasks are owned by Claude. MVP-22 additionally requires the r
 
 | Task | Milestone | Change ID | Depends on | Status |
 | --- | --- | --- | --- | --- |
-| MVP-01 Runtime and verification foundation | M0 | `001-foundation` | None | reviewed |
+| MVP-01 Runtime and verification foundation | M0 | `001-foundation` | None | done |
 | MVP-02 Staff identity and access | M0 | `002-staff-access` | MVP-01 | planned |
 | MVP-03 Guest capabilities and mutation infrastructure | M0 | `003-guest-access` | MVP-02 | planned |
 | MVP-04 Member identity | M0 | `004-member-access` | MVP-02 | planned |
@@ -46,7 +46,7 @@ All implementation tasks are owned by Claude. MVP-22 additionally requires the r
 
 ### MVP-01 — Runtime and verification foundation
 
-- Deliver: independent Next.js admin/PWA shells, Go service, disposable PostgreSQL, pgx, Goose, pinned toolchains/lockfiles, origin routing, health/readiness, structured request IDs, and minimal OpenAPI contract. Add real development commands, CI, database/migration tests, frontend build checks, and browser smoke checks.
+- Deliver: independent Next.js admin/PWA shells, Go service, disposable PostgreSQL, pgx, Goose, pinned toolchains/lockfiles, origin routing, health/readiness, structured request IDs, and minimal OpenAPI contract. Add real development commands, a local verification gate (ADR-0003), database/migration tests, frontend build checks, and browser smoke checks.
 - Read: [repository boundaries](../architecture/repository.md), [system](../architecture/system.md), [HTTP conventions](../api/http.md), and the [prepared plan](../changes/001-foundation/plan.md). Foundation for ACC-004/ADM-001; this task does not complete identity requirements.
 - Accept: clean checkout starts all three applications; readiness fails safely when PostgreSQL is unavailable; both frontends build independently; migrations run on a fresh disposable database; production outputs exclude specs/docs/AI files. No staff/customer domain features yet.
 
@@ -154,7 +154,7 @@ All implementation tasks are owned by Claude. MVP-22 additionally requires the r
 
 ### MVP-19 — Complete journey regression suite
 
-- Deliver: reproducible nonmember/member multi-device E2E fixtures and CI journey tests spanning queue, seating, kitchen, billing, rewards, departure and cleaning.
+- Deliver: reproducible nonmember/member multi-device E2E fixtures and journey tests in `make verify` spanning queue, seating, kitchen, billing, rewards, departure and cleaning.
 - Map: ADM-A3 and all cross-domain scenarios in [testing](../quality/testing.md).
 - Accept: the seven required concurrency groups have real DB tests; lost-response/conflict/revocation/refund paths are exercised; requirement-to-test coverage gaps are closed or remain explicit blockers. No mock-only concurrency claims.
 

@@ -7,15 +7,18 @@ const baseURL = `http://127.0.0.1:${port}`;
 // running at API_INTERNAL_URL (see docs/development/setup.md).
 export default defineConfig({
   testDir: "./tests",
-  forbidOnly: !!process.env.CI,
+  forbidOnly: true,
   retries: 0,
-  reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
+  // Fail fast instead of hanging if the server or a browser stalls.
+  globalTimeout: 180_000,
+  timeout: 30_000,
+  reporter: "list",
   use: { baseURL, trace: "retain-on-failure" },
   projects: [
     {
       name: "chromium",
       // PLAYWRIGHT_CHANNEL=chrome uses an installed Google Chrome when the
-      // bundled Chromium cannot be downloaded; CI uses bundled Chromium.
+      // bundled Chromium cannot be downloaded.
       use: { ...devices["Desktop Chrome"], channel: process.env.PLAYWRIGHT_CHANNEL || undefined },
     },
   ],
@@ -24,6 +27,8 @@ export default defineConfig({
     url: baseURL,
     reuseExistingServer: false,
     timeout: 60_000,
+    stdout: "pipe",
+    stderr: "pipe",
     env: { API_INTERNAL_URL: process.env.API_INTERNAL_URL ?? "http://127.0.0.1:8080" },
   },
 });

@@ -1,7 +1,7 @@
 # Review: 001-foundation
 
 Date: 2026-09-26. Reviewer: Claude — **self-review** (implementation author; no independent reviewer ran).
-Scope: working tree against `261db41` as reviewed before committing (committed afterwards without code changes), including all untracked files listed by `git status`: `src/api`, `src/admin`, `src/pwa`, `specs/api/openapi.yaml`, `compose.yaml`, `Makefile`, `.github/workflows/runtime.yml`, `tooling/runtime/`, docs/spec updates. Result: **pass with follow-ups**; one P2 remains open with owner and follow-up (below). CI has not executed on GitHub.
+Scope: working tree against `261db41` as reviewed before committing (committed afterwards without code changes), including all untracked files listed by `git status`: `src/api`, `src/admin`, `src/pwa`, `specs/api/openapi.yaml`, `compose.yaml`, `Makefile`, `.github/workflows/runtime.yml`, `tooling/runtime/`, docs/spec updates. Result: **pass with follow-ups**; one P2 remains open with owner and follow-up (below). Hosted CI was removed by owner decision ([ADR-0003](../../decisions/0003-local-verification.md)); `make verify` is the gate.
 
 Passes performed after implementation and tests: (1) code review per `tableflow-code-review` over the final diff, callers, migrations and tests; (2) DB/API review per `tableflow-db-api-review`, recorded in [performance.md](performance.md). Fixes were re-verified by rerunning the affected tests and the process-level experiment.
 
@@ -14,7 +14,7 @@ Passes performed after implementation and tests: (1) code review per `tableflow-
 | P2 | `src/pwa/proxy.ts:23`, `src/admin/proxy.ts:23` (HTTP contract: 503 on dependency failure) | `API_INTERNAL_URL=http://127.0.0.1:1`, `GET /api/v1/health/live` via frontend → `500 Internal Server Error`, text/plain, no `Cache-Control: no-store` | When the API is down, browsers get a non-contract error body; no data exposure or integrity risk | **Open**. The rewrite cannot intercept upstream connection failures. Owner: Claude. Follow-up: MVP-02 plan must choose between a route-handler proxy (with explicit cookie/header forwarding and a 503 envelope) and a deployment reverse proxy (MVP-21), then add a proxy-failure test |
 | P3 | `src/*/app/icon.svg` (AdminAndPwaBrowserSmoke) | Smoke test caught a console `404` for the favicon | Console noise; masked real console errors | **Fixed**: added app icons; smoke rerun clean on both apps |
 | P3 | `src/api/internal/platform/health/health.go:65`, `app.go:24` | Readiness is public through both origins; each failed probe logs WARN | Outage floods can amplify logs; up/down state visible to the public | Accepted for MVP-01; revisit with monitoring and deployment routing in MVP-21 |
-| P3 | `src/api/db/local/init.sql:8` | `tableflow_app` can still connect to the `postgres` maintenance database (PUBLIC default) | Local/CI only; no production roles exist yet | Accepted; production role hardening belongs to MVP-21 |
+| P3 | `src/api/db/local/init.sql:8` | `tableflow_app` can still connect to the `postgres` maintenance database (PUBLIC default) | Local only; no production roles exist yet | Accepted; production role hardening belongs to MVP-21 |
 
 Checked and not a finding: encoded path traversal through `proxy.ts` (`/api/v1/%2e%2e/...`, `..%2f`, double encoding) never reached the upstream outside `/api/v1` (upstream request log inspected). Request IDs from clients are accepted only when they match `^[A-Za-z0-9._-]{1,64}$`; access logs omit query strings and path values (tested). Config and connection errors do not echo DSNs/passwords (tested). Test databases are dropped (0 `tableflow_test_*` remaining after runs).
 
@@ -38,7 +38,8 @@ All runs 2026-09-26 on macOS (Darwin 25.5.0, arm64), Docker 29.1.3, `postgres:18
 | Clean-checkout simulation | Tracked + new non-ignored files copied to scratch; separate compose project on port 54319 | services-up, migrate, specs, api-check, api-test-db, frontends-check, smoke, artifact-check all passed | Console output |
 | `actionlint v1.7.7` | Both workflows | passed (static only; shellcheck not installed) | Console output |
 | Final rerun after last fix (10:27Z): `make frontends-check`, `make api-check`, `make api-test-db`, `make smoke` (installed Chrome), `make artifact-check`, `make specs-check` | Local compose PostgreSQL 18.6 | all passed; artifact check 2449 files / 52 sentinels | Console output |
-| GitHub Actions `runtime.yml` | — | **not run** (requires push, not authorized) | — |
+| GitHub Actions `runtime.yml` first run (after push) | ubuntu-latest | Go job passed; frontend job hung in `make smoke` (>8 min, cause not diagnosed: logs need GitHub auth) | Workflow removed per ADR-0003; Playwright now has `globalTimeout` 180 s and pipes server output so a hang fails with logs |
+| `make verify` (tooling/runtime/verify.sh), 2026-09-26T11:12Z | macOS arm64, Go 1.27.1 (module toolchain), Node 24.21.0, pnpm 12.6.0, Docker 29.1.3, postgres:18.6, installed Chrome 153 (`PLAYWRIGHT_CHANNEL=chrome`) | **passed**: specs-check (50 files), api-check, api-test-db, both frontend checks, smoke 3/3 per app, artifact check (2449 files / 53 sentinels); API stopped afterwards | Console output |
 
 ## Database and endpoints
 
@@ -46,4 +47,4 @@ See [performance.md](performance.md): two health routes, one bounded ping per co
 
 ## Delivery decision
 
-Implementation, local verification and both review passes are complete; no P0/P1 findings. Open: P2 proxy error shape (owner Claude, follow-up in MVP-02/MVP-21 decision), P3 items accepted above. Status: **reviewed**, not `done`, because the new CI workflow has never executed. Close to `done` after the first GitHub Actions run of `runtime.yml` passes (needs user-approved push). Canonical specs updated: [repository](../../architecture/repository.md), [system](../../architecture/system.md), [HTTP](../../api/http.md), [OpenAPI](../../api/openapi.yaml), development guides and [setup](../../../docs/development/setup.md).
+Implementation, local verification and both review passes are complete; no P0/P1 findings. Open: P2 proxy error shape (owner Claude, follow-up in MVP-02/MVP-21 decision), P3 items accepted above. Status: **done** (2026-09-26). The owner replaced hosted CI with the local `make verify` gate ([ADR-0003](../../decisions/0003-local-verification.md)); its full run passed on the final state. The one hosted run was not used as evidence. Canonical specs updated: [repository](../../architecture/repository.md), [system](../../architecture/system.md), [HTTP](../../api/http.md), [OpenAPI](../../api/openapi.yaml), development guides and [setup](../../../docs/development/setup.md).

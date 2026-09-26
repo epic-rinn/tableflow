@@ -54,7 +54,7 @@ Health: `GET /api/v1/health/live` never touches PostgreSQL; `GET /api/v1/health/
 | `make smoke` | Playwright browser smoke for both built apps; requires a running API. Set `PLAYWRIGHT_CHANNEL=chrome` to use an installed Chrome if the bundled Chromium cannot be downloaded |
 | `make artifact-check` | Builds the API binary and scans it plus both Next.js standalone/static outputs for docs/specs/AI content |
 
-CI (`.github/workflows/runtime.yml`) runs the same targets with PostgreSQL 18.6 service containers.
+`make verify` runs all of the above in order, starting the built API for the smoke tests and stopping it afterwards. It is the required gate; there is no hosted CI ([ADR-0003](../../specs/decisions/0003-local-verification.md)). It requires Node.js 24 on `PATH`.
 
 ## Migrations and recovery
 

@@ -25,10 +25,10 @@
 - Review the final diff plus callers, permissions, migrations, and tests. Flag concrete correctness, security, reliability, and measured performance issues with file/line and reproduction conditions.
 - Block delivery on cross-visit access, double seating, duplicate orders/payments/points, unverified payment closure, destructive migration risk, and demonstrated serious regressions.
 - Do not prescribe indexes or caching from intuition alone. Explain the query shape, cardinality, plan, tradeoff, and measurement limitations.
-- These are agent workflow requirements. `make specs-check` checks structure, not review quality; runtime CI and hosted review are not configured yet.
+- These are agent workflow requirements. `make specs-check` checks structure, not review quality; there is no hosted CI or hosted review ([ADR-0003](specs/decisions/0003-local-verification.md)); `make verify` is the local verification gate.
 
 ## Current checks
 
-- `make specs-check` is available now.
+- `make verify` runs the full local gate (see [setup](docs/development/setup.md)); `make specs-check` checks the knowledge base only.
 - App, Go, database, and load-test commands must be introduced and documented in M0. Do not run imaginary package scripts.
 - Use disposable local databases for migrations, concurrency tests, and `EXPLAIN ANALYZE`. Never run write plans or load tests on production without explicit authorization.

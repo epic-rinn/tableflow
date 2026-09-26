@@ -15,7 +15,7 @@ tableflow/
 ├── tooling/specs/             Documentation/skill validation
 ├── tooling/runtime/           Built-artifact boundary check
 ├── compose.yaml               Local development services only
-├── .github/                   Repository CI and PR template
+├── .github/                   PR template (no hosted CI; ADR-0003)
 ├── AGENTS.md                  Repository-level AI instructions
 └── README.md                  Human entrypoint
 ```

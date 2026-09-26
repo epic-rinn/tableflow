@@ -10,7 +10,7 @@ FRONTENDS := admin pwa
 
 .PHONY: specs-check services-up services-down services-reset \
 	migrate-up migrate-down migrate-status api-run api-check api-test-db api-build \
-	admin-check pwa-check frontends-check smoke artifact-check check
+	admin-check pwa-check frontends-check smoke artifact-check check verify
 
 specs-check:
 	python3 tooling/specs/check.py
@@ -62,3 +62,7 @@ artifact-check: api-build
 		src/pwa/.next/standalone src/pwa/.next/static tmp/tableflow-api
 
 check: specs-check api-check
+
+# Full local gate: services, Go, frontends, browser smoke, artifacts.
+verify:
+	tooling/runtime/verify.sh

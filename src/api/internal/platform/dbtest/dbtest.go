@@ -2,7 +2,7 @@
 //
 // TEST_DATABASE_URL must point at a disposable server with permission to
 // create databases. Tests skip when it is unset unless TABLEFLOW_REQUIRE_DB=1,
-// which CI sets so a missing database fails instead of silently passing.
+// which `make api-test-db` sets so a missing database fails instead of silently passing.
 package dbtest
 
 import (

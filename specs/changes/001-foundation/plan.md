@@ -1,6 +1,6 @@
 # Change: 001-foundation
 
-Status: reviewed (CI first run pending). Date: 2026-09-26. Implementation owner: Claude. Task: MVP-01.
+Status: done. Date: 2026-09-26. Implementation owner: Claude. Task: MVP-01.
 
 ## Problem and behavior
 
@@ -18,7 +18,7 @@ Read [system](../../architecture/system.md), [repository](../../architecture/rep
 4. Add a minimal Goose migration and real DB harness; define migration ownership and fresh/upgrade/recovery commands. Avoid speculative implementation of the entire domain schema.
 5. Introduce liveness independent of DB health, bounded readiness dependency checks, request IDs, graceful shutdown and safe error/logging behavior.
 6. Put the initial machine-readable OpenAPI contract at the location required by the system spec, covering only implemented health routes. Add validation and reproducible generation if needed; never import specs at runtime.
-7. Add documented formatting/static/unit/DB/frontend/browser-smoke checks and CI jobs as runnable components become available. Verify deployed build contents exclude docs/specs/AI files.
+7. Add documented formatting/static/unit/DB/frontend/browser-smoke checks and a verification gate (hosted CI, later replaced by local `make verify` per ADR-0003) as runnable components become available. Verify deployed build contents exclude docs/specs/AI files.
 
 ## Query and endpoint impact
 

@@ -32,6 +32,6 @@ Use independent database connections and synchronization barriers; a sequential 
 - Required performance evidence is present, or the feature remains implemented/unverified rather than delivered.
 - Operational decisions affecting live service are resolved before launch.
 
-## CI rollout
+## Verification gate
 
-The current workflow only validates specs/skill structure. M0 must add Go formatting/vet/tests/race checks, pinned frontend lint/typecheck/tests/build, OpenAPI validation, PostgreSQL-backed migration/integration jobs, and browser smoke tests as their code is introduced. Run targeted checks per change; run representative performance jobs for data-path changes, not blindly on every prose edit. Repository branch-protection settings are an external deployment step, not created by Markdown.
+There is no hosted CI ([ADR-0003](../decisions/0003-local-verification.md)). `make verify` runs specs-check, Go formatting/vet/race tests, PostgreSQL-backed migration/integration tests, pinned frontend lint/typecheck/build, OpenAPI contract validation, browser smoke tests and the artifact boundary check locally. Extend it as new check types are introduced. Each task's review records the actual `make verify` run and its environment. Run targeted checks while developing; run representative performance measurements for data-path changes, not blindly on every prose edit.

@@ -1,12 +1,12 @@
 # MVP implementation roadmap
 
-M0 is **in progress**: MVP-01 (runtime foundation) is reviewed and awaits its first CI run; identity tasks MVP-02–04 are planned. All later milestones are planned.
+M0 is **in progress**: MVP-01 (runtime foundation) is done; identity tasks MVP-02–04 are planned. All later milestones are planned.
 
 The [MVP task backlog](tasks.md) owns implementation-task status and dependencies. Claude implements those tasks; Codex primarily maintains planning and the original Word report. Begin with the prepared [001-foundation packet](../changes/001-foundation/plan.md), which covers only the runtime/testing portion of M0. Identity is delivered by MVP-02–04 before M0 is complete.
 
 | Milestone | Scope / requirements | Dependencies | Exit evidence |
 | --- | --- | --- | --- |
-| M0 Foundation | Pinned toolchains, separate `src/admin` and `src/pwa` Next.js bootstraps, `src/api` Go bootstrap, local PostgreSQL, Goose, origin routing, health checks, OpenAPI/CI/test harness, staff/member identity (ACC-001–004, ADM-001) | None | Runnable setup, separate frontend builds, real DB tests, auth/origin isolation, contract validation; review |
+| M0 Foundation | Pinned toolchains, separate `src/admin` and `src/pwa` Next.js bootstraps, `src/api` Go bootstrap, local PostgreSQL, Goose, origin routing, health checks, OpenAPI/local verification gate/test harness, staff/member identity (ACC-001–004, ADM-001) | None | Runnable setup, separate frontend builds, real DB tests, auth/origin isolation, contract validation; review |
 | M1 Queue and seating | QUE-001–004, SEA-001–004; tables/roles config subset | M0 | Join/call/seat UI and API, claim constraints, competing-host tests, board/poll plans; review |
 | M2 Menu and ordering | MEN-001, ORD-001–007; kitchen/assistance and menu config | M1 | Two-device ordering, kitchen transitions, conflict/idempotency tests and query plans; review |
 | M3 Cashier settlement | BIL-001–008; charge policy config | M2 | End-to-end nonmember payment, rounding fixtures, confirmation/refund races, plans; review |
