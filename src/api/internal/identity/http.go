@@ -32,6 +32,12 @@ func NewHTTP(svc *Service, adminOrigins []string, trusted []netip.Prefix, logger
 	return &HTTP{svc: svc, origin: httpx.OriginGuard(adminOrigins), trusted: trusted, logger: logger}
 }
 
+// Origin wraps a handler with the admin-origin CSRF guard.
+func (h *HTTP) Origin(next http.HandlerFunc) http.HandlerFunc { return h.origin(next) }
+
+// Fail maps identity errors (e.g. from Revalidate) to responses.
+func (h *HTTP) Fail(w http.ResponseWriter, r *http.Request, err error) { h.fail(w, r, err) }
+
 // Routes returns path patterns and their method handlers.
 func (h *HTTP) Routes() map[string]map[string]http.HandlerFunc {
 	return map[string]map[string]http.HandlerFunc{
@@ -39,24 +45,24 @@ func (h *HTTP) Routes() map[string]map[string]http.HandlerFunc {
 			http.MethodPost: h.origin(h.login),
 		},
 		"/api/v1/sessions/current": {
-			http.MethodGet:    h.staff(h.current),
-			http.MethodDelete: h.origin(h.staff(h.logout)),
+			http.MethodGet:    h.RequireStaff(h.current),
+			http.MethodDelete: h.origin(h.RequireStaff(h.logout)),
 		},
 		"/api/v1/staff/activate": {
 			http.MethodPost: h.origin(h.activate),
 		},
 		"/api/v1/branches/{branch_id}/staff": {
-			http.MethodGet:  h.staff(h.listStaff),
-			http.MethodPost: h.origin(h.staff(h.invite)),
+			http.MethodGet:  h.RequireStaff(h.listStaff),
+			http.MethodPost: h.origin(h.RequireStaff(h.invite)),
 		},
 		"/api/v1/staff/{staff_id}/activation": {
-			http.MethodPost: h.origin(h.staff(h.reissue)),
+			http.MethodPost: h.origin(h.RequireStaff(h.reissue)),
 		},
 		"/api/v1/staff/{staff_id}/roles": {
-			http.MethodPatch: h.origin(h.staff(h.setRoles)),
+			http.MethodPatch: h.origin(h.RequireStaff(h.setRoles)),
 		},
 		"/api/v1/staff/{staff_id}/deactivate": {
-			http.MethodPost: h.origin(h.staff(h.deactivate)),
+			http.MethodPost: h.origin(h.RequireStaff(h.deactivate)),
 		},
 	}
 }
@@ -69,8 +75,10 @@ func PrincipalFrom(ctx context.Context) (Principal, bool) {
 	return p, ok
 }
 
-// staff authenticates the session cookie and marks the response private.
-func (h *HTTP) staff(next http.HandlerFunc) http.HandlerFunc {
+// RequireStaff authenticates the staff session cookie and marks the response
+// private. Mutations must also pass Origin and re-validate in their
+// transaction with Service.Revalidate.
+func (h *HTTP) RequireStaff(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		httpx.Private(w)
 		c, err := r.Cookie(StaffCookie)

@@ -243,3 +243,10 @@ func (s *Service) Purge(ctx context.Context) (int64, error) {
 	}
 	return total, nil
 }
+
+// ExpireCapability limits a capability's remaining life (e.g. a terminal
+// queue ticket stays trackable briefly so the guest sees the outcome).
+func ExpireCapability(ctx context.Context, tx pgx.Tx, kind, resourceID string, after time.Duration) error {
+	_, err := tx.Exec(ctx, q("capability_expire"), kind, resourceID, after)
+	return err
+}

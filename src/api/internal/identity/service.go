@@ -369,6 +369,14 @@ func (s *Service) adminTx(ctx context.Context, p Principal, branchID string, fn 
 	})
 }
 
+// Revalidate re-reads the acting staff session, account status and roles
+// under FOR SHARE inside tx. Domain mutations call it first (actor rows
+// precede domain rows in the lock order); revocation then either waits for
+// the mutation or makes it fail with ErrUnauthenticated.
+func (s *Service) Revalidate(ctx context.Context, tx pgx.Tx, p Principal) (Principal, error) {
+	return s.revalidate(ctx, tx, p)
+}
+
 // revalidate re-reads the acting session under FOR SHARE in tx.
 func (s *Service) revalidate(ctx context.Context, tx pgx.Tx, p Principal) (Principal, error) {
 	actor := Principal{SessionID: p.SessionID}

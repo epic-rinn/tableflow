@@ -1,0 +1,1 @@
+SELECT id FROM branches WHERE id = $1 FOR UPDATE

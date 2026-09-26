@@ -21,23 +21,23 @@ import (
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/mail"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/password"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/server"
+	"github.com/epic-rinn/tableflow/src/api/internal/seating"
 )
+
+// RouteProvider is a module exposing its HTTP routes.
+type RouteProvider interface {
+	Routes() map[string]map[string]http.HandlerFunc
+}
 
 // Routes maps each implemented path pattern to its method handlers. The
 // OpenAPI contract test compares this set with the documented operations.
-func Routes(health *health.Handler, id *identity.HTTP, acc *access.HTTP, mem *members.HTTP) map[string]map[string]http.HandlerFunc {
+func Routes(health *health.Handler, providers ...RouteProvider) map[string]map[string]http.HandlerFunc {
 	routes := map[string]map[string]http.HandlerFunc{
 		"/api/v1/health/live":  {http.MethodGet: health.Live},
 		"/api/v1/health/ready": {http.MethodGet: health.Ready},
 	}
-	if id != nil {
-		maps.Copy(routes, id.Routes())
-	}
-	if acc != nil {
-		maps.Copy(routes, acc.Routes())
-	}
-	if mem != nil {
-		maps.Copy(routes, mem.Routes())
+	for _, p := range providers {
+		maps.Copy(routes, p.Routes())
 	}
 	return routes
 }
@@ -98,7 +98,12 @@ func Run(ctx context.Context, cfg config.Config, logger *slog.Logger, ln net.Lis
 	go outbox.Run(ctx, 2)
 	memSvc := members.NewService(pool, hasher, outbox, cfg.PWAPublicURL)
 	memHTTP := members.NewHTTP(memSvc, cfg.PWAOrigins, cfg.TrustedProxies, logger)
-	h := NewHandler(logger, Routes(health.New(pool, cfg.ReadinessTimeout, logger), idHTTP, accHTTP, memHTTP))
+	store, err := idempotency.NewStore(cfg.DataKey)
+	if err != nil {
+		return err
+	}
+	seatHTTP := seating.NewHTTP(seating.NewService(pool, svc), store, idHTTP, accHTTP, cfg.PWAOrigins, cfg.TrustedProxies, logger)
+	h := NewHandler(logger, Routes(health.New(pool, cfg.ReadinessTimeout, logger), idHTTP, accHTTP, memHTTP, seatHTTP))
 	go purgeLoop(ctx, logger, map[string]func(context.Context) (int64, error){
 		"identity":    svc.Purge,
 		"access":      accSvc.Purge,

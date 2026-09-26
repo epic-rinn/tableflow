@@ -47,7 +47,7 @@ func newEnv(t *testing.T) *env {
 	t.Cleanup(pool.Close)
 	svc := identity.NewService(pool, pwhash.New(4), time.Hour, 12*time.Hour)
 	h := identity.NewHTTP(svc, []string{adminOrigin}, []netip.Prefix{netip.MustParsePrefix("127.0.0.1/32")}, quiet)
-	srv := httptest.NewServer(app.NewHandler(quiet, app.Routes(health.New(pool, time.Second, quiet), h, nil, nil)))
+	srv := httptest.NewServer(app.NewHandler(quiet, app.Routes(health.New(pool, time.Second, quiet), h)))
 	t.Cleanup(srv.Close)
 	e := &env{t: t, pool: pool, svc: svc, srv: srv}
 	branch, _, act, err := svc.Bootstrap(context.Background(), "Main", "manager@example.com", "Manager")

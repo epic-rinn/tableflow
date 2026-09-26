@@ -51,7 +51,7 @@ func newEnv(t *testing.T) *env {
 	idSvc := identity.NewService(pool, password.New(2), time.Hour, 12*time.Hour)
 	routes := app.Routes(health.New(pool, time.Second, quiet),
 		identity.NewHTTP(idSvc, []string{adminOrigin}, trusted, quiet),
-		access.NewHTTP(access.NewService(pool), []string{pwaOrigin}, trusted, quiet), nil)
+		access.NewHTTP(access.NewService(pool), []string{pwaOrigin}, trusted, quiet))
 	srv := httptest.NewServer(app.NewHandler(quiet, routes))
 	t.Cleanup(srv.Close)
 	e := &env{t: t, pool: pool, srv: srv}

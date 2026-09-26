@@ -20,6 +20,7 @@ import (
 	"github.com/epic-rinn/tableflow/src/api/internal/identity"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/database"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/password"
+	"github.com/epic-rinn/tableflow/src/api/internal/seating"
 )
 
 func main() {
@@ -65,6 +66,9 @@ func run(args []string) error {
 	}
 	if err != nil {
 		return err
+	}
+	if err := seating.InsertDefaultGroups(ctx, pool, branchID); err != nil {
+		return fmt.Errorf("default seating groups: %w", err)
 	}
 	// Output is for the operator's terminal only; the token is single-use
 	// and expires. Deliver the link to the manager over a private channel.
