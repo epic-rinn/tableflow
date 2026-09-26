@@ -1,0 +1,13 @@
+.env
+.env.*
+!.env.example
+node_modules/
+.next/
+coverage/
+playwright-report/
+test-results/
+__pycache__/
+*.pyc
+.DS_Store
+tmp/
+*.docx

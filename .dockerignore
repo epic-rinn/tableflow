@@ -1,0 +1,17 @@
+.git
+.github
+.agents
+.codex
+specs
+docs
+tooling
+AGENTS.md
+CLAUDE.md
+README.md
+Makefile
+.env
+.env.*
+**/node_modules
+**/.next
+**/__pycache__
+**/.DS_Store

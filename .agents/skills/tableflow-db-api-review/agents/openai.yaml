@@ -1,0 +1,6 @@
+interface:
+  display_name: "TableFlow Database and API Review"
+  short_description: "Measure query plans and endpoint performance"
+  default_prompt: "Use $tableflow-db-api-review to analyze changed SQL and endpoints and record reproducible performance evidence."
+policy:
+  allow_implicit_invocation: true
