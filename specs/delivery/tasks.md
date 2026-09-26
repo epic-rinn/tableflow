@@ -26,7 +26,7 @@ All implementation tasks are owned by Claude. MVP-22 additionally requires the r
 | MVP-05 Tables and queue entry | M1 | `005-queue-entry` | MVP-03 | done |
 | MVP-06 Calling and seating | M1 | `006-call-seat` | MVP-05 | done |
 | MVP-07 Moves and table lifecycle | M1 | `007-table-lifecycle` | MVP-06 | done |
-| MVP-08 Menu management and browsing | M2 | `008-menu` | MVP-07 | planned |
+| MVP-08 Menu management and browsing | M2 | `008-menu` | MVP-07 | in-progress |
 | MVP-09 Shared-visit ordering | M2 | `009-ordering` | MVP-08 | planned |
 | MVP-10 Kitchen and assistance | M2 | `010-kitchen` | MVP-09 | planned |
 | MVP-11 Bill calculation and policies | M3 | `011-bill-calculation` | MVP-10 | planned |

@@ -13,6 +13,8 @@ import (
 	"github.com/epic-rinn/tableflow/src/api/internal/access"
 	"github.com/epic-rinn/tableflow/src/api/internal/identity"
 	"github.com/epic-rinn/tableflow/src/api/internal/members"
+	"github.com/epic-rinn/tableflow/src/api/internal/menu"
+	"github.com/epic-rinn/tableflow/src/api/internal/ordering"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/config"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/database"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/health"
@@ -103,7 +105,9 @@ func Run(ctx context.Context, cfg config.Config, logger *slog.Logger, ln net.Lis
 		return err
 	}
 	seatHTTP := seating.NewHTTP(seating.NewService(pool, svc), store, idHTTP, accHTTP, cfg.PWAOrigins, cfg.TrustedProxies, logger)
-	h := NewHandler(logger, Routes(health.New(pool, cfg.ReadinessTimeout, logger), idHTTP, accHTTP, memHTTP, seatHTTP))
+	menuHTTP := menu.NewHTTP(menu.NewService(pool, svc), idHTTP, logger)
+	orderHTTP := ordering.NewHTTP(ordering.NewService(pool, svc), pool, store, idHTTP, accHTTP, cfg.PWAOrigins, logger)
+	h := NewHandler(logger, Routes(health.New(pool, cfg.ReadinessTimeout, logger), idHTTP, accHTTP, memHTTP, seatHTTP, menuHTTP, orderHTTP))
 	go purgeLoop(ctx, logger, map[string]func(context.Context) (int64, error){
 		"identity":    svc.Purge,
 		"access":      accSvc.Purge,

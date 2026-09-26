@@ -66,6 +66,7 @@ var (
 	ErrPartyNeedsStaff   = errors.New("party needs staff assistance")
 	ErrLabelTaken        = errors.New("table label taken")
 	ErrTooManyTables     = errors.New("table limit reached")
+	ErrVisitHasOrders    = errors.New("visit has chargeable orders")
 )
 
 // ValidationError carries per-field messages.

@@ -10,6 +10,7 @@ import (
 
 	"github.com/epic-rinn/tableflow/src/api/internal/access"
 	"github.com/epic-rinn/tableflow/src/api/internal/identity"
+	"github.com/epic-rinn/tableflow/src/api/internal/ordering"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/audit"
 )
 
@@ -150,7 +151,7 @@ func (s *Service) Depart(ctx context.Context, tx pgx.Tx, p identity.Principal, v
 }
 
 // CloseEmpty closes an open visit without chargeable orders, with an audited
-// reason (SEA-004). Order checks are added when orders exist (MVP-09).
+// reason (SEA-004); visits with chargeable order lines are refused.
 func (s *Service) CloseEmpty(ctx context.Context, tx pgx.Tx, p identity.Principal, visitID string, expectedVersion int, reason, requestID string) (Visit, error) {
 	r, ok := validReason(strings.TrimSpace(reason))
 	if !ok {
@@ -169,6 +170,13 @@ func (s *Service) CloseEmpty(ctx context.Context, tx pgx.Tx, p identity.Principa
 	}
 	if v.state != "open" {
 		return Visit{}, ErrVisitState
+	}
+	// SEA-004: only visits without chargeable orders close empty. The visit
+	// row is locked, so no order can be added concurrently.
+	if n, err := ordering.ChargeableLines(ctx, tx, visitID); err != nil {
+		return Visit{}, err
+	} else if n > 0 {
+		return Visit{}, ErrVisitHasOrders
 	}
 	if err := endVisit(ctx, tx, visitID, v.tableID, "closed", &r); err != nil {
 		return Visit{}, err

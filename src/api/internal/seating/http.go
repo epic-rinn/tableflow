@@ -2,7 +2,6 @@ package seating
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"log/slog"
 	"math"
@@ -112,46 +111,10 @@ func (a Actor) scope() string {
 	return ""
 }
 
-// mutate runs fn and its idempotency record in one transaction, replaying
-// the committed response for a repeated key. Failed commands store nothing.
+// mutate runs a business command idempotently (see idempotency.Mutate).
 func (h *HTTP) mutate(w http.ResponseWriter, r *http.Request, op string, body any,
 	fn func(ctx context.Context, tx pgx.Tx) (int, any, error)) {
-	httpx.Private(w)
-	key, ok := idempotency.ParseKey(r.Header.Get(idempotency.Header))
-	if !ok {
-		httpx.WriteError(w, r, http.StatusBadRequest, "IDEMPOTENCY_KEY_REQUIRED", "Send a UUID Idempotency-Key header")
-		return
-	}
-	canonical, err := json.Marshal(body)
-	if err != nil {
-		h.fail(w, r, err)
-		return
-	}
-	scope := actorFrom(r).scope()
-	var res idempotency.Result
-	err = pgx.BeginFunc(r.Context(), h.svc.pool, func(tx pgx.Tx) error {
-		var err error
-		res, err = h.store.Execute(r.Context(), tx, scope, op, key, idempotency.RequestHash([]byte(r.URL.Path), canonical), replayTTL,
-			func() (int, []byte, error) {
-				status, out, err := fn(r.Context(), tx)
-				if err != nil {
-					return 0, nil, err
-				}
-				b, err := json.Marshal(out)
-				return status, b, err
-			})
-		return err
-	})
-	if err != nil {
-		h.fail(w, r, err)
-		return
-	}
-	if res.Replayed {
-		w.Header().Set("Idempotency-Replayed", "true")
-	}
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(res.Status)
-	_, _ = w.Write(append(res.Body, '\n'))
+	idempotency.Mutate(w, r, h.svc.pool, h.store, actorFrom(r).scope(), op, replayTTL, body, fn, h.fail)
 }
 
 func (h *HTTP) fail(w http.ResponseWriter, r *http.Request, err error) {
@@ -187,6 +150,8 @@ func (h *HTTP) fail(w http.ResponseWriter, r *http.Request, err error) {
 		conflict("QUEUE_ACTIVE", "Seating groups can change only when nobody is waiting or called")
 	case errors.Is(err, ErrLabelTaken):
 		conflict("LABEL_TAKEN", "Another table already uses this label")
+	case errors.Is(err, ErrVisitHasOrders):
+		conflict("VISIT_HAS_ORDERS", "This visit has chargeable orders; cancel them or settle the bill instead")
 	case errors.Is(err, ErrTooManyTables):
 		conflict("TABLE_LIMIT", "The branch already has the maximum number of tables")
 	case errors.Is(err, ErrTableIncompatible):
