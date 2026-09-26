@@ -1,6 +1,6 @@
 # System architecture
 
-Status: accepted direction; modules not implemented. Decision: [ADR-0001](../decisions/0001-stack.md).
+Status: accepted direction; platform foundation implemented (MVP-01), domain modules not implemented. Decision: [ADR-0001](../decisions/0001-stack.md).
 
 ```mermaid
 flowchart LR
@@ -37,4 +37,4 @@ Exact dependency/tool versions are pinned in M0 using then-current supported rel
 
 ## API evolution
 
-[HTTP contract](../api/http.md) is the initial contract source. Before implementing a slice, encode its routes/schemas in `specs/api/openapi.yaml` (OpenAPI 3.1) and validate it in CI. At that point OpenAPI owns wire schemas; this document and HTTP notes keep rationale/policies only. Generate TypeScript transport types from the contract, not database entities. Do not create a misleading empty OpenAPI contract now.
+[HTTP contract](../api/http.md) is the initial contract source. Before implementing a slice, encode its routes/schemas in `specs/api/openapi.yaml` (OpenAPI 3.1) and validate it in CI. At that point OpenAPI owns wire schemas; this document and HTTP notes keep rationale/policies only. Generate TypeScript transport types from the contract, not database entities. The contract exists at `specs/api/openapi.yaml` and currently covers only the implemented health routes; the API contract test (`TestHealthOpenApiValidation`) validates the document and fails if implemented and documented paths diverge.

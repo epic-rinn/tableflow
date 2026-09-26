@@ -1,6 +1,6 @@
 # Knowledge map
 
-Status: desired MVP baseline, implementation not started. Last reviewed: 2026-09-26.
+Status: desired MVP baseline; runtime foundation (MVP-01) implemented and reviewed, domain features not started. Last reviewed: 2026-09-26.
 
 ## Read by task
 

@@ -1,11 +1,11 @@
 # Go API development
 
-Runtime location: `src/api/`. Service not initialized. Read [architecture](../../specs/architecture/system.md), [data model](../../specs/architecture/data-model.md), and [HTTP contract](../../specs/api/http.md).
+Runtime location: `src/api/`. Foundation implemented in MVP-01 (health routes only); setup and commands are in [setup](setup.md). Read [architecture](../../specs/architecture/system.md), [data model](../../specs/architecture/data-model.md), and [HTTP contract](../../specs/api/http.md).
 
-M0 creates the pinned Go module, `cmd/api`, shared HTTP/config/database infrastructure, and integration-test harness. Feature modules live under `internal/<domain>` and contain handlers, use cases, repository code, module-local embedded SQL, and tests when implemented.
+Current layout: `cmd/api` (server), `cmd/migrate` (Goose release step), `internal/platform/{config,database,httpx,health,server,app}` shared infrastructure, and `internal/platform/dbtest` (disposable migrated PostgreSQL databases for tests). Feature modules live under `internal/<domain>` and contain handlers, use cases, repository code, module-local embedded SQL, and tests when implemented.
 
 Use `pgx/v5` and `pgxpool` with handwritten parameterized SQL and explicit scanning. Database schema lives in `src/api/db/migrations/`. Configuration includes `DATABASE_URL`, `HTTP_ADDR`, allowed admin/PWA origins, session lifetimes, and a secret-encryption key; examples must contain dummy values only.
 
-Document actual Go test/vet/race and local start commands when source exists. Production credentials never belong in repository fixtures.
+Commands: `make api-check` (gofmt, vet, race tests), `make api-test-db` (required PostgreSQL tests), `make api-run`. PostgreSQL tests call `dbtest.NewMigratedDatabase(t)`; they skip without `TEST_DATABASE_URL` except when `TABLEFLOW_REQUIRE_DB=1` (CI and `make api-test-db`). Errors use `httpx.WriteError` with the common envelope; handlers are wrapped by `httpx.Middleware` (request ID, panic recovery, access log without query strings). Every new route must be added to [openapi.yaml](../../specs/api/openapi.yaml) and its contract test. Production credentials never belong in repository fixtures.
 
 Enforce branch/resource authorization even on idempotency replay. Use context-aware queries, bounded pools, explicit columns, checked affected-row counts, closed rows, and iteration-error checks. Use cases own transactions and pass them into repositories. Follow the documented lock order; avoid external network calls while holding locks. No process-local business locks or float money. Changed data paths require database/API review and real PostgreSQL concurrency tests.

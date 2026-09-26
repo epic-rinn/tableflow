@@ -2,7 +2,7 @@
 
 Restaurant queue, dine-in ordering, cashier settlement, and optional loyalty.
 
-This repository currently contains the MVP knowledge base, development rules, review skills, and empty runtime directories. Application code, database migrations, and runtime tests are not implemented yet.
+This repository contains the MVP knowledge base, development rules, review skills, and the runtime foundation (MVP-01): Next.js admin and PWA shells, a Go API with health routes, a baseline Goose migration, and tests. Restaurant features are not implemented yet; see the [task backlog](specs/delivery/tasks.md).
 
 Start at [specs/README.md](specs/README.md). There are three applications: a Next.js admin panel for restaurant staff, a Next.js customer PWA, and a Go API backed by PostgreSQL. SQL is handwritten through pgx and migrated with Goose. No ORM.
 
@@ -30,12 +30,14 @@ specs/templates/                Reusable change and review formats
 specs/research/                 External sources and adopted practices
 docs/development/               Application setup and engineering guides
 tooling/specs/                  Knowledge-base validation (not app code)
+tooling/runtime/                Build-artifact boundary check (not app code)
+compose.yaml                    Local PostgreSQL and mail sink (development only)
 src/admin/                      Staff/manager Next.js admin panel
 src/pwa/                        Customer Next.js PWA
 src/api/                        Go API, SQL, and runtime tests
 src/api/db/migrations/          Versioned Goose SQL migrations
 ```
 
-Run `make specs-check` with Python 3.10+ to check local Markdown links and the required knowledge/skill structure. Runtime setup and commands will be introduced by milestone M0; this repository does not pretend to have a runnable app yet.
+Run `make specs-check` with Python 3.10+ to check local Markdown links and the required knowledge/skill structure. Local setup, services, and runtime checks are in [docs/development/setup.md](docs/development/setup.md).
 
-`src/` contains runtime projects only. Specs, documentation, agent instructions, skills, and knowledge-base tooling stay outside it and are excluded from the root Docker build context. Each runtime project will own its dependencies/build configuration in M0. See [repository boundaries](specs/architecture/repository.md).
+`src/` contains runtime projects only. Specs, documentation, agent instructions, skills, and knowledge-base tooling stay outside it and are excluded from the root Docker build context. Each runtime project owns its dependencies/build configuration; `make artifact-check` verifies built outputs exclude docs/specs/AI files. See [repository boundaries](specs/architecture/repository.md).

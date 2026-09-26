@@ -1,10 +1,10 @@
 # Customer PWA development
 
-Runtime location: `src/pwa/`. App not initialized. Read [system architecture](../../specs/architecture/system.md) and [PWA requirements](../../specs/features/05-access-pwa.md).
+Runtime location: `src/pwa/`. Shell implemented in MVP-01; no customer features or service worker yet. Read [system architecture](../../specs/architecture/system.md) and [PWA requirements](../../specs/features/05-access-pwa.md).
 
-M0 creates this project's `package.json`, pnpm lockfile, TypeScript/Next.js config, `app/`, test setup, and pinned tooling. Add `features/<domain>` for UI behavior, `components/` for shared UI, `lib/api/` for contract-derived transport, and `public/` for static PWA assets only as needed. These paths are relative to `src/pwa/`.
+The project has its own `package.json`, pnpm lockfile, TypeScript/Next.js config, `app/`, and Playwright smoke tests (dev port 3000). Add `features/<domain>` for UI behavior, `components/` for shared UI, `lib/api/` for contract-derived transport, and `public/` for static PWA assets only as needed. These paths are relative to `src/pwa/`.
 
-The browser calls same-origin `/api/v1`; Go owns business mutations. Environment variable `API_INTERNAL_URL` is server-only. Document working dev/build/typecheck/test commands when initialization makes them real.
+The browser calls same-origin `/api/v1`; Go owns business mutations. Environment variable `API_INTERNAL_URL` is server-only. Commands: [setup](setup.md) (`make pwa-check`, `make smoke`). `proxy.ts` forwards `/api/v1/*` to `API_INTERNAL_URL` at request time.
 
 This application contains guest queue, dining/order, bill-view, login, and loyalty screens. Staff queue management, kitchen, cashier, and manager functions belong to the separate admin application.
 

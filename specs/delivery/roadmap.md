@@ -1,6 +1,6 @@
 # MVP implementation roadmap
 
-All implementation milestones are **planned**. This setup delivers specifications and review procedures only.
+M0 is **in progress**: MVP-01 (runtime foundation) is reviewed and awaits its first CI run; identity tasks MVP-02–04 are planned. All later milestones are planned.
 
 The [MVP task backlog](tasks.md) owns implementation-task status and dependencies. Claude implements those tasks; Codex primarily maintains planning and the original Word report. Begin with the prepared [001-foundation packet](../changes/001-foundation/plan.md), which covers only the runtime/testing portion of M0. Identity is delivered by MVP-02–04 before M0 is complete.
 

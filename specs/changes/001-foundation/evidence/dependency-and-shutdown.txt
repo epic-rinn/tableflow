@@ -1,0 +1,19 @@
+Environment: macOS 26 (Darwin 25.5.0) arm64, 10 CPU, 24 GiB; Docker 29.1.3; postgres:18.6 container
+(no CPU/memory limits); API binary built with Go 1.27.1 -trimpath, connecting as tableflow_app.
+Client: curl on the same host. All times wall clock, 2026-09-26 (UTC+7 local).
+
+PostgreSQL paused (docker compose pause): TCP accepted, no replies
+  sequential readiness: 503 1.002917s / 503 1.002543s / 503 1.003025s
+  20 parallel readiness requests: all 503, 0.9928-0.9940s (shared single in-flight probe)
+  liveness during pause: 200 0.000494s
+  after unpause: readiness 200 without API restart
+
+PostgreSQL stopped then started: readiness 503 while stopped, 200 after start without API restart.
+
+SIGTERM with a readiness request in flight and PostgreSQL paused
+  before fix: in-flight request completed (503 1.00s); "api shutdown complete" logged;
+              process exited after 15.71s because pgxpool.Close blocked on the unresponsive server
+  after fix:  in-flight request completed (503 1.00s); WARN "database pool close timed out" (3s);
+              process exited after 4.09s
+SIGTERM with PostgreSQL healthy (after fix): exited after 0.02s;
+  pg_stat_activity rows with application_name='tableflow-api' afterwards: 0

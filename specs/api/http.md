@@ -1,6 +1,6 @@
 # MVP HTTP contract
 
-Status: design contract, no endpoints implemented. Base path: `/api/v1`. All routes below are relative to that base. Wire schemas move to OpenAPI per [architecture](../architecture/system.md) before their implementation.
+Status: design contract; only the health routes in [openapi.yaml](openapi.yaml) are implemented. Base path: `/api/v1`. All routes below are relative to that base. Wire schemas move to OpenAPI per [architecture](../architecture/system.md) before their implementation.
 
 ## Common conventions
 

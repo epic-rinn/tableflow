@@ -1,6 +1,6 @@
 # MVP implementation tasks
 
-Status: all tasks planned; no application implementation is claimed. Created: 2026-09-26.
+Status: MVP-01 reviewed (done after its first CI run passes); all other tasks planned. Created: 2026-09-26.
 
 This is the implementation queue for Claude. Codex maintains task scope and the Word report; Claude maintains execution status and evidence. The [roadmap](roadmap.md) groups milestones, while this file owns task order and status. Canonical feature specs remain the authority for behavior.
 
@@ -19,7 +19,7 @@ All implementation tasks are owned by Claude. MVP-22 additionally requires the r
 
 | Task | Milestone | Change ID | Depends on | Status |
 | --- | --- | --- | --- | --- |
-| MVP-01 Runtime and verification foundation | M0 | `001-foundation` | None | planned |
+| MVP-01 Runtime and verification foundation | M0 | `001-foundation` | None | reviewed |
 | MVP-02 Staff identity and access | M0 | `002-staff-access` | MVP-01 | planned |
 | MVP-03 Guest capabilities and mutation infrastructure | M0 | `003-guest-access` | MVP-02 | planned |
 | MVP-04 Member identity | M0 | `004-member-access` | MVP-02 | planned |
