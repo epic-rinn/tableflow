@@ -1,0 +1,15 @@
+BEGIN
+HashAggregate  (cost=717.14..721.14 rows=200 width=40) (actual time=4.355..4.359 rows=31.00 loops=1)
+  Group Key: (((opened_at AT TIME ZONE 'Asia/Bangkok'::text))::date)::text
+  Batches: 1  Memory Usage: 40kB
+  Buffers: shared hit=1 read=29
+  ->  Index Only Scan using visits_by_opened on visits  (cost=0.29..634.51 rows=16526 width=32) (actual time=0.084..3.422 rows=15569.00 loops=1)
+        Index Cond: ((branch_id = '00000000-0000-7000-8000-0000000000c1'::uuid) AND (opened_at >= '2026-08-26 17:00:00+00'::timestamp with time zone) AND (opened_at < '2026-09-26 17:00:00+00'::timestamp with time zone))
+        Heap Fetches: 94
+        Index Searches: 1
+        Buffers: shared hit=1 read=29
+Planning:
+  Buffers: shared hit=202 read=6
+Planning Time: 0.349 ms
+Execution Time: 4.384 ms
+ROLLBACK

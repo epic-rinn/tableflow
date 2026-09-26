@@ -1,0 +1,32 @@
+{
+ "/": {
+  "scripts": 9,
+  "js_gzip_kib": 194.2,
+  "js_raw_kib": 631.4,
+  "css_gzip_kib": 10.5
+ },
+ "/t": {
+  "scripts": 10,
+  "js_gzip_kib": 217.3,
+  "js_raw_kib": 708.6,
+  "css_gzip_kib": 10.5
+ },
+ "/q": {
+  "scripts": 10,
+  "js_gzip_kib": 217.3,
+  "js_raw_kib": 708.6,
+  "css_gzip_kib": 10.5
+ },
+ "/join/01a0dfb8-97fe-70ca-9ac7-dbeaac6e3f98": {
+  "scripts": 9,
+  "js_gzip_kib": 192.8,
+  "js_raw_kib": 627.2,
+  "css_gzip_kib": 10.5
+ },
+ "/account": {
+  "scripts": 9,
+  "js_gzip_kib": 195.4,
+  "js_raw_kib": 634.8,
+  "css_gzip_kib": 10.5
+ }
+}

@@ -1,0 +1,50 @@
+{
+ "/login": {
+  "scripts": 10,
+  "js_gzip_kib": 203.1,
+  "js_raw_kib": 651.8,
+  "css_gzip_kib": 16.5
+ },
+ "/host": {
+  "scripts": 13,
+  "js_gzip_kib": 238.1,
+  "js_raw_kib": 758.2,
+  "css_gzip_kib": 16.5
+ },
+ "/kitchen": {
+  "scripts": 12,
+  "js_gzip_kib": 224.9,
+  "js_raw_kib": 720.0,
+  "css_gzip_kib": 16.5
+ },
+ "/cashier": {
+  "scripts": 12,
+  "js_gzip_kib": 234.9,
+  "js_raw_kib": 755.1,
+  "css_gzip_kib": 16.5
+ },
+ "/receipts": {
+  "scripts": 12,
+  "js_gzip_kib": 225.7,
+  "js_raw_kib": 725.3,
+  "css_gzip_kib": 16.5
+ },
+ "/reports": {
+  "scripts": 12,
+  "js_gzip_kib": 223.7,
+  "js_raw_kib": 719.0,
+  "css_gzip_kib": 16.5
+ },
+ "/audit": {
+  "scripts": 12,
+  "js_gzip_kib": 222.1,
+  "js_raw_kib": 710.9,
+  "css_gzip_kib": 16.5
+ },
+ "/loyalty": {
+  "scripts": 12,
+  "js_gzip_kib": 223.0,
+  "js_raw_kib": 713.6,
+  "css_gzip_kib": 16.5
+ }
+}

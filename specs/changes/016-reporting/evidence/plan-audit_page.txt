@@ -1,0 +1,20 @@
+BEGIN
+Limit  (cost=0.42..19.25 rows=51 width=133) (actual time=0.017..0.112 rows=51.00 loops=1)
+  Buffers: shared hit=55
+  ->  Nested Loop Left Join  (cost=0.42..11709.56 rows=31706 width=133) (actual time=0.017..0.109 rows=51.00 loops=1)
+        Join Filter: (s.id = a.actor_staff_id)
+        Buffers: shared hit=55
+        ->  Index Scan Backward using audit_events_branch_time on audit_events a  (cost=0.42..10915.88 rows=31706 width=143) (actual time=0.012..0.095 rows=51.00 loops=1)
+              Index Cond: ((branch_id = '00000000-0000-7000-8000-0000000000c1'::uuid) AND (occurred_at >= '2026-08-26 17:00:00+00'::timestamp with time zone) AND (occurred_at < '2026-09-26 17:00:00+00'::timestamp with time zone) AND (ROW(occurred_at, id) < ROW('2026-09-26 17:00:00+00'::timestamp with time zone, 'ffffffff-ffff-ffff-ffff-ffffffffffff'::uuid)))
+              Index Searches: 1
+              Buffers: shared hit=54
+        ->  Materialize  (cost=0.00..1.03 rows=2 width=22) (actual time=0.000..0.000 rows=1.00 loops=51)
+              Storage: Memory  Maximum Storage: 17kB
+              Buffers: shared hit=1
+              ->  Seq Scan on staff_accounts s  (cost=0.00..1.02 rows=2 width=22) (actual time=0.002..0.002 rows=1.00 loops=1)
+                    Buffers: shared hit=1
+Planning:
+  Buffers: shared hit=280 read=1
+Planning Time: 0.315 ms
+Execution Time: 0.137 ms
+ROLLBACK

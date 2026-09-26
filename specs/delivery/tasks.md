@@ -1,6 +1,6 @@
 # MVP implementation tasks
 
-Status: M0–M4 (MVP-01–15) and MU (UI-01/02) done; M5 onwards planned. UI track added 2026-09-27 at the owner's request ([ADR-0006](../decisions/0006-ui-stack.md)). Created: 2026-09-26.
+Status: M0–M5 (MVP-01–18) and MU (UI-01/02) done; M6 (MVP-19–22) planned. UI track added 2026-09-27 at the owner's request ([ADR-0006](../decisions/0006-ui-stack.md)). Created: 2026-09-26.
 
 This is the implementation queue for Claude. Codex maintains task scope and the Word report; Claude maintains execution status and evidence. The [roadmap](roadmap.md) groups milestones, while this file owns task order and status. Canonical feature specs remain the authority for behavior.
 
@@ -36,9 +36,9 @@ All implementation tasks are owned by Claude. MVP-22 additionally requires the r
 | UI-02 PWA design system and redesign | MU | `ui-02-pwa-design` | UI-01 | done |
 | MVP-14 Member visit claim and tier snapshot | M4 | `014-member-claim` | MVP-04, MVP-13, UI-02 | done |
 | MVP-15 Atomic loyalty and member history | M4 | `015-loyalty-ledger` | MVP-14 | done |
-| MVP-16 Manager reporting and audit | M5 | `016-reporting` | MVP-15 | implemented-unverified |
-| MVP-17 Installable PWA and cache isolation | M5 | `017-pwa` | MVP-16 | implemented-unverified |
-| MVP-18 Accessibility, locale and recovery audit | M5 | `018-journey-hardening` | MVP-17 | implemented-unverified |
+| MVP-16 Manager reporting and audit | M5 | `016-reporting` | MVP-15 | done |
+| MVP-17 Installable PWA and cache isolation | M5 | `017-pwa` | MVP-16 | done |
+| MVP-18 Accessibility, locale and recovery audit | M5 | `018-journey-hardening` | MVP-17 | done |
 | MVP-19 Complete journey regression suite | M6 | `019-e2e` | MVP-18 | planned |
 | MVP-20 Representative performance qualification | M6 | `020-performance` | MVP-19 | planned |
 | MVP-21 Deployment and restore rehearsal | M6 | `021-operations` | MVP-20 | planned |

@@ -1,0 +1,18 @@
+BEGIN
+HashAggregate  (cost=5232.88..5249.53 rows=666 width=63) (actual time=7.598..7.611 rows=93.00 loops=1)
+  Group Key: (((paid_at AT TIME ZONE 'Asia/Bangkok'::text))::date)::text, method
+  Batches: 1  Memory Usage: 49kB
+  Buffers: shared hit=741 read=642
+  ->  Bitmap Heap Scan on settlements  (cost=975.08..5034.19 rows=15895 width=63) (actual time=1.144..6.126 rows=15499.00 loops=1)
+        Recheck Cond: ((branch_id = '00000000-0000-7000-8000-0000000000c1'::uuid) AND (paid_at >= '2026-08-26 17:00:00+00'::timestamp with time zone) AND (paid_at < '2026-09-26 17:00:00+00'::timestamp with time zone))
+        Heap Blocks: exact=1193
+        Buffers: shared hit=741 read=642
+        ->  Bitmap Index Scan on settlements_by_branch  (cost=0.00..971.11 rows=15895 width=0) (actual time=0.969..0.969 rows=15499.00 loops=1)
+              Index Cond: ((branch_id = '00000000-0000-7000-8000-0000000000c1'::uuid) AND (paid_at >= '2026-08-26 17:00:00+00'::timestamp with time zone) AND (paid_at < '2026-09-26 17:00:00+00'::timestamp with time zone))
+              Index Searches: 1
+              Buffers: shared read=190
+Planning:
+  Buffers: shared hit=219 read=7
+Planning Time: 0.284 ms
+Execution Time: 7.659 ms
+ROLLBACK

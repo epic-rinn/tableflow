@@ -1,6 +1,6 @@
 # Change: 018-journey-hardening — Accessibility, locale and recovery audit
 
-Status: implemented-unverified (M5 gate pending; `make verify` passes). Date: 2026-09-27. Scope owner: Claude. Task: MVP-18. Verification: M5 gate (ADR-0004).
+Status: done (M5 gate passed 2026-09-27). Date: 2026-09-27. Scope owner: Claude. Task: MVP-18. Verification: M5 gate (ADR-0004).
 
 ## Problem and behavior
 

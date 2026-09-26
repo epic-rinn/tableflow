@@ -1,6 +1,6 @@
 # Identity, staff operations, and PWA
 
-Status: specified; staff identity (ACC-002 staff part, ACC-003 for staff routes, ACC-004 staff sessions) implemented in MVP-02, guest capabilities/sessions (ACC-001) in MVP-03 and member identity (ACC-002 member part) in MVP-04; guest screens (queue, dining, orders, bill, assistance, account) are redesigned in UI-02; PWA-001–003 (manifest, install guidance, service worker limited to public static assets, offline page, safe update) were implemented in MVP-17; the PWA-004/005 audit is MVP-18.
+Status: specified; staff identity (ACC-002 staff part, ACC-003 for staff routes, ACC-004 staff sessions) implemented in MVP-02, guest capabilities/sessions (ACC-001) in MVP-03 and member identity (ACC-002 member part) in MVP-04; guest screens (queue, dining, orders, bill, assistance, account) are redesigned in UI-02; PWA-001–003 (manifest, install guidance, service worker limited to public static assets, offline page, safe update) were implemented in MVP-17; PWA-004/005 (Thai/English, keyboard, polling, recovery) were audited and completed in MVP-18.
 
 Visual design and mobile patterns: [UI design](../product/ui-design.md) (UI-003).
 
