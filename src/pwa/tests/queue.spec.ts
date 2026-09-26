@@ -21,8 +21,10 @@ test.describe("queue", () => {
     await page.getByRole("button", { name: "Join the queue" }).click();
     await expect(page).toHaveURL(/\/q$/); // token removed from the address bar
     await expect(page.getByRole("heading", { name: /^Ticket \d+$/ })).toBeVisible();
-    await expect(page.locator(".position")).toContainText("in your group");
-    await expect(page.locator(".position")).toContainText("not an exact order or wait time");
+    // Located by text within the ticket region, not by CSS class (UI-004).
+    const ticket = page.getByRole("region", { name: /^Ticket \d+$/ });
+    await expect(ticket.getByText(/in your group\.$/)).toBeVisible();
+    await expect(ticket.getByText("not an exact order or wait time", { exact: false })).toBeVisible();
 
     await page.getByRole("button", { name: "Cancel ticket" }).click();
     await page.getByRole("button", { name: "Yes, cancel my ticket" }).click();

@@ -5,6 +5,9 @@ import { useState } from "react";
 import { Field } from "@/components/Field";
 import { api } from "@/lib/api/client";
 import { useFragmentToken } from "@/lib/useFragmentToken";
+import { MobileShell } from "@/components/common/MobileShell";
+import { Notice } from "@/components/common/Notice";
+import { Button } from "@/components/ui/button";
 
 export default function ResetConfirmPage() {
   const token = useFragmentToken();
@@ -33,29 +36,27 @@ export default function ResetConfirmPage() {
 
   if (done) {
     return (
-      <main>
-        <h1>Password changed</h1>
+      <MobileShell eyebrow="Member account" title="Password changed">
         <p role="status">
           You were signed out everywhere. <Link href="/account/login">Sign in with your new password</Link>
         </p>
-      </main>
+      </MobileShell>
     );
   }
   return (
-    <main>
-      <h1>Choose a new password</h1>
+    <MobileShell eyebrow="Member account" title="Choose a new password">
       {token === "" ? (
         <p role="alert">Open the full link from your email.</p>
       ) : (
-        <form onSubmit={onSubmit} noValidate>
+        <form onSubmit={onSubmit} noValidate className="grid gap-4">
           <Field id="new_password" label="New password (at least 12 characters)" type="password" autoComplete="new-password" required error={fields.new_password} />
           <Field id="confirm" label="Confirm new password" type="password" autoComplete="new-password" required error={fields.confirm} />
-          {error && <p role="alert">{error}</p>}
-          <button type="submit" disabled={!token}>
+          <Notice notice={error ? { role: "alert", text: error } : null} />
+          <Button type="submit" size="lg" className="h-12 w-full rounded-2xl text-base" disabled={!token}>
             Change password
-          </button>
+          </Button>
         </form>
       )}
-    </main>
+    </MobileShell>
   );
 }

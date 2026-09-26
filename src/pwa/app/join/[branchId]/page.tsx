@@ -1,7 +1,13 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
+import { Accessibility, Baby, Minus, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
+import { MobileShell } from "@/components/common/MobileShell";
+import { Notice } from "@/components/common/Notice";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api/client";
 import type { Need, Ticket } from "@/lib/api/types";
 import { useIdempotent } from "@/lib/useIdempotent";
@@ -52,27 +58,44 @@ export default function JoinPage() {
   }
 
   return (
-    <main>
-      <h1>Join the queue</h1>
-      <form onSubmit={onSubmit}>
-        <p>
-          <label htmlFor="party">Number of people</label>
-          <input id="party" type="number" min={1} max={50} value={party} onChange={(e) => setParty(Number(e.target.value))} />
-        </p>
-        <fieldset>
-          <legend>Seating needs (optional)</legend>
-          {NEEDS.map((n) => (
-            <label key={n.id}>
-              <input type="checkbox" checked={needs.includes(n.id)} onChange={(e) => setNeeds(e.target.checked ? [...needs, n.id] : needs.filter((x) => x !== n.id))} />{" "}
-              {n.label}
-            </label>
-          ))}
+    <MobileShell title="Join the queue" hero={<p className="mt-1 text-sm">No app or account needed. We&apos;ll keep your place.</p>}>
+      <form onSubmit={onSubmit} className="flex flex-1 flex-col gap-5">
+        <div className="grid gap-3 rounded-2xl border bg-card p-4">
+          <Label htmlFor="party" className="text-base">Number of people</Label>
+          <div className="flex items-center gap-3">
+            <Button type="button" variant="outline" size="icon-lg" className="size-12 rounded-full" aria-label="Fewer people"
+              disabled={party <= 1} onClick={() => setParty(Math.max(1, party - 1))}>
+              <Minus aria-hidden />
+            </Button>
+            <Input id="party" type="number" min={1} max={50} value={party} onChange={(e) => setParty(Number(e.target.value))}
+              className="h-12 flex-1 text-center text-2xl font-bold tabular-nums" />
+            <Button type="button" variant="outline" size="icon-lg" className="size-12 rounded-full" aria-label="More people"
+              disabled={party >= 50} onClick={() => setParty(Math.min(50, party + 1))}>
+              <Plus aria-hidden />
+            </Button>
+          </div>
+        </div>
+        <fieldset className="grid gap-2">
+          <legend className="mb-2 text-sm font-medium">Seating needs (optional)</legend>
+          {NEEDS.map((n) => {
+            const Icon = n.id === "accessible" ? Accessibility : Baby;
+            return (
+              <label key={n.id} className="flex min-h-14 cursor-pointer items-center gap-3 rounded-2xl border bg-card px-4 has-checked:border-primary has-checked:bg-accent">
+                <Icon className="size-5 text-muted-foreground" aria-hidden />
+                <span className="flex-1 text-sm font-medium">{n.label}</span>
+                <input type="checkbox" className="size-5 accent-primary" checked={needs.includes(n.id)}
+                  onChange={(e) => setNeeds(e.target.checked ? [...needs, n.id] : needs.filter((x) => x !== n.id))} />
+              </label>
+            );
+          })}
         </fieldset>
-        {error && <p role="alert">{error}</p>}
-        <button type="submit" disabled={!ready || busy}>
-          {busy ? "Joining…" : "Join the queue"}
-        </button>
+        <Notice notice={error ? { role: "alert", text: error } : null} />
+        <div className="sticky bottom-0 mt-auto bg-background pt-2 pb-safe">
+          <Button type="submit" size="lg" className="h-14 w-full rounded-2xl text-base" disabled={!ready || busy}>
+            {busy ? "Joining…" : "Join the queue"}
+          </Button>
+        </div>
       </form>
-    </main>
+    </MobileShell>
   );
 }

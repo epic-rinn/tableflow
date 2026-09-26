@@ -1,6 +1,6 @@
 # Customer PWA development
 
-Runtime location: `src/pwa/`. Guest screens implemented through M3 (functional styling); the Grab-style mobile redesign is UI-02 and the service worker is MVP-17. Read [system architecture](../../specs/architecture/system.md) and [PWA requirements](../../specs/features/05-access-pwa.md).
+Runtime location: `src/pwa/`. Guest screens implemented through M3 and redesigned in UI-02 (Tailwind CSS v4 + shadcn/ui, Grab-style mobile patterns); the service worker is MVP-17. Read [system architecture](../../specs/architecture/system.md) and [PWA requirements](../../specs/features/05-access-pwa.md).
 
 The project has its own `package.json`, pnpm lockfile, TypeScript/Next.js config, `app/`, and Playwright smoke tests (dev port 3000). Add `features/<domain>` for UI behavior, `components/` for shared UI, `lib/api/` for contract-derived transport, and `public/` for static PWA assets only as needed. These paths are relative to `src/pwa/`.
 
@@ -26,7 +26,7 @@ Stack and visual language: [ADR-0006](../../specs/decisions/0006-ui-stack.md) an
   - a sticky cart bar opening the cart sheet;
   - order timeline with status chips;
   - receipt-style bill (never a pay button);
-  - a help sheet for assistance.
+  - a "Need something?" help card with quick actions.
 - **Brand:** the look is Grab-like in patterns only. Use TableFlow tokens; never Grab's name, logo, colours or illustrations.
 - **Client JavaScript:** keep first-load JS within the budget in [performance](../../specs/quality/performance.md). Prefer Server Components for static parts and keep client components narrow. Do not import heavy components into the entry routes without measuring.
 - **Tests:** keep accessible names stable (tests use role, label and name). PWA journeys run at 390×844.

@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { Field } from "@/components/Field";
 import { api } from "@/lib/api/client";
+import { MobileShell } from "@/components/common/MobileShell";
+import { Notice } from "@/components/common/Notice";
+import { Button } from "@/components/ui/button";
 
 export default function ResetRequestPage() {
   const [sent, setSent] = useState(false);
@@ -17,17 +20,16 @@ export default function ResetRequestPage() {
   }
 
   return (
-    <main>
-      <h1>Reset your password</h1>
+    <MobileShell eyebrow="Member account" title="Reset your password">
       {sent ? (
         <p role="status">If an account uses that email, a reset link is on its way. It expires in 1 hour.</p>
       ) : (
-        <form onSubmit={onSubmit} noValidate>
+        <form onSubmit={onSubmit} noValidate className="grid gap-4">
           <Field id="email" label="Email" type="email" autoComplete="email" required />
-          {error && <p role="alert">{error}</p>}
-          <button type="submit">Send reset link</button>
+          <Notice notice={error ? { role: "alert", text: error } : null} />
+          <Button type="submit" size="lg" className="h-12 w-full rounded-2xl text-base">Send reset link</Button>
         </form>
       )}
-    </main>
+    </MobileShell>
   );
 }

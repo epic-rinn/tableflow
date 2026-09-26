@@ -6,6 +6,9 @@ import { useState } from "react";
 import { Field } from "@/components/Field";
 import { api } from "@/lib/api/client";
 import type { Member } from "@/lib/api/types";
+import { MobileShell } from "@/components/common/MobileShell";
+import { Notice } from "@/components/common/Notice";
+import { Button } from "@/components/ui/button";
 
 export default function MemberLoginPage() {
   const router = useRouter();
@@ -30,19 +33,18 @@ export default function MemberLoginPage() {
   }
 
   return (
-    <main>
-      <h1>Member sign in</h1>
-      <form onSubmit={onSubmit} noValidate>
+    <MobileShell eyebrow="Member account" title="Member sign in">
+      <form onSubmit={onSubmit} noValidate className="grid gap-4">
         <Field id="email" label="Email" type="email" autoComplete="username" required />
         <Field id="password" label="Password" type="password" autoComplete="current-password" required />
-        {error && <p role="alert">{error}</p>}
-        <button type="submit" disabled={busy}>
+        <Notice notice={error ? { role: "alert", text: error } : null} />
+        <Button type="submit" size="lg" className="h-12 w-full rounded-2xl text-base" disabled={busy}>
           Sign in
-        </button>
+        </Button>
       </form>
       <p>
         <Link href="/account/reset">Forgot your password?</Link> · <Link href="/account/signup">Create an account</Link>
       </p>
-    </main>
+    </MobileShell>
   );
 }

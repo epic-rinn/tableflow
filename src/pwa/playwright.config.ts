@@ -12,7 +12,7 @@ export default defineConfig({
   forbidOnly: true,
   retries: 0,
   // Fail fast instead of hanging if the server or a browser stalls.
-  globalTimeout: 180_000,
+  globalTimeout: 300_000,
   timeout: 30_000,
   reporter: "list",
   use: { baseURL, trace: "retain-on-failure" },
@@ -21,7 +21,15 @@ export default defineConfig({
       name: "chromium",
       // PLAYWRIGHT_CHANNEL=chrome uses an installed Google Chrome when the
       // bundled Chromium cannot be downloaded.
-      use: { ...devices["Desktop Chrome"], channel: process.env.PLAYWRIGHT_CHANNEL || undefined },
+      // UI-A2: guests use phones, so every journey runs at 390×844 with touch.
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 390, height: 844 },
+        isMobile: true,
+        hasTouch: true,
+        deviceScaleFactor: 2,
+        channel: process.env.PLAYWRIGHT_CHANNEL || undefined,
+      },
     },
   ],
   webServer: {

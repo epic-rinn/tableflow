@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api/client";
 import { useFragmentToken } from "@/lib/useFragmentToken";
+import { MobileShell } from "@/components/common/MobileShell";
 
 export default function VerifyPage() {
   const token = useFragmentToken();
@@ -21,8 +22,7 @@ export default function VerifyPage() {
   }, [token]);
 
   return (
-    <main>
-      <h1>Confirm your email</h1>
+    <MobileShell eyebrow="Member account" title="Confirm your email">
       {token === "" && <p role="alert">Open the full link from your email.</p>}
       {token && !result && <p role="status">Confirming…</p>}
       {result?.ok && (
@@ -31,6 +31,6 @@ export default function VerifyPage() {
         </p>
       )}
       {result && !result.ok && <p role="alert">{result.message}</p>}
-    </main>
+    </MobileShell>
   );
 }

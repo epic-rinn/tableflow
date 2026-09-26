@@ -1,0 +1,38 @@
+{
+ "/": {
+  "scripts": 8,
+  "js_gzip_kib": 173.5,
+  "js_raw_kib": 563.7,
+  "css_gzip_kib": 10.3
+ },
+ "/t": {
+  "scripts": 10,
+  "js_gzip_kib": 205.5,
+  "js_raw_kib": 668.3,
+  "css_gzip_kib": 10.3
+ },
+ "/q": {
+  "scripts": 10,
+  "js_gzip_kib": 205.5,
+  "js_raw_kib": 668.3,
+  "css_gzip_kib": 10.3
+ },
+ "/join/01a0df1e-e0f5-710a-95a2-b52b2976381d": {
+  "scripts": 9,
+  "js_gzip_kib": 184.9,
+  "js_raw_kib": 598.8,
+  "css_gzip_kib": 10.3
+ },
+ "/account": {
+  "scripts": 9,
+  "js_gzip_kib": 186.3,
+  "js_raw_kib": 602.5,
+  "css_gzip_kib": 10.3
+ },
+ "/account/login": {
+  "scripts": 9,
+  "js_gzip_kib": 186.9,
+  "js_raw_kib": 604.6,
+  "css_gzip_kib": 10.3
+ }
+}

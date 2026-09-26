@@ -1,6 +1,6 @@
 # Tasks: ui-01-admin-design
 
-Status: implemented-unverified (2026-09-27); MU gate with UI-02.
+Status: done (MU gate, 2026-09-27).
 
 - [x] Plan.
 - [x] Baseline client-JS measurement.
@@ -8,4 +8,4 @@ Status: implemented-unverified (2026-09-27); MU gate with UI-02.
 - [x] App shell (sidebar, top bar, freshness).
 - [x] Redesign workspaces: login/activate, host, kitchen, visit orders, cashier, receipts, menu, configuration, staff, charges.
 - [x] axe scans and viewport screenshots (`make verify` passes).
-- [ ] MU gate (with UI-02): reviews.
+- [x] MU gate (with UI-02): reviews recorded.

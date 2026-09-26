@@ -1,6 +1,6 @@
 # Change: ui-01-admin-design — Admin design system and redesign
 
-Status: implemented-unverified (MU gate with UI-02 pending; `make verify` already passes). Date: 2026-09-27. Scope owner: Claude. Task: UI-01. Verification: MU gate (ADR-0004), together with UI-02.
+Status: done (MU gate passed 2026-09-27). Date: 2026-09-27. Scope owner: Claude. Task: UI-01. Verification: MU gate (ADR-0004), together with UI-02.
 
 ## Problem and behavior
 

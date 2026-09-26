@@ -1,6 +1,6 @@
 # Restaurant admin panel
 
-Status: specified; ADM-001 implemented in MVP-02, ADM-002/003 in M1–M2, ADM-004 in M3. ADM-005 is partial: menu, tables, staff, charges and refunds are done; reports and audit review come in M5. ADM-006 stale/offline handling is partial and audited in MVP-18. Current screens are functional but unstyled until UI-01. Runtime project: `src/admin/`. This is a distinct Next.js application, not a route group inside the customer PWA.
+Status: specified; ADM-001 implemented in MVP-02, ADM-002/003 in M1–M2, ADM-004 in M3. ADM-005 is partial: menu, tables, staff, charges and refunds are done; reports and audit review come in M5. ADM-006 stale/offline handling is partial and audited in MVP-18. Screens redesigned in UI-01. Runtime project: `src/admin/`. This is a distinct Next.js application, not a route group inside the customer PWA.
 
 Visual design and layout: [UI design](../product/ui-design.md) (UI-002).
 

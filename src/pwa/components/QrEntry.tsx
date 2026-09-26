@@ -1,6 +1,9 @@
 "use client";
 
+import { ScanLine } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { MobileShell } from "@/components/common/MobileShell";
+import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api/client";
 import { useFragmentToken } from "@/lib/useFragmentToken";
 import { QueueTracking } from "./QueueTracking";
@@ -54,23 +57,33 @@ export function QrEntry({ kind }: { kind: CapabilityKind }) {
     token === null ? { step: "reading" } : result?.token === token ? result.state : { step: "exchanging" };
   const copy = COPY[kind];
   return (
-    <main>
-      <h1>{copy.title}</h1>
+    <MobileShell title={copy.title}
+      hero={state.step === "connected" ? <p role="status" aria-live="polite" className="mt-1 text-sm">{copy.connected}</p> : null}>
       {state.step === "reading" || state.step === "exchanging" ? (
-        <p role="status" aria-live="polite">
-          Connecting…
-        </p>
+        <div role="status" aria-live="polite" className="grid gap-3 py-6">
+          <span className="sr-only">Connecting…</span>
+          <Skeleton className="h-24 rounded-2xl" />
+          <Skeleton className="h-16 rounded-2xl" />
+          <Skeleton className="h-16 rounded-2xl" />
+        </div>
       ) : null}
-      {state.step === "connected" && (
-        <>
-          <p role="status" aria-live="polite">
-            {copy.connected}
-          </p>
-          {kind === "queue" ? <QueueTracking ticketId={state.session.resource_id} /> : <Dining visitId={state.session.resource_id} />}
-        </>
-      )}
-      {state.step === "missing" && <p role="alert">Scan the QR code again, or ask staff for help.</p>}
-      {state.step === "failed" && <p role="alert">{state.message}</p>}
-    </main>
+      {state.step === "connected" &&
+        (kind === "queue" ? <QueueTracking ticketId={state.session.resource_id} /> : <Dining visitId={state.session.resource_id} />)}
+      {state.step === "missing" && <Problem text="Scan the QR code again, or ask staff for help." />}
+      {state.step === "failed" && <Problem text={state.message} />}
+    </MobileShell>
+  );
+}
+
+function Problem({ text }: { text: string }) {
+  return (
+    <div className="grid justify-items-center gap-3 py-10 text-center">
+      <span className="flex size-14 items-center justify-center rounded-full bg-destructive-soft text-destructive">
+        <ScanLine className="size-7" aria-hidden />
+      </span>
+      <p role="alert" className="max-w-xs text-sm">
+        {text}
+      </p>
+    </div>
   );
 }

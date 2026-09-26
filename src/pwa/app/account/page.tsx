@@ -4,6 +4,9 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api/client";
 import type { Member } from "@/lib/api/types";
+import { MobileShell } from "@/components/common/MobileShell";
+import { Notice } from "@/components/common/Notice";
+import { Button } from "@/components/ui/button";
 
 type State = { step: "loading" } | { step: "signed-out" } | { step: "member"; member: Member } | { step: "error"; message: string };
 
@@ -36,10 +39,9 @@ export default function AccountPage() {
   }
 
   return (
-    <main>
-      <h1>Your account</h1>
+    <MobileShell eyebrow="Member account" title="Your account">
       {state.step === "loading" && <p role="status">Loading…</p>}
-      {state.step === "error" && <p role="alert">{state.message}</p>}
+      {state.step === "error" && <Notice notice={{ role: "alert", text: state.message }} />}
       {state.step === "signed-out" && (
         <p>
           <Link href="/account/login">Sign in</Link> or <Link href="/account/signup">create an account</Link>. Membership is
@@ -54,17 +56,17 @@ export default function AccountPage() {
           ) : (
             <p>
               Email not confirmed yet.{" "}
-              <button type="button" onClick={() => resend(state.member.email)}>
+              <Button type="button" variant="outline" size="lg" className="h-12 rounded-2xl" onClick={() => resend(state.member.email)}>
                 Send a new confirmation link
-              </button>
+              </Button>
             </p>
           )}
-          <button type="button" onClick={signOut}>
+          <Button type="button" variant="outline" size="lg" className="h-12 rounded-2xl" onClick={signOut}>
             Sign out
-          </button>
+          </Button>
         </>
       )}
-      {notice && <p role="status">{notice}</p>}
-    </main>
+      <Notice notice={notice ? { role: "status", text: notice } : null} />
+    </MobileShell>
   );
 }

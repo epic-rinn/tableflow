@@ -1,6 +1,6 @@
 # MVP implementation tasks
 
-Status: M0–M3 (MVP-01–13) done; MU (UI-01/02, UI redesign) next, then M4 onwards. UI track added 2026-09-27 at the owner's request ([ADR-0006](../decisions/0006-ui-stack.md)). Created: 2026-09-26.
+Status: M0–M3 (MVP-01–13) and MU (UI-01/02) done; M4 onwards planned. UI track added 2026-09-27 at the owner's request ([ADR-0006](../decisions/0006-ui-stack.md)). Created: 2026-09-26.
 
 This is the implementation queue for Claude. Codex maintains task scope and the Word report; Claude maintains execution status and evidence. The [roadmap](roadmap.md) groups milestones, while this file owns task order and status. Canonical feature specs remain the authority for behavior.
 
@@ -32,8 +32,8 @@ All implementation tasks are owned by Claude. MVP-22 additionally requires the r
 | MVP-11 Bill calculation and policies | M3 | `011-bill-calculation` | MVP-10 | done |
 | MVP-12 Cashier settlement | M3 | `012-settlement` | MVP-11 | done |
 | MVP-13 Receipts and full refunds | M3 | `013-refunds` | MVP-12 | done |
-| UI-01 Admin design system and redesign | MU | `ui-01-admin-design` | MVP-13 | implemented-unverified |
-| UI-02 PWA design system and redesign | MU | `ui-02-pwa-design` | UI-01 | planned |
+| UI-01 Admin design system and redesign | MU | `ui-01-admin-design` | MVP-13 | done |
+| UI-02 PWA design system and redesign | MU | `ui-02-pwa-design` | UI-01 | done |
 | MVP-14 Member visit claim and tier snapshot | M4 | `014-member-claim` | MVP-04, MVP-13, UI-02 | planned |
 | MVP-15 Atomic loyalty and member history | M4 | `015-loyalty-ledger` | MVP-14 | planned |
 | MVP-16 Manager reporting and audit | M5 | `016-reporting` | MVP-15 | planned |
@@ -144,7 +144,7 @@ All implementation tasks are owned by Claude. MVP-22 additionally requires the r
 
 - **Deliver:**
   - Tailwind CSS v4 and shadcn/ui in `src/pwa`, with the shared token values and self-hosted fonts;
-  - the Grab-style mobile patterns (hero header, queue ticket card and stepper, category chips, option bottom sheet, sticky cart bar and cart sheet, order timeline, receipt-style bill, help sheet, offline banner) and restyled account pages;
+  - the Grab-style mobile patterns (hero header, queue ticket card and stepper, category chips, option bottom sheet, sticky cart bar and cart sheet, order timeline, receipt-style bill, help card, offline banner) and restyled account pages;
   - phone-viewport journeys and axe scans.
 - **Map:** UI-001/003/004/005, PWA-003–005 presentation.
 - **Accept:**

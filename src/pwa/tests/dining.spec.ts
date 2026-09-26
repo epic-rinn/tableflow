@@ -14,16 +14,23 @@ test.describe.serial("dining", () => {
       await expect(p.getByRole("heading", { name: "Table E2E-1" })).toBeVisible();
     }
     await a.getByRole("button", { name: "Add Thai Tea" }).click();
+    // UI-003: the cart lives behind a sticky "View cart" bar and opens as a sheet.
+    const cartBar = (p: typeof a) => p.getByRole("button", { name: /^View cart · \d+ items?/ });
+    await expect(cartBar(a)).toContainText("1 item");
+    await expect(cartBar(b)).toHaveCount(0); // the other phone's cart stays empty
+    await cartBar(a).click();
     await expect(a.getByRole("region", { name: "Your cart (this phone)" })).toContainText("ชาไทย");
-    await expect(b.getByRole("region", { name: "Your cart (this phone)" })).toContainText("Nothing added yet.");
+    await a.keyboard.press("Escape");
 
     // The cart survives a reload of the same phone.
     await a.reload();
+    await expect(cartBar(a)).toContainText("1 item");
+    await cartBar(a).click();
     await expect(a.getByRole("region", { name: "Your cart (this phone)" })).toContainText("ชาไทย");
 
-    await a.getByRole("button", { name: "Send order" }).click();
+    await a.getByRole("button", { name: /^Send order/ }).click();
     await expect(a.getByRole("main").getByRole("status").filter({ hasText: "sent to the kitchen" })).toBeVisible();
-    await expect(a.getByRole("region", { name: "Your cart (this phone)" })).toContainText("Nothing added yet.");
+    await expect(cartBar(a)).toHaveCount(0);
 
     await b.reload();
     const shared = b.getByRole("region", { name: "Table orders" });

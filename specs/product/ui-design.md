@@ -1,6 +1,6 @@
 # UI design
 
-Status: accepted direction (2026-09-27); implementation in UI-01 (admin) and UI-02 (PWA). Stack: [ADR-0006](../decisions/0006-ui-stack.md). This spec describes presentation only: behaviour, authorization and data rules stay in the feature specs and in Go.
+Status: accepted direction (2026-09-27); implemented in UI-01 (admin) and UI-02 (PWA), MU gate passed 2026-09-27. Stack: [ADR-0006](../decisions/0006-ui-stack.md). This spec describes presentation only: behaviour, authorization and data rules stay in the feature specs and in Go.
 
 ## Principles
 
@@ -87,7 +87,7 @@ Patterns follow modern super-app ordering apps, without copying any brand.
   - a MENU_CHANGED conflict highlights the affected lines.
 - **Orders:** a timeline of confirmed orders with line status chips (Sent, Accepted, Preparing, Ready, Served, Rejected with reason).
 - **Bill:** a receipt-style card with lines, subtotal, service charge, tax and total, plus a "pay at the counter" note. There is never a pay button.
-- **Help:** a floating or bottom "Need help?" button that opens a sheet with help / allergy question / request bill, showing each request's status.
+- **Help:** a "Need something?" card with quick-action chips (call staff, allergy question, ask for the bill) and each request's live status, always visible on the dining page. It is a card rather than a sheet so request status stays on screen.
 - **Account and member:** a bottom tab bar (Home/Menu, Orders, Account) once loyalty screens exist (M4), with clean auth forms.
 - **Offline and stale states:** a top banner with the last refresh time; mutations disabled.
 
@@ -95,7 +95,7 @@ Patterns follow modern super-app ordering apps, without copying any brand.
 
 - **UI-001** Both apps use the shared token set and shadcn/ui primitives from ADR-0006. There is no ad-hoc per-page styling beyond Tailwind utilities.
 - **UI-002** The admin uses the sidebar app shell, state badges, dialogs for consequential actions (payment, refund, override, close, rotate QR) and data tables for lists over 20 rows.
-- **UI-003** The PWA implements the mobile patterns above: hero header, category chips, option bottom sheet, sticky cart bar, order timeline, receipt-style bill and help sheet.
+- **UI-003** The PWA implements the mobile patterns above: hero header, category chips, option bottom sheet, sticky cart bar, order timeline, receipt-style bill and help card.
 - **UI-004** Accessibility and locale requirements (PWA-004, ADM-006) hold after the redesign. Accessible names and roles used by the browser tests stay stable, or the tests change in the same commit with a stated reason.
 - **UI-005** No third-party runtime asset hosts (fonts, icons, images). There are no brand assets from other companies, and item images are placeholders until menu images are specified.
 
