@@ -14,6 +14,8 @@ const DESCRIPTIONS: Record<string, string> = {
   "/receipts": "Receipt history and refunds",
   "/configuration": "Tables and seating groups",
   "/menu": "Categories, items, options and prices",
+  "/reports": "Daily sales, refunds, queue and loyalty totals",
+  "/audit": "Who changed what, when and why",
   "/charges": "Service charge and tax policy",
   "/loyalty": "Points rate, tiers and member discounts",
   "/staff": "Invitations, roles and access",

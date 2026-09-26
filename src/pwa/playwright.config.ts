@@ -36,6 +36,9 @@ export default defineConfig({
     command: `pnpm exec next start --hostname 127.0.0.1 --port ${port}`,
     url: baseURL,
     reuseExistingServer: false,
+    // Bounded teardown: SIGTERM, then a hard kill after 5 s, so a stuck
+    // next-server can never outlive the run and block the next one.
+    gracefulShutdown: { signal: "SIGTERM", timeout: 5_000 },
     timeout: 60_000,
     stdout: "pipe",
     stderr: "pipe",

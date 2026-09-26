@@ -30,7 +30,7 @@ import { useIdempotent } from "@/lib/useIdempotent";
 const dateTime = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short" });
 
 // Historical receipts, newest first, with an exact reference search.
-export function ReceiptList({ branchId }: { branchId: string }) {
+export function ReceiptList({ branchId, from, to }: { branchId: string; from?: string; to?: string }) {
   const [items, setItems] = useState<ReceiptSummary[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -41,6 +41,10 @@ export function ReceiptList({ branchId }: { branchId: string }) {
       const params = new URLSearchParams({ limit: "25" });
       if (after) params.set("cursor", after);
       if (reference) params.set("receipt_reference", reference);
+      if (from && to) {
+        params.set("from", from);
+        params.set("to", to);
+      }
       const res = await api<ReceiptPage>(`/branches/${branchId}/settlements?${params}`);
       if (!res.ok) {
         setError(res.error.message);
@@ -50,7 +54,7 @@ export function ReceiptList({ branchId }: { branchId: string }) {
       setItems((prev) => (after ? [...prev, ...res.data.items] : res.data.items));
       setCursor(res.data.next_cursor);
     },
-    [branchId],
+    [branchId, from, to],
   );
 
   useEffect(() => {
@@ -60,7 +64,9 @@ export function ReceiptList({ branchId }: { branchId: string }) {
 
   return (
     <>
-      <PageHeader title="Receipts" description="Paid bills, newest first. Receipts never change after payment." />
+      <PageHeader title="Receipts"
+        description={from && to ? `Paid ${from === to ? `on ${from}` : `from ${from} to ${to}`} (business dates), newest first.` : "Paid bills, newest first. Receipts never change after payment."}
+        actions={from && to ? <Link href="/receipts" className="text-sm text-primary underline-offset-4 hover:underline">Show all</Link> : undefined} />
       <Card>
         <CardHeader>
           <form

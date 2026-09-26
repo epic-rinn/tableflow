@@ -1,4 +1,5 @@
--- Newest first; keyset on (paid_at, id). $4 optional exact receipt reference.
+-- Newest first; keyset on (paid_at, id). $4 optional exact receipt reference;
+-- $6/$7 optional business-date instant range (report drill-down).
 SELECT s.id, s.receipt_reference, s.amount_satang, s.method, s.paid_at, t.label, r.id IS NOT NULL
 FROM settlements s
 JOIN visits v ON v.id = s.visit_id
@@ -7,5 +8,7 @@ LEFT JOIN refunds r ON r.settlement_id = s.id
 WHERE s.branch_id = $1
   AND (s.paid_at, s.id) < ($2, $3)
   AND ($4::text IS NULL OR s.receipt_reference = $4)
+  AND ($6::timestamptz IS NULL OR s.paid_at >= $6)
+  AND ($7::timestamptz IS NULL OR s.paid_at < $7)
 ORDER BY s.paid_at DESC, s.id DESC
 LIMIT $5

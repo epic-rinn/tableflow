@@ -324,7 +324,8 @@ func (h *HTTP) receipts(w http.ResponseWriter, r *http.Request) {
 		limit = n
 	}
 	p, _ := identity.PrincipalFrom(r.Context())
-	page, err := h.svc.Receipts(r.Context(), p, branch, r.URL.Query().Get("receipt_reference"), r.URL.Query().Get("cursor"), limit)
+	qs := r.URL.Query()
+	page, err := h.svc.Receipts(r.Context(), p, branch, qs.Get("receipt_reference"), qs.Get("from"), qs.Get("to"), qs.Get("cursor"), limit)
 	if err != nil {
 		h.fail(w, r, err)
 		return

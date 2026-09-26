@@ -59,6 +59,16 @@ test.describe.serial("cashier", () => {
     await page.goto("/receipts");
     await expect(page.getByRole("row").filter({ hasText: "E2E-2" })).toContainText("Refunded");
 
+    // MVP-16: the day's report shows the payment and its refund; the audit log has the reason.
+    await page.goto("/reports");
+    const totals = page.getByRole("list", { name: "Totals for the range" });
+    await expect(totals.getByRole("listitem").filter({ hasText: "Refunds" })).toContainText("141.24");
+    await expect(page.getByRole("region", { name: "By payment method" }).getByRole("row").filter({ hasText: "Cash" })).toContainText("141.24");
+    await page.goto("/audit");
+    await page.getByLabel("Action (optional)").fill("settlement");
+    await page.getByRole("button", { name: "Show" }).click();
+    await expect(page.getByRole("row").filter({ hasText: "settlement.refunded" })).toContainText("guest complaint");
+
     // Payment never releases the table: the host records departure, then cleaning.
     await page.goto("/host");
     const table = page.getByRole("article", { name: "Table E2E-2" });

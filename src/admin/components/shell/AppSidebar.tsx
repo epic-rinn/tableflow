@@ -62,29 +62,35 @@ export function AppSidebar({ identity, workspaces }: { identity: StaffIdentity; 
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Workspaces</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <nav aria-label="Workspaces">
-              <SidebarMenu>
-                {workspaces.map((w) => {
-                  const Icon = WORKSPACE_ICONS[w.href] ?? LayoutGrid;
-                  const active = pathname === w.href || pathname.startsWith(`${w.href}/`);
-                  return (
-                    <SidebarMenuItem key={w.href}>
-                      <SidebarMenuButton asChild isActive={active} tooltip={w.label}>
-                        <Link href={w.href} aria-current={active ? "page" : undefined}>
-                          <Icon aria-hidden />
-                          <span>{w.label}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
-            </nav>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        <nav aria-label="Workspaces">
+          {(["service", "manage"] as const).map((group) => {
+            const items = workspaces.filter((w) => w.group === group);
+            if (items.length === 0) return null;
+            return (
+              <SidebarGroup key={group}>
+                <SidebarGroupLabel>{group === "service" ? "Service" : "Manage"}</SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {items.map((w) => {
+                      const Icon = WORKSPACE_ICONS[w.href] ?? LayoutGrid;
+                      const active = pathname === w.href || pathname.startsWith(`${w.href}/`);
+                      return (
+                        <SidebarMenuItem key={w.href}>
+                          <SidebarMenuButton asChild isActive={active} tooltip={w.label}>
+                            <Link href={w.href} aria-current={active ? "page" : undefined}>
+                              <Icon aria-hidden />
+                              <span>{w.label}</span>
+                            </Link>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      );
+                    })}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            );
+          })}
+        </nav>
       </SidebarContent>
       <SidebarFooter>
         <div className="grid gap-0.5 px-2 py-1 text-sm group-data-[collapsible=icon]:hidden">

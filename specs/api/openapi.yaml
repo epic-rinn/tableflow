@@ -26,6 +26,8 @@ tags:
     description: Menu, orders, kitchen lines and assistance
   - name: billing
     description: Charge policies, bills, cashier settlement, receipts and full refunds (admin origin; guests may only read their bill)
+  - name: reporting
+    description: Manager daily summaries by business date and the redacted audit viewer
   - name: loyalty
     description: Loyalty policy, member visit claims and member points history
   - name: member
@@ -1800,6 +1802,8 @@ paths:
         - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100}}
         - {name: cursor, in: query, schema: {type: string, maxLength: 512}}
         - {name: receipt_reference, in: query, schema: {type: string, pattern: '^R-[A-Z2-7]{10}$'}}
+        - {name: from, in: query, description: 'Business date (branch timezone), inclusive; with to, at most 31 days', schema: {type: string, format: date}}
+        - {name: to, in: query, schema: {type: string, format: date}}
       responses:
         '200':
           description: Receipt page
@@ -2054,6 +2058,57 @@ paths:
             application/json:
               schema: {$ref: '#/components/schemas/LedgerPage'}
         '401': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+  /api/v1/branches/{branch_id}/reports/daily:
+    parameters:
+      - {name: branch_id, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      operationId: getDailyReport
+      tags: [reporting]
+      summary: 'Per-business-date summary: tickets, visits, sales/refunds by method, loyalty (manager)'
+      description: >-
+        Business dates use the branch timezone; the inclusive range is capped at 31 days. Each metric is dated by its own event (join, open, payment, refund, ledger entry). Net = sales − refunds.
+      security: [{staffSession: []}]
+      parameters:
+        - {name: from, in: query, required: true, schema: {type: string, format: date}}
+        - {name: to, in: query, required: true, schema: {type: string, format: date}}
+      responses:
+        '200':
+          description: Report
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DailyReport'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+  /api/v1/branches/{branch_id}/audit-events:
+    parameters:
+      - {name: branch_id, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      operationId: listAuditEvents
+      tags: [reporting]
+      summary: 'Audit events newest first, with actor and reason; details limited to known keys (manager)'
+      security: [{staffSession: []}]
+      parameters:
+        - {name: from, in: query, required: true, schema: {type: string, format: date}}
+        - {name: to, in: query, required: true, schema: {type: string, format: date}}
+        - {name: action, in: query, description: 'Exact action or family (e.g. settlement)', schema: {type: string, pattern: '^[a-z_]+(\.[a-z_]+)?$'}}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100}}
+        - {name: cursor, in: query, schema: {type: string, maxLength: 512}}
+      responses:
+        '200':
+          description: Audit page
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AuditPage'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
         '422': {$ref: '#/components/responses/Error'}
 components:
   parameters:
@@ -2830,4 +2885,64 @@ components:
               receipt_reference: {type: string}
               branch_name: {type: string}
               created_at: {type: string, format: date-time}
+        next_cursor: {type: [string, 'null']}
+    Amount:
+      type: object
+      additionalProperties: false
+      required: [count, satang]
+      properties:
+        count: {type: integer, minimum: 0}
+        satang: {type: integer, minimum: 0}
+    ReportDay:
+      type: object
+      additionalProperties: false
+      required: [tickets_joined, tickets_seated, no_shows, tickets_cancelled, visits_opened, sales, sales_by_method, refunds,
+                 refunds_by_method, net_satang, member_settlements, points_earned, points_reversed]
+      properties:
+        date: {type: string, format: date, description: Absent on totals}
+        tickets_joined: {type: integer}
+        tickets_seated: {type: integer}
+        no_shows: {type: integer}
+        tickets_cancelled: {type: integer}
+        visits_opened: {type: integer}
+        sales: {$ref: '#/components/schemas/Amount'}
+        sales_by_method: {type: object, additionalProperties: {$ref: '#/components/schemas/Amount'}}
+        refunds: {$ref: '#/components/schemas/Amount'}
+        refunds_by_method: {type: object, additionalProperties: {$ref: '#/components/schemas/Amount'}}
+        net_satang: {type: integer}
+        member_settlements: {type: integer}
+        points_earned: {type: integer}
+        points_reversed: {type: integer}
+    DailyReport:
+      type: object
+      additionalProperties: false
+      required: [branch_id, timezone, from, to, days, totals]
+      properties:
+        branch_id: {type: string, format: uuid}
+        timezone: {type: string}
+        from: {type: string, format: date}
+        to: {type: string, format: date}
+        days: {type: array, maxItems: 31, items: {$ref: '#/components/schemas/ReportDay'}}
+        totals: {$ref: '#/components/schemas/ReportDay'}
+    AuditPage:
+      type: object
+      additionalProperties: false
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [id, occurred_at, actor, action, resource_type, resource_id, reason, request_id, details]
+            properties:
+              id: {type: string, format: uuid}
+              occurred_at: {type: string, format: date-time}
+              actor: {type: string, description: 'Staff display name, Member or System'}
+              action: {type: string}
+              resource_type: {type: string}
+              resource_id: {type: [string, 'null'], format: uuid}
+              reason: {type: [string, 'null']}
+              request_id: {type: string}
+              details: {type: object, description: Known keys only; unknown keys are dropped}
         next_cursor: {type: [string, 'null']}

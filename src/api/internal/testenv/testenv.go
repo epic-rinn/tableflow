@@ -15,11 +15,14 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/netip"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
 
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -36,6 +39,7 @@ import (
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/mail"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/password"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/token"
+	"github.com/epic-rinn/tableflow/src/api/internal/reporting"
 	"github.com/epic-rinn/tableflow/src/api/internal/seating"
 )
 
@@ -105,7 +109,8 @@ func New(t *testing.T) *Env {
 		seating.NewHTTP(seating.NewService(pool, idSvc), store, idHTTP, accHTTP, []string{PWAOrigin}, trusted, quiet),
 		menu.NewHTTP(menu.NewService(pool, idSvc), idHTTP, quiet),
 		ordering.NewHTTP(ordering.NewService(pool, idSvc), pool, store, idHTTP, accHTTP, []string{PWAOrigin}, quiet),
-		billing.NewHTTP(billing.NewService(pool, idSvc), pool, store, idHTTP, accHTTP, memHTTP, []string{PWAOrigin}, quiet))
+		billing.NewHTTP(billing.NewService(pool, idSvc), pool, store, idHTTP, accHTTP, memHTTP, []string{PWAOrigin}, quiet),
+		reporting.NewHTTP(reporting.NewService(pool), idHTTP, quiet))
 	srv := httptest.NewServer(app.NewHandler(quiet, routes))
 	t.Cleanup(srv.Close)
 	e := &Env{T: t, Pool: pool, Srv: srv, statements: counter}
@@ -375,4 +380,24 @@ func (g *Guest) Send(path, key string, body any) Resp {
 		key = NewKey()
 	}
 	return g.e.Do("POST", path, g.cookies(), PWAOrigin, key, body)
+}
+
+// CheckContract validates a response against the OpenAPI operation for
+// method and path template (status code documented, body schema valid).
+func CheckContract(t *testing.T, method, path string, r Resp) {
+	t.Helper()
+	_, file, _, _ := runtime.Caller(0)
+	doc, err := openapi3.NewLoader().LoadFromFile(filepath.Join(filepath.Dir(file), "..", "..", "..", "..", "specs", "api", "openapi.yaml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	ref := doc.Paths.Find(path).GetOperation(method).Responses.Status(r.Status)
+	if ref == nil {
+		t.Fatalf("%s %s: %d undocumented (%s)", method, path, r.Status, r.Raw)
+	}
+	var body any
+	_ = json.Unmarshal([]byte(r.Raw), &body)
+	if err := ref.Value.Content.Get("application/json").Schema.Value.VisitJSON(body, openapi3.EnableJSONSchema2020()); err != nil {
+		t.Fatalf("%s %s %d: %v\n%s", method, path, r.Status, err, r.Raw)
+	}
 }

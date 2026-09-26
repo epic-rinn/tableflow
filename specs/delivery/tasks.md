@@ -36,7 +36,7 @@ All implementation tasks are owned by Claude. MVP-22 additionally requires the r
 | UI-02 PWA design system and redesign | MU | `ui-02-pwa-design` | UI-01 | done |
 | MVP-14 Member visit claim and tier snapshot | M4 | `014-member-claim` | MVP-04, MVP-13, UI-02 | done |
 | MVP-15 Atomic loyalty and member history | M4 | `015-loyalty-ledger` | MVP-14 | done |
-| MVP-16 Manager reporting and audit | M5 | `016-reporting` | MVP-15 | planned |
+| MVP-16 Manager reporting and audit | M5 | `016-reporting` | MVP-15 | implemented-unverified |
 | MVP-17 Installable PWA and cache isolation | M5 | `017-pwa` | MVP-16 | planned |
 | MVP-18 Accessibility, locale and recovery audit | M5 | `018-journey-hardening` | MVP-17 | planned |
 | MVP-19 Complete journey regression suite | M6 | `019-e2e` | MVP-18 | planned |

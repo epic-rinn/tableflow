@@ -152,3 +152,16 @@ export type Receipt = Totals & {
 };
 export type ReceiptSummary = { id: string; receipt_reference: string; amount_satang: number; method: PaymentMethod; paid_at: string; table_label: string; refunded: boolean };
 export type ReceiptPage = { items: ReceiptSummary[]; next_cursor: string | null };
+
+export type Amount = { count: number; satang: number };
+export type ReportDay = {
+  date?: string; tickets_joined: number; tickets_seated: number; no_shows: number; tickets_cancelled: number; visits_opened: number;
+  sales: Amount; sales_by_method: Record<string, Amount>; refunds: Amount; refunds_by_method: Record<string, Amount>;
+  net_satang: number; member_settlements: number; points_earned: number; points_reversed: number;
+};
+export type DailyReport = { branch_id: string; timezone: string; from: string; to: string; days: ReportDay[]; totals: ReportDay };
+export type AuditEvent = {
+  id: string; occurred_at: string; actor: string; action: string; resource_type: string; resource_id: string | null;
+  reason: string | null; request_id: string; details: Record<string, unknown>;
+};
+export type AuditPage = { items: AuditEvent[]; next_cursor: string | null };

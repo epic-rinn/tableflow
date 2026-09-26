@@ -27,6 +27,7 @@ import (
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/config"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/dbtest"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/health"
+	"github.com/epic-rinn/tableflow/src/api/internal/reporting"
 	"github.com/epic-rinn/tableflow/src/api/internal/seating"
 )
 
@@ -108,7 +109,8 @@ func TestHealthOpenApiValidation(t *testing.T) {
 	menuHTTP := menu.NewHTTP(nil, idHTTP, discard)
 	orderHTTP := ordering.NewHTTP(nil, nil, nil, idHTTP, accHTTP, nil, discard)
 	billHTTP := billing.NewHTTP(nil, nil, nil, idHTTP, accHTTP, memHTTP, nil, discard)
-	for path, methods := range Routes(health.New(fakePinger{}, time.Second, discard), idHTTP, accHTTP, memHTTP, seatHTTP, menuHTTP, orderHTTP, billHTTP) {
+	reportHTTP := reporting.NewHTTP(nil, idHTTP, discard)
+	for path, methods := range Routes(health.New(fakePinger{}, time.Second, discard), idHTTP, accHTTP, memHTTP, seatHTTP, menuHTTP, orderHTTP, billHTTP, reportHTTP) {
 		for method := range methods {
 			implemented = append(implemented, method+" "+path)
 		}

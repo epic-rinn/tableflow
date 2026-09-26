@@ -13,6 +13,7 @@ import (
 
 	"github.com/epic-rinn/tableflow/src/api/internal/identity"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/audit"
+	"github.com/epic-rinn/tableflow/src/api/internal/platform/bizdate"
 )
 
 // Receipt page bounds.
@@ -133,7 +134,7 @@ type cursor struct {
 }
 
 // Receipts lists a branch's settlements, optionally one receipt reference.
-func (s *Service) Receipts(ctx context.Context, p identity.Principal, branchID, reference, after string, limit int) (ReceiptPage, error) {
+func (s *Service) Receipts(ctx context.Context, p identity.Principal, branchID, reference, from, to, after string, limit int) (ReceiptPage, error) {
 	if p.BranchID != branchID {
 		return ReceiptPage{}, ErrNotFound
 	}
@@ -147,6 +148,19 @@ func (s *Service) Receipts(ctx context.Context, p identity.Principal, branchID, 
 		}
 		ref = &reference
 	}
+	// Optional report drill-down range in the branch's business dates.
+	var start, end *time.Time
+	if from != "" || to != "" {
+		var tz string
+		if err := s.pool.QueryRow(ctx, q("branch_timezone"), branchID).Scan(&tz); err != nil {
+			return ReceiptPage{}, err
+		}
+		r, err := bizdate.Parse(tz, from, to)
+		if err != nil {
+			return ReceiptPage{}, &ValidationError{Fields: map[string]string{"from": bizdate.ErrRange.Error()}}
+		}
+		start, end = &r.Start, &r.End
+	}
 	if limit <= 0 {
 		limit = pageDefault
 	}
@@ -158,7 +172,7 @@ func (s *Service) Receipts(ctx context.Context, p identity.Principal, branchID, 
 			return ReceiptPage{}, &ValidationError{Fields: map[string]string{"cursor": "invalid cursor"}}
 		}
 	}
-	rows, err := s.pool.Query(ctx, q("receipts_page"), branchID, c.T, c.ID, ref, limit+1)
+	rows, err := s.pool.Query(ctx, q("receipts_page"), branchID, c.T, c.ID, ref, limit+1, start, end)
 	if err != nil {
 		return ReceiptPage{}, err
 	}

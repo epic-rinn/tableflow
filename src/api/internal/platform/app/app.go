@@ -24,6 +24,7 @@ import (
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/mail"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/password"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/server"
+	"github.com/epic-rinn/tableflow/src/api/internal/reporting"
 	"github.com/epic-rinn/tableflow/src/api/internal/seating"
 )
 
@@ -118,7 +119,8 @@ func Run(ctx context.Context, cfg config.Config, logger *slog.Logger, ln net.Lis
 	menuHTTP := menu.NewHTTP(menu.NewService(pool, svc), idHTTP, logger)
 	orderHTTP := ordering.NewHTTP(ordering.NewService(pool, svc), pool, store, idHTTP, accHTTP, cfg.PWAOrigins, logger)
 	billHTTP := billing.NewHTTP(billing.NewService(pool, svc), pool, store, idHTTP, accHTTP, memHTTP, cfg.PWAOrigins, logger)
-	h := NewHandler(logger, Routes(health.New(pool, cfg.ReadinessTimeout, logger), idHTTP, accHTTP, memHTTP, seatHTTP, menuHTTP, orderHTTP, billHTTP))
+	reportHTTP := reporting.NewHTTP(reporting.NewService(pool), idHTTP, logger)
+	h := NewHandler(logger, Routes(health.New(pool, cfg.ReadinessTimeout, logger), idHTTP, accHTTP, memHTTP, seatHTTP, menuHTTP, orderHTTP, billHTTP, reportHTTP))
 	go purgeLoop(ctx, logger, map[string]func(context.Context) (int64, error){
 		"identity":    svc.Purge,
 		"access":      accSvc.Purge,
