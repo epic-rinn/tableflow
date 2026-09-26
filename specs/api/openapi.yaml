@@ -20,6 +20,8 @@ tags:
     description: Staff sessions, activation and administration (admin origin only)
   - name: guest
     description: Anonymous bootstrap and QR capability sessions (PWA origin only)
+  - name: seating
+    description: Tables, seating groups, queue, holds, visits and table lifecycle
   - name: member
     description: Member accounts and sessions (PWA origin only); responses never reveal whether an email is registered
 paths:
@@ -614,8 +616,611 @@ paths:
           description: Session revoked and cookie cleared
         '401': {$ref: '#/components/responses/Error'}
         '403': {$ref: '#/components/responses/Error'}
+  /api/v1/branches/{branch_id}/seating-groups:
+    parameters:
+      - {name: branch_id, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      operationId: getSeatingGroups
+      tags: [seating]
+      summary: Current seating groups (any staff role)
+      security: [{staffSession: []}]
+      responses:
+        '200':
+          description: Current bands
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/GroupList'}
+        '401': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+    put:
+      operationId: replaceSeatingGroups
+      tags: [seating]
+      summary: Replace seating groups (manager; only while no ticket is active)
+      security: [{staffSession: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [groups]
+              properties:
+                groups: {type: array, minItems: 1, maxItems: 10, items: {$ref: '#/components/schemas/GroupInput'}}
+      responses:
+        '200':
+          description: New bands
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/GroupList'}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '415': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+  /api/v1/branches/{branch_id}/tables:
+    parameters:
+      - {name: branch_id, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      operationId: listTables
+      tags: [seating]
+      summary: 'Floor board: all tables with claims (≤100)'
+      security: [{staffSession: []}]
+      responses:
+        '200':
+          description: Tables
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TableList'}
+        '401': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+    post:
+      operationId: createTable
+      tags: [seating]
+      summary: Add a table (manager)
+      security: [{staffSession: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [label, capacity, needs]
+              properties:
+                label: {type: string, minLength: 1, maxLength: 20}
+                capacity: {type: integer, minimum: 1, maximum: 50}
+                needs: {$ref: '#/components/schemas/Needs'}
+      responses:
+        '201':
+          description: Table created
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Table'}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '415': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+  /api/v1/tables/{table_id}:
+    parameters:
+      - {name: table_id, in: path, required: true, schema: {type: string, format: uuid}}
+    patch:
+      operationId: updateTable
+      tags: [seating]
+      summary: Edit a table (manager); claimed tables cannot be deactivated or shrunk
+      security: [{staffSession: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [label, capacity, needs, active, expected_version]
+              properties:
+                label: {type: string, minLength: 1, maxLength: 20}
+                capacity: {type: integer, minimum: 1, maximum: 50}
+                needs: {$ref: '#/components/schemas/Needs'}
+                active: {type: boolean}
+                expected_version: {type: integer, minimum: 1}
+      responses:
+        '200':
+          description: Updated table
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Table'}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '415': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+  /api/v1/tables/{table_id}/ready:
+    parameters:
+      - {name: table_id, in: path, required: true, schema: {type: string, format: uuid}}
+    post:
+      operationId: markTableReady
+      tags: [seating]
+      summary: Cleaned, unclaimed table becomes available (host)
+      security: [{staffSession: []}]
+      parameters:
+        - {$ref: '#/components/parameters/IdempotencyKey'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [expected_version]
+              properties:
+                expected_version: {type: integer, minimum: 1}
+      responses:
+        '200':
+          description: Table available
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+            Idempotency-Replayed:
+              description: Present (true) when the committed result of an earlier identical request is replayed
+              schema: {type: string, const: 'true'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Table'}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '415': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+  /api/v1/branches/{branch_id}/queue-tickets:
+    parameters:
+      - {name: branch_id, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      operationId: listQueueTickets
+      tags: [seating]
+      summary: 'Host board: waiting and called tickets, oldest first'
+      security: [{staffSession: []}]
+      parameters:
+        - {name: state, in: query, schema: {type: string, enum: [waiting, called]}}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 50}}
+        - {name: cursor, in: query, schema: {type: string, maxLength: 64}}
+      responses:
+        '200':
+          description: One page
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TicketPage'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+    post:
+      operationId: joinQueue
+      tags: [seating]
+      summary: Join the queue (anonymous session on the PWA origin, or host on the admin origin)
+      description: >-
+        Guests need an anonymous session and are limited to 5 joins per session and 30 per client IP per 10 minutes. Parties larger than the largest seating group need staff (PARTY_NEEDS_STAFF). The tracking token is returned once and replayed sealed for retries.
+      security: [{staffSession: []}, {anonymousSession: []}]
+      parameters:
+        - {$ref: '#/components/parameters/IdempotencyKey'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [party_size, needs]
+              properties:
+                party_size: {type: integer, minimum: 1, maximum: 50}
+                needs: {$ref: '#/components/schemas/Needs'}
+      responses:
+        '201':
+          description: Ticket and tracking token
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+            Idempotency-Replayed:
+              description: Present (true) when the committed result of an earlier identical request is replayed
+              schema: {type: string, const: 'true'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/JoinResult'}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '415': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+        '429': {$ref: '#/components/responses/Error'}
+  /api/v1/queue-tickets/{ticket_id}:
+    parameters:
+      - {name: ticket_id, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      operationId: getQueueTicket
+      tags: [seating]
+      summary: Track a ticket (its own guest, or branch staff)
+      security: [{staffSession: []}, {guestSession: []}]
+      responses:
+        '200':
+          description: Ticket with group position
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Ticket'}
+        '401': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+  /api/v1/queue-tickets/{ticket_id}/cancel:
+    parameters:
+      - {name: ticket_id, in: path, required: true, schema: {type: string, format: uuid}}
+    post:
+      operationId: cancelQueueTicket
+      tags: [seating]
+      summary: Cancel a waiting or called ticket (its guest or a host); releases any hold
+      security: [{staffSession: []}, {guestSession: []}]
+      parameters:
+        - {$ref: '#/components/parameters/IdempotencyKey'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [expected_version]
+              properties:
+                expected_version: {type: integer, minimum: 1}
+      responses:
+        '200':
+          description: Cancelled ticket
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+            Idempotency-Replayed:
+              description: Present (true) when the committed result of an earlier identical request is replayed
+              schema: {type: string, const: 'true'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Ticket'}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '415': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+  /api/v1/queue-tickets/{ticket_id}/call:
+    parameters:
+      - {name: ticket_id, in: path, required: true, schema: {type: string, format: uuid}}
+    post:
+      operationId: callQueueTicket
+      tags: [seating]
+      summary: Hold a table for a waiting ticket until a return deadline (host)
+      description: >-
+        Skipping an older compatible waiting party returns BYPASS_REQUIRES_OVERRIDE unless a manager supplies override_reason (audited).
+      security: [{staffSession: []}]
+      parameters:
+        - {$ref: '#/components/parameters/IdempotencyKey'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [table_id, expected_version]
+              properties:
+                table_id: {type: string, format: uuid}
+                expected_version: {type: integer, minimum: 1}
+                override_reason: {type: string, minLength: 1, maxLength: 500}
+      responses:
+        '200':
+          description: Called ticket
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+            Idempotency-Replayed:
+              description: Present (true) when the committed result of an earlier identical request is replayed
+              schema: {type: string, const: 'true'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Ticket'}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '415': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+  /api/v1/queue-tickets/{ticket_id}/no-show:
+    parameters:
+      - {name: ticket_id, in: path, required: true, schema: {type: string, format: uuid}}
+    post:
+      operationId: markNoShow
+      tags: [seating]
+      summary: Staff-confirmed no-show; releases the hold
+      security: [{staffSession: []}]
+      parameters:
+        - {$ref: '#/components/parameters/IdempotencyKey'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [expected_version, reason]
+              properties:
+                expected_version: {type: integer, minimum: 1}
+                reason: {type: string, minLength: 1, maxLength: 500}
+      responses:
+        '200':
+          description: No-show ticket
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+            Idempotency-Replayed:
+              description: Present (true) when the committed result of an earlier identical request is replayed
+              schema: {type: string, const: 'true'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Ticket'}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '415': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+  /api/v1/visits:
+    post:
+      operationId: seatParty
+      tags: [seating]
+      summary: Seat a called/waiting ticket or a walk-in (host); creates the visit and dining QR
+      description: >-
+        Walk-ins need party_size. Bypassing an older compatible waiting party requires a manager override_reason. Retrying with the same key returns the original visit and token.
+      security: [{staffSession: []}]
+      parameters:
+        - {$ref: '#/components/parameters/IdempotencyKey'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [branch_id, table_id, expected_table_version]
+              properties:
+                branch_id: {type: string, format: uuid}
+                table_id: {type: string, format: uuid}
+                queue_ticket_id: {type: [string, 'null'], format: uuid}
+                party_size: {type: [integer, 'null'], minimum: 1, maximum: 50}
+                needs: {$ref: '#/components/schemas/Needs'}
+                expected_table_version: {type: integer, minimum: 1}
+                override_reason: {type: [string, 'null'], minLength: 1, maxLength: 500}
+      responses:
+        '201':
+          description: Visit and one-time dining token
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+            Idempotency-Replayed:
+              description: Present (true) when the committed result of an earlier identical request is replayed
+              schema: {type: string, const: 'true'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SeatResult'}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '415': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+  /api/v1/visits/{visit_id}:
+    parameters:
+      - {name: visit_id, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      operationId: getVisit
+      tags: [seating]
+      summary: A visit for its dining guests or branch staff (no member data)
+      security: [{staffSession: []}, {guestSession: []}]
+      responses:
+        '200':
+          description: Visit
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Visit'}
+        '401': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+  /api/v1/visits/{visit_id}/move:
+    parameters:
+      - {name: visit_id, in: path, required: true, schema: {type: string, format: uuid}}
+    post:
+      operationId: moveVisit
+      tags: [seating]
+      summary: Move a visit to an available compatible table; access is preserved
+      security: [{staffSession: []}]
+      parameters:
+        - {$ref: '#/components/parameters/IdempotencyKey'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [table_id, expected_version, expected_table_version]
+              properties:
+                table_id: {type: string, format: uuid}
+                expected_version: {type: integer, minimum: 1}
+                expected_table_version: {type: integer, minimum: 1}
+      responses:
+        '200':
+          description: Updated visit
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+            Idempotency-Replayed:
+              description: Present (true) when the committed result of an earlier identical request is replayed
+              schema: {type: string, const: 'true'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Visit'}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '415': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+  /api/v1/visits/{visit_id}/depart:
+    parameters:
+      - {name: visit_id, in: path, required: true, schema: {type: string, format: uuid}}
+    post:
+      operationId: departVisit
+      tags: [seating]
+      summary: 'Paid party leaves: release the claim, table to cleaning, revoke dining access'
+      security: [{staffSession: []}]
+      parameters:
+        - {$ref: '#/components/parameters/IdempotencyKey'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [expected_version]
+              properties:
+                expected_version: {type: integer, minimum: 1}
+      responses:
+        '200':
+          description: Updated visit
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+            Idempotency-Replayed:
+              description: Present (true) when the committed result of an earlier identical request is replayed
+              schema: {type: string, const: 'true'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Visit'}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '415': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+  /api/v1/visits/{visit_id}/close-empty:
+    parameters:
+      - {name: visit_id, in: path, required: true, schema: {type: string, format: uuid}}
+    post:
+      operationId: closeEmptyVisit
+      tags: [seating]
+      summary: Close an open visit without chargeable orders (audited reason)
+      security: [{staffSession: []}]
+      parameters:
+        - {$ref: '#/components/parameters/IdempotencyKey'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [expected_version, reason]
+              properties:
+                expected_version: {type: integer, minimum: 1}
+                reason: {type: string, minLength: 1, maxLength: 500}
+      responses:
+        '200':
+          description: Updated visit
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+            Idempotency-Replayed:
+              description: Present (true) when the committed result of an earlier identical request is replayed
+              schema: {type: string, const: 'true'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Visit'}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '415': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+  /api/v1/visits/{visit_id}/rotate-access:
+    parameters:
+      - {name: visit_id, in: path, required: true, schema: {type: string, format: uuid}}
+    post:
+      operationId: rotateVisitAccess
+      tags: [seating]
+      summary: Issue a new dining QR; all sessions from the old one stop working (audited)
+      security: [{staffSession: []}]
+      parameters:
+        - {$ref: '#/components/parameters/IdempotencyKey'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [expected_version, reason]
+              properties:
+                expected_version: {type: integer, minimum: 1}
+                reason: {type: string, minLength: 1, maxLength: 500}
+      responses:
+        '200':
+          description: Updated visit
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+            Idempotency-Replayed:
+              description: Present (true) when the committed result of an earlier identical request is replayed
+              schema: {type: string, const: 'true'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SeatResult'}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '415': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
 components:
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Client-generated UUID; the same key and body replays the committed result, a different body returns 409 IDEMPOTENCY_CONFLICT.
+      schema: {type: string, format: uuid}
   securitySchemes:
+    anonymousSession:
+      type: apiKey
+      in: cookie
+      name: __Host-tf_anon
+      description: Anonymous bootstrap session on the PWA origin (queue join only).
     memberSession:
       type: apiKey
       in: cookie
@@ -790,3 +1395,144 @@ components:
         locale: {type: string, enum: [th, en]}
         email_verified: {type: boolean}
         session_expires_at: {type: string, format: date-time}
+    Needs:
+      type: array
+      maxItems: 2
+      uniqueItems: true
+      items: {type: string, enum: [accessible, high_chair]}
+    GroupInput:
+      type: object
+      additionalProperties: false
+      required: [label, min_party, max_party]
+      properties:
+        label: {type: string, minLength: 1, maxLength: 40}
+        min_party: {type: integer, minimum: 1}
+        max_party: {type: integer, minimum: 1, maximum: 50}
+    Group:
+      type: object
+      additionalProperties: false
+      required: [id, label, min_party, max_party]
+      properties:
+        id: {type: string, format: uuid}
+        label: {type: string}
+        min_party: {type: integer}
+        max_party: {type: integer}
+    GroupList:
+      type: object
+      additionalProperties: false
+      required: [groups]
+      properties:
+        groups: {type: array, items: {$ref: '#/components/schemas/Group'}}
+    Table:
+      type: object
+      additionalProperties: false
+      required: [id, label, capacity, needs, state, active, version, claim]
+      properties:
+        id: {type: string, format: uuid}
+        label: {type: string}
+        capacity: {type: integer}
+        needs: {$ref: '#/components/schemas/Needs'}
+        state: {type: string, enum: [available, held, occupied, cleaning]}
+        active: {type: boolean}
+        version: {type: integer}
+        claim:
+          oneOf:
+            - {type: 'null'}
+            - type: object
+              additionalProperties: false
+              required: [kind]
+              properties:
+                kind: {type: string, enum: [hold, visit]}
+                queue_ticket_id: {type: string, format: uuid}
+                display_number: {type: integer}
+                visit_id: {type: string, format: uuid}
+    TableList:
+      type: object
+      additionalProperties: false
+      required: [items, server_time]
+      properties:
+        items: {type: array, maxItems: 101, items: {$ref: '#/components/schemas/Table'}}
+        server_time: {type: string, format: date-time}
+    Ticket:
+      type: object
+      additionalProperties: false
+      required: [id, branch_id, display_number, business_date, state, party_size, needs, source, seating_group, parties_ahead, called_until, called_table_label, overdue, version, created_at, server_time]
+      properties:
+        id: {type: string, format: uuid}
+        branch_id: {type: string, format: uuid}
+        display_number: {type: integer, minimum: 1}
+        business_date: {type: string, format: date}
+        state: {type: string, enum: [waiting, called, seated, cancelled, no_show]}
+        party_size: {type: integer}
+        needs: {$ref: '#/components/schemas/Needs'}
+        source: {type: string, enum: [guest, staff]}
+        seating_group:
+          oneOf:
+            - {type: 'null'}
+            - type: object
+              additionalProperties: false
+              required: [id, label, min_party, max_party]
+              properties:
+                id: {type: string, format: uuid}
+                label: {type: string}
+                min_party: {type: integer}
+                max_party: {type: integer}
+        parties_ahead: {type: [integer, 'null'], minimum: 0, description: 'Waiting parties ahead in the same seating group (not a global seating order); null unless waiting'}
+        called_until: {type: [string, 'null'], format: date-time}
+        called_table_label: {type: [string, 'null']}
+        overdue: {type: boolean}
+        version: {type: integer}
+        created_at: {type: string, format: date-time}
+        server_time: {type: string, format: date-time}
+    TicketPage:
+      type: object
+      additionalProperties: false
+      required: [items, next_cursor, server_time]
+      properties:
+        items: {type: array, maxItems: 100, items: {$ref: '#/components/schemas/Ticket'}}
+        next_cursor: {type: [string, 'null']}
+        server_time: {type: string, format: date-time}
+    JoinResult:
+      type: object
+      additionalProperties: false
+      required: [ticket, tracking]
+      properties:
+        ticket: {$ref: '#/components/schemas/Ticket'}
+        tracking:
+          type: object
+          additionalProperties: false
+          required: [token]
+          properties:
+            token: {type: string, description: 'Tracking capability; put in the /q#<token> link or QR'}
+    Visit:
+      type: object
+      additionalProperties: false
+      required: [id, branch_id, state, party_size, needs, table, version, opened_at, server_time]
+      properties:
+        id: {type: string, format: uuid}
+        branch_id: {type: string, format: uuid}
+        state: {type: string, enum: [open, paid, departed, closed]}
+        party_size: {type: integer}
+        needs: {$ref: '#/components/schemas/Needs'}
+        table:
+          type: object
+          additionalProperties: false
+          required: [id, label]
+          properties:
+            id: {type: string, format: uuid}
+            label: {type: string}
+        version: {type: integer}
+        opened_at: {type: string, format: date-time}
+        server_time: {type: string, format: date-time}
+    SeatResult:
+      type: object
+      additionalProperties: false
+      required: [visit, dining]
+      properties:
+        visit: {$ref: '#/components/schemas/Visit'}
+        dining:
+          type: object
+          additionalProperties: false
+          required: [token]
+          properties:
+            token: {type: string, description: 'Dining capability for the /t#<token> QR; shown once'}
