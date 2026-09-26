@@ -15,3 +15,27 @@ export type Member = {
   email_verified: boolean;
   session_expires_at?: string;
 };
+
+export type Need = "accessible" | "high_chair";
+
+export type Ticket = {
+  id: string;
+  display_number: number;
+  state: "waiting" | "called" | "seated" | "cancelled" | "no_show";
+  party_size: number;
+  needs: Need[];
+  seating_group: { label: string } | null;
+  parties_ahead: number | null;
+  called_until: string | null;
+  called_table_label: string | null;
+  version: number;
+  server_time: string;
+};
+
+export type Visit = {
+  id: string;
+  state: "open" | "paid" | "departed" | "closed";
+  party_size: number;
+  table: { id: string; label: string };
+  version: number;
+};

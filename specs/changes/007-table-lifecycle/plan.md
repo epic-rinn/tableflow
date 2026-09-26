@@ -1,6 +1,6 @@
 # Change: 007-table-lifecycle — Moves and table lifecycle
 
-Status: in-progress. Date: 2026-09-26. Scope owner: Claude. Task: MVP-07. Verification: M1 gate (ADR-0004).
+Status: implemented-unverified. Date: 2026-09-26. Scope owner: Claude. Task: MVP-07. Verification: M1 gate (ADR-0004).
 
 ## Problem and behavior
 

@@ -40,10 +40,10 @@ make frontends-check
 
 step "Browser tests (disposable tableflow_e2e database, API on $API_ADDR)"
 while IFS='=' read -r name value; do
-  [[ "$name" =~ ^E2E_[A-Z_]+$ && "$value" =~ ^[A-Za-z0-9_-]{43}$ ]] || { echo "unexpected e2e-db output" >&2; exit 1; }
+  [[ "$name" =~ ^E2E_[A-Z_]+$ && ( "$value" =~ ^[A-Za-z0-9_-]{43}$ || "$value" =~ ^[0-9a-f-]{36}$ ) ]] || { echo "unexpected e2e-db output" >&2; exit 1; }
   export "$name=$value"
 done < <(tooling/runtime/e2e-db.sh)
-[[ -n "${E2E_MANAGER_TOKEN:-}" && -n "${E2E_VISIT_TOKEN:-}" ]] || { echo "E2E setup produced no tokens" >&2; exit 1; }
+[[ -n "${E2E_MANAGER_TOKEN:-}" && -n "${E2E_VISIT_TOKEN:-}" && -n "${E2E_BRANCH_ID:-}" ]] || { echo "E2E setup produced no tokens" >&2; exit 1; }
 make api-build
 DATABASE_URL="postgres://tableflow_app:app_dev_only@127.0.0.1:${DB_PORT}/tableflow_e2e?sslmode=disable" \
   ADMIN_ORIGINS="http://127.0.0.1:3001" PWA_ORIGINS="http://127.0.0.1:3000" PWA_PUBLIC_URL="http://127.0.0.1:3000" \

@@ -1,6 +1,6 @@
 # MVP HTTP contract
 
-Status: design contract; health, staff-identity, guest-session and member-identity routes are implemented and their wire schemas live in [openapi.yaml](openapi.yaml). Base path: `/api/v1`. All routes below are relative to that base. Wire schemas move to OpenAPI per [architecture](../architecture/system.md) before their implementation.
+Status: design contract; health, identity, guest-session, member and queue/seating routes are implemented and their wire schemas live in [openapi.yaml](openapi.yaml). Base path: `/api/v1`. All routes below are relative to that base. Wire schemas move to OpenAPI per [architecture](../architecture/system.md) before their implementation.
 
 ## Common conventions
 
@@ -53,6 +53,8 @@ Staff account invitation/activation uses manager-issued single-use credentials; 
 | POST `/visits/{visit_id}/rotate-access` | Host | `{expected_version,reason}` → new QR; old derived guest sessions revoked; ACC-001 |
 
 Capability-authenticated tracking after seating reports the terminal queue state; it does not reveal the dining secret. Staff give the separate dining QR at the table.
+
+Implemented in M1 (MVP-05–07) with these additions: GET/PUT `/branches/{branch_id}/seating-groups` (seating part of configuration), GET `/visits/{visit_id}` for the visit's guests or staff, `POST /queue-tickets/{id}/cancel` also releases a hold, and `POST /visits` accepts `party_size`/`needs` for walk-ins. Wire schemas: [openapi.yaml](openapi.yaml).
 
 ## Menu, orders, kitchen, assistance
 

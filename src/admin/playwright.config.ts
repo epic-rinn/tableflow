@@ -17,13 +17,22 @@ export default defineConfig({
   reporter: "list",
   use: { baseURL, trace: "retain-on-failure" },
   projects: [
+    // PLAYWRIGHT_CHANNEL=chrome uses an installed Google Chrome when the
+    // bundled Chromium cannot be downloaded.
+    // The staff spec activates the E2E manager that later specs sign in as.
+    {
+      name: "staff",
+      testMatch: /staff\.spec\.ts/,
+      use: { ...devices["Desktop Chrome"], channel: process.env.PLAYWRIGHT_CHANNEL || undefined },
+    },
     {
       name: "chromium",
-      // PLAYWRIGHT_CHANNEL=chrome uses an installed Google Chrome when the
-      // bundled Chromium cannot be downloaded.
+      testIgnore: /staff\.spec\.ts/,
+      dependencies: ["staff"],
       use: { ...devices["Desktop Chrome"], channel: process.env.PLAYWRIGHT_CHANNEL || undefined },
     },
   ],
+  workers: 1,
   webServer: {
     command: `pnpm exec next start --hostname 127.0.0.1 --port ${port}`,
     url: baseURL,

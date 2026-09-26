@@ -12,7 +12,8 @@ test.describe("QR entry", () => {
     page.on("request", (r) => urls.push(r.url() + " " + (r.headers()["referer"] ?? "")));
 
     await page.goto(`/t#${visitToken}`);
-    await expect(page.getByRole("main").getByRole("status")).toHaveText("You are connected to your table.");
+    await expect(page.getByText("You are connected to your table.")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Table E2E-1" })).toBeVisible();
     expect(new URL(page.url()).hash).toBe("");
     expect(await page.evaluate(() => window.history.length)).toBeLessThanOrEqual(2);
     for (const u of urls) expect(u).not.toContain(visitToken);
@@ -35,7 +36,8 @@ test.describe("QR entry", () => {
     const other = await browser.newContext();
     const page = await other.newPage();
     await page.goto(`/t#${visitToken}`);
-    await expect(page.getByRole("main").getByRole("status")).toHaveText("You are connected to your table.");
+    await expect(page.getByText("You are connected to your table.")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Table E2E-1" })).toBeVisible();
     await other.close();
   });
 

@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api/client";
 import { useFragmentToken } from "@/lib/useFragmentToken";
+import { QueueTracking } from "./QueueTracking";
+import { VisitSummary } from "./VisitSummary";
 import type { CapabilityKind, GuestSession } from "@/lib/api/types";
 
 type State =
@@ -60,9 +62,12 @@ export function QrEntry({ kind }: { kind: CapabilityKind }) {
         </p>
       ) : null}
       {state.step === "connected" && (
-        <p role="status" aria-live="polite">
-          {copy.connected}
-        </p>
+        <>
+          <p role="status" aria-live="polite">
+            {copy.connected}
+          </p>
+          {kind === "queue" ? <QueueTracking ticketId={state.session.resource_id} /> : <VisitSummary visitId={state.session.resource_id} />}
+        </>
       )}
       {state.step === "missing" && <p role="alert">Scan the QR code again, or ask staff for help.</p>}
       {state.step === "failed" && <p role="alert">{state.message}</p>}

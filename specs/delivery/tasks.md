@@ -1,6 +1,6 @@
 # MVP implementation tasks
 
-Status: M0 (MVP-01–04) done; M1 onwards planned. Created: 2026-09-26.
+Status: M0 (MVP-01–04) done; M1 (MVP-05–07) implemented-unverified, gate pending; later tasks planned. Created: 2026-09-26.
 
 This is the implementation queue for Claude. Codex maintains task scope and the Word report; Claude maintains execution status and evidence. The [roadmap](roadmap.md) groups milestones, while this file owns task order and status. Canonical feature specs remain the authority for behavior.
 
@@ -23,9 +23,9 @@ All implementation tasks are owned by Claude. MVP-22 additionally requires the r
 | MVP-02 Staff identity and access | M0 | `002-staff-access` | MVP-01 | done |
 | MVP-03 Guest capabilities and mutation infrastructure | M0 | `003-guest-access` | MVP-02 | done |
 | MVP-04 Member identity | M0 | `004-member-access` | MVP-02 | done |
-| MVP-05 Tables and queue entry | M1 | `005-queue-entry` | MVP-03 | in-progress |
-| MVP-06 Calling and seating | M1 | `006-call-seat` | MVP-05 | planned |
-| MVP-07 Moves and table lifecycle | M1 | `007-table-lifecycle` | MVP-06 | planned |
+| MVP-05 Tables and queue entry | M1 | `005-queue-entry` | MVP-03 | implemented-unverified |
+| MVP-06 Calling and seating | M1 | `006-call-seat` | MVP-05 | implemented-unverified |
+| MVP-07 Moves and table lifecycle | M1 | `007-table-lifecycle` | MVP-06 | implemented-unverified |
 | MVP-08 Menu management and browsing | M2 | `008-menu` | MVP-07 | planned |
 | MVP-09 Shared-visit ordering | M2 | `009-ordering` | MVP-08 | planned |
 | MVP-10 Kitchen and assistance | M2 | `010-kitchen` | MVP-09 | planned |

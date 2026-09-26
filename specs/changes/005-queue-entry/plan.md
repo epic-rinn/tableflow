@@ -1,6 +1,6 @@
 # Change: 005-queue-entry — Tables and queue entry
 
-Status: in-progress. Date: 2026-09-26. Scope owner: Claude. Task: MVP-05. Verification: M1 milestone gate ([ADR-0004](../../decisions/0004-milestone-verification.md)).
+Status: implemented-unverified. Date: 2026-09-26. Scope owner: Claude. Task: MVP-05. Verification: M1 milestone gate ([ADR-0004](../../decisions/0004-milestone-verification.md)).
 
 ## Problem and behavior
 

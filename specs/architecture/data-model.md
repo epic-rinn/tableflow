@@ -12,11 +12,12 @@ Status: logical design, not executed DDL. Goose migrations become the source for
 | staff_activation_tokens (implemented) | account, SHA-256 token hash, expiry, used/revoked time, issuer | Unique hash; one open token per account (partial unique) |
 | staff_sessions (implemented) / guest and member sessions, capabilities | hashed random secret, absolute expiry, idle `last_seen_at`, revocation; guest visit/ticket + capability generation later | Unique secret hash; partial (account) WHERE not revoked; resource/generation lookup |
 | auth_throttle (implemented) | fixed-window attempt counters keyed by hashed email or client IP | PK bucket; window_start for purge |
-| queue_counters | branch/business_date, last sequence | Unique branch/date; atomic increment |
-| queue_tickets | daily display_sequence, global monotonic join_order, business_date, party_size, seating_group, needs, state, called_until, version | Unique branch/date/display_sequence; unique join_order; partial branch/group/join_order for waiting; partial called-deadline for called |
-| dining_tables | label, capacity, supported needs, state, version | Unique branch/label; branch/state for board if measured useful |
-| visits | branch, optional queue_ticket, state, bill_version, claimed_member, policy snapshot, timestamps | Unique non-null queue_ticket; branch/state/opened_at/id |
-| table_claims | table_id, either queue_ticket_id or visit_id; branch | Primary/unique table_id; unique non-null visit_id and queue_ticket_id; check exactly one owner |
+| queue_counters (implemented) | branch/business_date, last sequence | Unique branch/date; atomic increment |
+| seating_groups (implemented) | branch, label, party-size band, retired_at (replaced only while no ticket is active) | branch current bands |
+| queue_tickets (implemented) | daily display_sequence, global monotonic join_order, business_date, party_size, seating_group, needs, state, called_until, version | Unique branch/date/display_sequence; unique join_order; partial branch/group/join_order for waiting; partial called-deadline for called |
+| dining_tables (implemented) | label, capacity, supported needs (`accessible`, `high_chair`), state, active, version | Unique branch/label; branch/state for board if measured useful |
+| visits (implemented: open/paid/departed/closed; bill/member fields later) | branch, optional queue_ticket, state, bill_version, claimed_member, policy snapshot, timestamps | Unique non-null queue_ticket; branch/state/opened_at/id |
+| table_claims (implemented) | table_id, either queue_ticket_id or visit_id; branch | Primary/unique table_id; unique non-null visit_id and queue_ticket_id; check exactly one owner |
 | menu_categories / menu_items / option_groups / options / item_option_groups | branch, display order, translated names, satang price/delta, sold_out, revision, option bounds | Branch/category/display order; relationship foreign keys; active menu lookup |
 | orders / order_lines | visit, submit actor/key, line quantity, immutable name/option/price snapshot, state, notes | Orders: branch/visit/created_at/id; lines: order_id; partial branch/state/created_at/id for active kitchen |
 | assistance_requests | visit, topic, state, acknowledgement actor/time | Unique visit/topic while unresolved; branch/state/created_at/id |
@@ -47,6 +48,8 @@ Default to PostgreSQL Read Committed with explicit row locks and guarded updates
 - Begin settlement: lock visit, then member if claimed; validate states/version and snapshot charges/benefit. Confirm settlement repeats locks/revalidation, records payment and ledger changes in one transaction. Both order submission and settlement lock the same visit.
 - Refund: lock visit/member, enforce unique reversal, append negative ledger credit and refund/audit records. Do not delete or reopen the paid bill.
 - Staff administration (implemented): branch row `FOR UPDATE` → acting session/account `FOR SHARE` (re-validation) → target account `FOR UPDATE` → its tokens/sessions/roles. Activation locks the invited account, then its token. Without the branch lock, two managers acting on each other deadlock (demonstrated by `TestAdminLockOrderPreventsDeadlock`).
+- Guest capabilities are children of their ticket/visit: guest mutations lock the ticket or visit first and then re-validate the guest session (`FOR SHARE`), because staff commands update the capability after locking the same row.
+- Queue joins take the branch row `FOR SHARE` and seating-group replacement takes it `FOR UPDATE`; neither locks tickets, so the exception to the config-last order cannot form a cycle.
 - Every mutation re-validates its session/account/roles `FOR SHARE` inside its transaction, so revocation either waits for an in-flight mutation or the mutation fails.
 - Role/menu/config changes follow the same lock rules if touching visit state. Do not hold database locks during email, network, or human verification.
 

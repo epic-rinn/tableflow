@@ -45,3 +45,23 @@ td {
   text-align: left;
   vertical-align: top;
 }
+
+.tables {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: 0.75rem;
+  list-style: none;
+  padding: 0;
+}
+
+.table {
+  border: 1px solid currentColor;
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+}
+
+.table.occupied { border-width: 3px; }
+.table.cleaning { border-style: dashed; }
+.overdue { color: #b00020; }
+.freshness { font-size: 0.9rem; }
+.link-panel input { width: min(100%, 40rem); }
