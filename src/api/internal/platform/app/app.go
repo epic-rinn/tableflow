@@ -10,23 +10,28 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/epic-rinn/tableflow/src/api/internal/access"
 	"github.com/epic-rinn/tableflow/src/api/internal/identity"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/config"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/database"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/health"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/httpx"
+	"github.com/epic-rinn/tableflow/src/api/internal/platform/idempotency"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/server"
 )
 
 // Routes maps each implemented path pattern to its method handlers. The
 // OpenAPI contract test compares this set with the documented operations.
-func Routes(health *health.Handler, id *identity.HTTP) map[string]map[string]http.HandlerFunc {
+func Routes(health *health.Handler, id *identity.HTTP, acc *access.HTTP) map[string]map[string]http.HandlerFunc {
 	routes := map[string]map[string]http.HandlerFunc{
 		"/api/v1/health/live":  {http.MethodGet: health.Live},
 		"/api/v1/health/ready": {http.MethodGet: health.Ready},
 	}
 	if id != nil {
 		maps.Copy(routes, id.Routes())
+	}
+	if acc != nil {
+		maps.Copy(routes, acc.Routes())
 	}
 	return routes
 }
@@ -45,7 +50,9 @@ func NewHandler(logger *slog.Logger, routes map[string]map[string]http.HandlerFu
 // hashConcurrency bounds simultaneous argon2id operations (~19 MiB each).
 const hashConcurrency = 4
 
-func purgeIdentity(ctx context.Context, svc *identity.Service, logger *slog.Logger) {
+// purgeLoop runs hourly maintenance deletes (expired sessions, throttle
+// buckets, idempotency records); each purge is bounded.
+func purgeLoop(ctx context.Context, logger *slog.Logger, purges map[string]func(context.Context) (int64, error)) {
 	t := time.NewTicker(time.Hour)
 	defer t.Stop()
 	for {
@@ -53,10 +60,12 @@ func purgeIdentity(ctx context.Context, svc *identity.Service, logger *slog.Logg
 		case <-ctx.Done():
 			return
 		case <-t.C:
-			if n, err := svc.Purge(ctx); err != nil && ctx.Err() == nil {
-				logger.Warn("identity purge failed", "error", err.Error())
-			} else if n > 0 {
-				logger.Info("identity purge", "deleted", n)
+			for name, purge := range purges {
+				if n, err := purge(ctx); err != nil && ctx.Err() == nil {
+					logger.Warn("purge failed", "purge", name, "error", err.Error())
+				} else if n > 0 {
+					logger.Info("purge", "purge", name, "deleted", n)
+				}
 			}
 		}
 	}
@@ -76,8 +85,14 @@ func Run(ctx context.Context, cfg config.Config, logger *slog.Logger, ln net.Lis
 	}
 	svc := identity.NewService(pool, identity.NewHasher(hashConcurrency), cfg.StaffSessionIdle, cfg.StaffSessionAbsolute)
 	idHTTP := identity.NewHTTP(svc, cfg.AdminOrigins, cfg.TrustedProxies, logger)
-	h := NewHandler(logger, Routes(health.New(pool, cfg.ReadinessTimeout, logger), idHTTP))
-	go purgeIdentity(ctx, svc, logger)
+	accSvc := access.NewService(pool)
+	accHTTP := access.NewHTTP(accSvc, cfg.PWAOrigins, cfg.TrustedProxies, logger)
+	h := NewHandler(logger, Routes(health.New(pool, cfg.ReadinessTimeout, logger), idHTTP, accHTTP))
+	go purgeLoop(ctx, logger, map[string]func(context.Context) (int64, error){
+		"identity":    svc.Purge,
+		"access":      accSvc.Purge,
+		"idempotency": func(ctx context.Context) (int64, error) { return idempotency.Purge(ctx, pool) },
+	})
 	logger.Info("api listening", "addr", ln.Addr().String())
 	err = server.Serve(ctx, ln, h, server.Timeouts{
 		ReadHeader: cfg.ReadHeaderTimeout,

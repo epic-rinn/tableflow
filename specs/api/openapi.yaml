@@ -18,6 +18,8 @@ tags:
     description: Process liveness and dependency readiness
   - name: staff
     description: Staff sessions, activation and administration (admin origin only)
+  - name: guest
+    description: Anonymous bootstrap and QR capability sessions (PWA origin only)
 paths:
   /api/v1/health/live:
     get:
@@ -320,8 +322,88 @@ paths:
         '409': {$ref: '#/components/responses/Error'}
         '415': {$ref: '#/components/responses/Error'}
         '422': {$ref: '#/components/responses/Error'}
+  /api/v1/sessions/anonymous:
+    post:
+      operationId: startAnonymousSession
+      tags: [guest]
+      summary: Create or reuse an anonymous bootstrap session
+      description: >-
+        Requires an allowed PWA Origin; throttled per client IP (60 per 10
+        minutes). Returns 200 without Set-Cookie when a valid anonymous
+        cookie is already present.
+      responses:
+        '200':
+          description: Existing session reused
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AnonymousSession'}
+        '201':
+          description: New session; sets `__Host-tf_anon` (HttpOnly, Secure, SameSite=Lax, Path=/)
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AnonymousSession'}
+        '403': {$ref: '#/components/responses/Error'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+  /api/v1/sessions/capability:
+    post:
+      operationId: exchangeCapability
+      tags: [guest]
+      summary: Exchange a queue or dining QR token for a guest session
+      description: >-
+        The token comes from the URL fragment and is sent only in this body.
+        It is not consumed; every diner can exchange the active token. Any
+        unusable token (unknown, rotated, revoked, expired, wrong kind)
+        returns 422 TOKEN_INVALID. Throttled per client IP (120 per 10 minutes).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [token, kind]
+              properties:
+                token: {type: string, maxLength: 64}
+                kind: {type: string, enum: [queue, visit]}
+      responses:
+        '201':
+          description: Guest session created; sets `__Host-tf_guest` (HttpOnly, Secure, SameSite=Lax, Path=/)
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/GuestSession'}
+        '400': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '415': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+  /api/v1/sessions/guest:
+    get:
+      operationId: getGuestSession
+      tags: [guest]
+      summary: Current guest session scope
+      security: [{guestSession: []}]
+      responses:
+        '200':
+          description: Active guest session
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/GuestSession'}
+        '401': {$ref: '#/components/responses/Error'}
 components:
   securitySchemes:
+    guestSession:
+      type: apiKey
+      in: cookie
+      name: __Host-tf_guest
+      description: Capability-derived guest session on the PWA origin; valid only for the capability's current generation.
     staffSession:
       type: apiKey
       in: cookie
@@ -454,4 +536,19 @@ components:
       required: [token, expires_at]
       properties:
         token: {type: string, description: 'Single-use secret; shown once'}
+        expires_at: {type: string, format: date-time}
+    GuestSession:
+      type: object
+      additionalProperties: false
+      required: [branch_id, kind, resource_id, expires_at]
+      properties:
+        branch_id: {type: string, format: uuid}
+        kind: {type: string, enum: [queue, visit]}
+        resource_id: {type: string, format: uuid}
+        expires_at: {type: string, format: date-time}
+    AnonymousSession:
+      type: object
+      additionalProperties: false
+      required: [expires_at]
+      properties:
         expires_at: {type: string, format: date-time}

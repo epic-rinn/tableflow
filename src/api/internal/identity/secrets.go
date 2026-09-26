@@ -3,7 +3,6 @@ package identity
 import (
 	"context"
 	"crypto/rand"
-	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/base64"
 	"errors"
@@ -133,30 +132,4 @@ func validatePassword(pw string) string {
 		return fmt.Sprintf("must be at most %d characters", maxPasswordRunes)
 	}
 	return ""
-}
-
-// tokenBytes is the entropy of session and activation secrets (256 bits).
-const tokenBytes = 32
-
-// newToken returns a random URL-safe secret and its SHA-256 digest. Only the
-// digest is stored; the raw value is shown or set as a cookie exactly once.
-func newToken() (string, []byte) {
-	b := make([]byte, tokenBytes)
-	_, _ = rand.Read(b)
-	raw := base64.RawURLEncoding.EncodeToString(b)
-	sum := sha256.Sum256([]byte(raw))
-	return raw, sum[:]
-}
-
-// hashToken digests a presented secret, rejecting anything that could not
-// have been issued (wrong length or alphabet) without touching the database.
-func hashToken(raw string) ([]byte, bool) {
-	if len(raw) != base64.RawURLEncoding.EncodedLen(tokenBytes) {
-		return nil, false
-	}
-	if _, err := base64.RawURLEncoding.DecodeString(raw); err != nil {
-		return nil, false
-	}
-	sum := sha256.Sum256([]byte(raw))
-	return sum[:], true
 }

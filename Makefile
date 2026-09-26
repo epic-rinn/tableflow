@@ -5,12 +5,14 @@ TEST_DATABASE_URL ?= postgres://postgres:postgres_dev_only@127.0.0.1:$(DB_PORT)/
 MIGRATION_DATABASE_URL ?= postgres://tableflow_owner:owner_dev_only@127.0.0.1:$(DB_PORT)/tableflow?sslmode=disable
 DATABASE_URL ?= postgres://tableflow_app:app_dev_only@127.0.0.1:$(DB_PORT)/tableflow?sslmode=disable
 API_INTERNAL_URL ?= http://127.0.0.1:8080
+# Dummy local key (base64 of 32 bytes); deployments generate their own.
+DATA_ENCRYPTION_KEY ?= dGFibGVmbG93LWxvY2FsLWRldi1vbmx5LWtleS0zMmI=
 PNPM ?= corepack pnpm
 FRONTENDS := admin pwa
 
 .PHONY: specs-check services-up services-down services-reset \
 	migrate-up migrate-down migrate-status api-run api-check api-test-db api-build \
-	admin-check pwa-check frontends-check smoke artifact-check check verify
+	admin-check pwa-check frontends-check smoke artifact-check check verify print-data-key
 
 specs-check:
 	python3 tooling/specs/check.py
@@ -29,7 +31,7 @@ migrate-up migrate-down migrate-status:
 	cd src/api && MIGRATION_DATABASE_URL='$(MIGRATION_DATABASE_URL)' go run ./cmd/migrate $(subst migrate-,,$@)
 
 api-run:
-	cd src/api && DATABASE_URL='$(DATABASE_URL)' go run ./cmd/api
+	cd src/api && DATABASE_URL='$(DATABASE_URL)' DATA_ENCRYPTION_KEY='$(DATA_ENCRYPTION_KEY)' go run ./cmd/api
 
 api-check:
 	cd src/api && test -z "$$(gofmt -l .)" || { gofmt -l .; echo "gofmt required"; exit 1; }
@@ -62,6 +64,9 @@ artifact-check: api-build
 		src/pwa/.next/standalone src/pwa/.next/static tmp/tableflow-api
 
 check: specs-check api-check
+
+print-data-key:
+	@echo $(DATA_ENCRYPTION_KEY)
 
 # Full local gate: services, Go, frontends, browser smoke, artifacts.
 verify:

@@ -6,12 +6,15 @@ import (
 	"time"
 )
 
+// testKey is base64 of 32 zero bytes (test-only).
+const testKey = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+
 func env(values map[string]string) func(string) string {
 	return func(k string) string { return values[k] }
 }
 
 func TestLoadDefaults(t *testing.T) {
-	cfg, err := Load(env(map[string]string{"DATABASE_URL": "postgres://example.invalid/db"}))
+	cfg, err := Load(env(map[string]string{"DATABASE_URL": "postgres://example.invalid/db", "DATA_ENCRYPTION_KEY": testKey}))
 	if err != nil {
 		t.Fatalf("Load: %v", err)
 	}
@@ -32,7 +35,7 @@ func TestLoadRejectsInvalidValuesWithoutEchoingSecrets(t *testing.T) {
 		t.Fatal("expected error")
 	}
 	msg := err.Error()
-	for _, want := range []string{"DATABASE_URL is required", "DB_MAX_CONNS", "READINESS_TIMEOUT"} {
+	for _, want := range []string{"DATABASE_URL is required", "DB_MAX_CONNS", "READINESS_TIMEOUT", "DATA_ENCRYPTION_KEY is required"} {
 		if !strings.Contains(msg, want) {
 			t.Errorf("error %q missing %q", msg, want)
 		}
@@ -40,14 +43,14 @@ func TestLoadRejectsInvalidValuesWithoutEchoingSecrets(t *testing.T) {
 }
 
 func TestLoadDoesNotEchoInvalidValue(t *testing.T) {
-	_, err := Load(env(map[string]string{"DATABASE_URL": "x", "HTTP_WRITE_TIMEOUT": "secret-looking-value"}))
+	_, err := Load(env(map[string]string{"DATABASE_URL": "x", "DATA_ENCRYPTION_KEY": testKey, "HTTP_WRITE_TIMEOUT": "secret-looking-value"}))
 	if err == nil || strings.Contains(err.Error(), "secret-looking-value") {
 		t.Fatalf("expected sanitized error, got %v", err)
 	}
 }
 
 func TestLoadIdentityDefaultsAndValidation(t *testing.T) {
-	cfg, err := Load(env(map[string]string{"DATABASE_URL": "x"}))
+	cfg, err := Load(env(map[string]string{"DATABASE_URL": "x", "DATA_ENCRYPTION_KEY": testKey}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -62,8 +65,10 @@ func TestLoadIdentityDefaultsAndValidation(t *testing.T) {
 		"TRUSTED_PROXY_CIDRS":    "not-a-cidr",
 		"STAFF_SESSION_ABSOLUTE": "48h",
 		"STAFF_SESSION_IDLE":     "13h",
+		"PWA_ORIGINS":            "not an origin",
+		"DATA_ENCRYPTION_KEY":    "c2hvcnQ=",
 	} {
-		if _, err := Load(env(map[string]string{"DATABASE_URL": "x", name: value})); err == nil {
+		if _, err := Load(env(map[string]string{"DATABASE_URL": "x", "DATA_ENCRYPTION_KEY": testKey, name: value})); err == nil {
 			t.Errorf("%s=%q accepted", name, value)
 		}
 	}

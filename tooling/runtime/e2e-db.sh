@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Recreates the disposable tableflow_e2e database in the compose PostgreSQL,
-# migrates it, bootstraps one branch and prints the manager activation token.
+# migrates it, bootstraps one branch, seeds a dining capability and prints
+# E2E_MANAGER_TOKEN=... and E2E_VISIT_TOKEN=... lines.
 # Database/grant statements mirror src/api/db/local/init.sql.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
@@ -23,6 +24,16 @@ SQL
 
 (cd src/api && MIGRATION_DATABASE_URL="postgres://tableflow_owner:owner_dev_only@127.0.0.1:${DB_PORT}/tableflow_e2e?sslmode=disable" \
   go run ./cmd/migrate up >/dev/null)
-(cd src/api && DATABASE_URL="postgres://tableflow_app:app_dev_only@127.0.0.1:${DB_PORT}/tableflow_e2e?sslmode=disable" \
-  go run ./cmd/tableflowctl bootstrap-branch -name "E2E Branch" -email manager@e2e.test -display-name "E2E Manager") |
-  sed -n 's/^activation_token=//p'
+manager_token="$(cd src/api && DATABASE_URL="postgres://tableflow_app:app_dev_only@127.0.0.1:${DB_PORT}/tableflow_e2e?sslmode=disable" \
+  go run ./cmd/tableflowctl bootstrap-branch -name "E2E Branch" -email manager@e2e.test -display-name "E2E Manager" |
+  sed -n 's/^activation_token=//p')"
+echo "E2E_MANAGER_TOKEN=$manager_token"
+
+# A dining capability for a synthetic visit (visits arrive in MVP-06). Only
+# the SHA-256 digest is stored, exactly as the API does.
+visit_token="$(python3 -c 'import base64,secrets;print(base64.urlsafe_b64encode(secrets.token_bytes(32)).decode().rstrip("="))')"
+docker compose exec -T postgres psql -q -U tableflow_owner -d tableflow_e2e -v ON_ERROR_STOP=1 -v tok="$visit_token" >/dev/null <<'SQL'
+INSERT INTO capabilities (branch_id, kind, resource_id, token_hash)
+SELECT id, 'visit', '0198f0c0-0000-7000-8000-0000000000e2', sha256(convert_to(:'tok', 'UTF8')) FROM branches;
+SQL
+echo "E2E_VISIT_TOKEN=$visit_token"

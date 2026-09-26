@@ -2,6 +2,7 @@
 package config
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/netip"
@@ -38,6 +39,13 @@ type Config struct {
 	TrustedProxies       []netip.Prefix
 	StaffSessionIdle     time.Duration
 	StaffSessionAbsolute time.Duration
+
+	// PWAOrigins are the exact customer origins allowed to send guest,
+	// anonymous and member mutations.
+	PWAOrigins []string
+	// DataKey (32 bytes) seals secret-bearing stored data such as
+	// idempotency replay responses. Required; never logged.
+	DataKey []byte
 }
 
 // Load reads configuration using getenv (os.Getenv in production).
@@ -85,6 +93,10 @@ func Load(getenv func(string) string) (Config, error) {
 	}
 
 	cfg.AdminOrigins, err = origins(valueOr(getenv("ADMIN_ORIGINS"), "http://localhost:3001,http://127.0.0.1:3001"))
+	errs = appendErr(errs, err)
+	cfg.PWAOrigins, err = origins(valueOr(getenv("PWA_ORIGINS"), "http://localhost:3000,http://127.0.0.1:3000"))
+	errs = appendErr(errs, err)
+	cfg.DataKey, err = dataKey(getenv("DATA_ENCRYPTION_KEY"))
 	errs = appendErr(errs, err)
 	cfg.TrustedProxies, err = prefixes(getenv("TRUSTED_PROXY_CIDRS"))
 	errs = appendErr(errs, err)
@@ -149,7 +161,7 @@ func origins(raw string) ([]string, error) {
 		u, err := url.Parse(o)
 		if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" ||
 			u.Path != "" || u.RawQuery != "" || u.User != nil || u.Fragment != "" {
-			return nil, errors.New("ADMIN_ORIGINS must be comma-separated scheme://host[:port] origins")
+			return nil, errors.New("ADMIN_ORIGINS/PWA_ORIGINS must be comma-separated scheme://host[:port] origins")
 		}
 		out = append(out, o)
 	}
@@ -169,4 +181,15 @@ func prefixes(raw string) ([]netip.Prefix, error) {
 		out = append(out, p.Masked())
 	}
 	return out, nil
+}
+
+func dataKey(raw string) ([]byte, error) {
+	if raw == "" {
+		return nil, errors.New("DATA_ENCRYPTION_KEY is required (base64 of 32 random bytes)")
+	}
+	k, err := base64.StdEncoding.DecodeString(raw)
+	if err != nil || len(k) != 32 {
+		return nil, errors.New("DATA_ENCRYPTION_KEY must be base64 of exactly 32 bytes")
+	}
+	return k, nil
 }

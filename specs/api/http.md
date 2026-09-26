@@ -1,6 +1,6 @@
 # MVP HTTP contract
 
-Status: design contract; health and staff-identity routes are implemented and their wire schemas live in [openapi.yaml](openapi.yaml). Base path: `/api/v1`. All routes below are relative to that base. Wire schemas move to OpenAPI per [architecture](../architecture/system.md) before their implementation.
+Status: design contract; health, staff-identity and guest-session routes are implemented and their wire schemas live in [openapi.yaml](openapi.yaml). Base path: `/api/v1`. All routes below are relative to that base. Wire schemas move to OpenAPI per [architecture](../architecture/system.md) before their implementation.
 
 ## Common conventions
 
@@ -17,8 +17,9 @@ Status: design contract; health and staff-identity routes are implemented and th
 
 | Method and path | Actor | Input → output |
 | --- | --- | --- |
-| POST `/sessions/anonymous` | Public, rate limited | Empty → anonymous cookie; bootstrap identity for queue join |
-| POST `/sessions/capability` | Public, rate limited | `{token, kind: queue\|visit}` → guest cookie and resource ID/state; token appears only in body |
+| POST `/sessions/anonymous` | Public, PWA Origin, rate limited | Empty → anonymous cookie; bootstrap identity for queue join (implemented, MVP-03) |
+| POST `/sessions/capability` | Public, PWA Origin, rate limited | `{token, kind: queue\|visit}` → guest cookie and resource ID/branch; token appears only in body (implemented, MVP-03; resource state added by MVP-05/06) |
+| GET `/sessions/guest` | Guest session | Current guest scope (implemented, MVP-03) |
 | POST `/members` | Public, rate limited | `{email,password,locale}` → generic registration acknowledgement; verification email |
 | POST `/sessions/member` | Member credentials | `{email,password}` → member cookie and own identity |
 | POST `/sessions/staff` | Staff credentials, admin Origin, throttled | `{email,password}` → 201 staff cookie, assigned branch/roles (implemented) |

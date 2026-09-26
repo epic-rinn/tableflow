@@ -23,7 +23,8 @@ Status: logical design, not executed DDL. Goose migrations become the source for
 | bill_snapshots | visit, version, line/charge/discount totals, applied policies/member benefit | Unique visit/version; one final version referenced by settlement |
 | settlements / refunds | visit, snapshot version, amount, method, actor, verification/reference; full reversal reference | Unique settlement visit; unique refund settlement; branch/paid_at/id for reports |
 | loyalty_ledger | member, settlement, event kind, signed points and eligible-spend delta, policy version | Unique settlement/event kind; branch/member/created_at/id |
-| idempotency_requests | scope/principal/operation/key, body hash, safe replay result, expires_at | Unique scoped key; expiry cleanup index |
+| idempotency_requests (implemented, MVP-03) | scope/principal/operation/key, request hash, status, AES-256-GCM sealed replay body, expires_at | Unique scoped key; expiry cleanup index |
+| capabilities / guest_sessions / anonymous_sessions (implemented, MVP-03) | one capability per (kind, resource) with SHA-256 token hash, generation, expiry/revocation; guest sessions bound to a generation; anonymous bootstrap sessions | Unique token hashes; unique (kind, resource_id); partial (capability) WHERE not revoked; expiry indexes |
 | audit_events (implemented) | branch, actor, action, resource type/id, reason, request_id, details (no secrets), occurred_at | Branch/occurred_at/id; resource lookup when justified |
 
 These are index candidates, not instructions to create every index unconditionally. Primary/unique constraints are mandatory where specified. Validate performance indexes against real query predicates, ordering, plan evidence, write overhead, and data distribution. PostgreSQL does not automatically create every referencing foreign-key index.
@@ -57,7 +58,7 @@ All business mutations use an idempotency key scoped to authenticated actor/gues
 
 Queue join requires a short-lived anonymous bootstrap session before submitting, so a guessed idempotency key cannot retrieve another guest's queue secret. Secret-bearing replay results (new queue/dining QR) must be encrypted at rest with a deployment key, never logged, and purged on expiry; capability lookup stores hashes only. An implementation may return a resource reference and securely re-issue access instead if it preserves retry semantics and multi-diner behavior; document that choice before coding.
 
-Keep idempotency results for at least 24 hours and until the associated active visit/ticket terminates, whichever is later. Natural unique constraints on settlement, refund, loyalty events, and consumed tickets remain after replay records expire. Order clients must not automatically retry a expired-key command; reconcile its order history with staff.
+Implementation (MVP-03): `idempotency.Store.Execute` claims the key inside the caller's transaction; all stored responses are sealed with `DATA_ENCRYPTION_KEY`. Capability rotation/revocation happens inside the owning ticket/visit transaction, after locking that row. Keep idempotency results for at least 24 hours and until the associated active visit/ticket terminates, whichever is later. Natural unique constraints on settlement, refund, loyalty events, and consumed tickets remain after replay records expire. Order clients must not automatically retry a expired-key command; reconcile its order history with staff.
 
 ## Migrations
 

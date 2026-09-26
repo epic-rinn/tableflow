@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/httpx"
+	"github.com/epic-rinn/tableflow/src/api/internal/platform/throttle"
 )
 
 // StaffCookie is host-only (__Host- prefix: Secure, Path=/, no Domain), so
@@ -20,7 +21,7 @@ const StaffCookie = "__Host-tf_staff"
 // HTTP exposes identity routes.
 type HTTP struct {
 	svc     *Service
-	origins map[string]bool
+	origin  func(http.HandlerFunc) http.HandlerFunc
 	trusted []netip.Prefix
 	logger  *slog.Logger
 }
@@ -28,11 +29,7 @@ type HTTP struct {
 // NewHTTP builds handlers. adminOrigins are the exact origins allowed to
 // send cookie-authenticated mutations.
 func NewHTTP(svc *Service, adminOrigins []string, trusted []netip.Prefix, logger *slog.Logger) *HTTP {
-	o := make(map[string]bool, len(adminOrigins))
-	for _, v := range adminOrigins {
-		o[v] = true
-	}
-	return &HTTP{svc: svc, origins: o, trusted: trusted, logger: logger}
+	return &HTTP{svc: svc, origin: httpx.OriginGuard(adminOrigins), trusted: trusted, logger: logger}
 }
 
 // Routes returns path patterns and their method handlers.
@@ -61,22 +58,6 @@ func (h *HTTP) Routes() map[string]map[string]http.HandlerFunc {
 		"/api/v1/staff/{staff_id}/deactivate": {
 			http.MethodPost: h.origin(h.staff(h.deactivate)),
 		},
-	}
-}
-
-// origin rejects cross-site requests: the Origin header must be an allowed
-// admin origin and, when browsers send Sec-Fetch-Site, it must be same-origin.
-func (h *HTTP) origin(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if !h.origins[r.Header.Get("Origin")] {
-			httpx.WriteError(w, r, http.StatusForbidden, "ORIGIN_REJECTED", "Request origin is not allowed")
-			return
-		}
-		if site := r.Header.Get("Sec-Fetch-Site"); site != "" && site != "same-origin" {
-			httpx.WriteError(w, r, http.StatusForbidden, "ORIGIN_REJECTED", "Request origin is not allowed")
-			return
-		}
-		next(w, r)
 	}
 }
 
@@ -122,13 +103,12 @@ func (h *HTTP) setCookie(w http.ResponseWriter, value string, expires time.Time)
 // fail maps service errors to the common error envelope.
 func (h *HTTP) fail(w http.ResponseWriter, r *http.Request, err error) {
 	var ve *ValidationError
-	var rl *RateLimitedError
+	var rl *throttle.RateLimitedError
 	switch {
 	case errors.As(err, &ve):
 		httpx.ValidationError(w, r, ve.Fields)
 	case errors.As(err, &rl):
-		w.Header().Set("Retry-After", strconv.Itoa(int(math.Ceil(rl.RetryAfter.Seconds()))))
-		httpx.WriteError(w, r, http.StatusTooManyRequests, "RATE_LIMITED", "Too many attempts; try again later")
+		httpx.RateLimited(w, r, int(math.Ceil(rl.RetryAfter.Seconds())))
 	case errors.Is(err, ErrUnauthenticated):
 		h.setCookie(w, "", time.Time{})
 		httpx.WriteError(w, r, http.StatusUnauthorized, "UNAUTHENTICATED", "Sign in to continue")

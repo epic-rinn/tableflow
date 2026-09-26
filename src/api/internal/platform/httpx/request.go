@@ -7,6 +7,7 @@ import (
 	"mime"
 	"net/http"
 	"net/netip"
+	"strconv"
 	"strings"
 )
 
@@ -83,4 +84,29 @@ func isTrusted(a netip.Addr, trusted []netip.Prefix) bool {
 		}
 	}
 	return false
+}
+
+// OriginGuard rejects cross-site requests: the Origin header must be one of
+// allowed and, when browsers send Sec-Fetch-Site, it must be same-origin.
+func OriginGuard(allowed []string) func(http.HandlerFunc) http.HandlerFunc {
+	set := make(map[string]bool, len(allowed))
+	for _, o := range allowed {
+		set[o] = true
+	}
+	return func(next http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			site := r.Header.Get("Sec-Fetch-Site")
+			if !set[r.Header.Get("Origin")] || (site != "" && site != "same-origin") {
+				WriteError(w, r, http.StatusForbidden, "ORIGIN_REJECTED", "Request origin is not allowed")
+				return
+			}
+			next(w, r)
+		}
+	}
+}
+
+// RateLimited writes a 429 with a Retry-After header in whole seconds.
+func RateLimited(w http.ResponseWriter, r *http.Request, seconds int) {
+	w.Header().Set("Retry-After", strconv.Itoa(max(seconds, 1)))
+	WriteError(w, r, http.StatusTooManyRequests, "RATE_LIMITED", "Too many attempts; try again later")
 }

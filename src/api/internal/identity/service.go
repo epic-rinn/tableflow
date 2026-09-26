@@ -3,9 +3,7 @@ package identity
 
 import (
 	"context"
-	"crypto/sha256"
 	"embed"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -17,6 +15,9 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/epic-rinn/tableflow/src/api/internal/platform/throttle"
+	"github.com/epic-rinn/tableflow/src/api/internal/platform/token"
 )
 
 //go:embed sql/*.sql
@@ -77,11 +78,6 @@ type ValidationError struct{ Fields map[string]string }
 
 func (e *ValidationError) Error() string { return "validation failed" }
 
-// RateLimitedError reports when the caller may retry.
-type RateLimitedError struct{ RetryAfter time.Duration }
-
-func (e *RateLimitedError) Error() string { return "rate limited" }
-
 // Principal is an authenticated staff session.
 type Principal struct {
 	SessionID   string
@@ -116,6 +112,7 @@ type Activation struct {
 // Service owns identity use cases and their transactions.
 type Service struct {
 	pool     *pgxpool.Pool
+	limiter  *throttle.Limiter
 	hasher   *Hasher
 	idle     time.Duration
 	absolute time.Duration
@@ -123,7 +120,7 @@ type Service struct {
 
 // NewService builds the identity service.
 func NewService(pool *pgxpool.Pool, hasher *Hasher, idle, absolute time.Duration) *Service {
-	return &Service{pool: pool, hasher: hasher, idle: idle, absolute: absolute}
+	return &Service{pool: pool, limiter: throttle.New(pool), hasher: hasher, idle: idle, absolute: absolute}
 }
 
 // SessionLifetime is the absolute session lifetime (for cookie expiry).
@@ -165,49 +162,22 @@ func validDisplayName(n string) (string, bool) {
 	return n, count >= 1 && count <= maxDisplayNameRune
 }
 
-func bucketKey(kind, value string) string {
-	sum := sha256.Sum256([]byte(value))
-	return kind + ":" + hex.EncodeToString(sum[:16])
-}
-
-func ipKey(kind string, ip netip.Addr) string {
-	if !ip.IsValid() {
-		return kind + ":unknown"
-	}
-	return kind + ":" + ip.String()
-}
-
-// hit records an attempt; it returns an error once the limit is exceeded.
-func (s *Service) hit(ctx context.Context, bucket string, limit int) error {
-	var attempts int
-	var remaining float64
-	err := s.pool.QueryRow(ctx, q("throttle_hit"), bucket, throttleWindow).Scan(&attempts, &remaining)
-	if err != nil {
-		return fmt.Errorf("throttle: %w", err)
-	}
-	if attempts > limit {
-		retry := time.Duration(remaining * float64(time.Second))
-		return &RateLimitedError{RetryAfter: max(retry, time.Second)}
-	}
-	return nil
-}
-
 // Purge deletes expired throttle buckets and long-expired sessions.
 func (s *Service) Purge(ctx context.Context) (int64, error) {
-	var total int64
-	for _, name := range []string{"throttle_purge", "session_purge"} {
-		tag, err := s.pool.Exec(ctx, q(name))
-		if err != nil {
-			return total, fmt.Errorf("%s: %w", name, err)
-		}
-		total += tag.RowsAffected()
+	n, err := s.limiter.Purge(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("throttle purge: %w", err)
 	}
-	return total, nil
+	tag, err := s.pool.Exec(ctx, q("session_purge"))
+	if err != nil {
+		return n, fmt.Errorf("session purge: %w", err)
+	}
+	return n + tag.RowsAffected(), nil
 }
 
 // Authenticate resolves a raw session cookie value.
 func (s *Service) Authenticate(ctx context.Context, raw string) (Principal, error) {
-	hash, ok := hashToken(raw)
+	hash, ok := token.Hash(raw)
 	if !ok {
 		return Principal{}, ErrUnauthenticated
 	}
@@ -236,11 +206,11 @@ func (s *Service) Login(ctx context.Context, email, password string, ip netip.Ad
 	if !ok || password == "" || len(password) > maxPasswordBytes {
 		return Principal{}, "", time.Time{}, &ValidationError{Fields: map[string]string{"email": "enter an email and password"}}
 	}
-	emailBucket := bucketKey("login:email", norm)
-	if err := s.hit(ctx, ipKey("login:ip", ip), loginPerIP); err != nil {
+	emailBucket := throttle.HashedKey("login:email", norm)
+	if err := s.limiter.Hit(ctx, throttle.IPKey("login:ip", ip), loginPerIP, throttleWindow); err != nil {
 		return Principal{}, "", time.Time{}, err
 	}
-	if err := s.hit(ctx, emailBucket, loginPerEmail); err != nil {
+	if err := s.limiter.Hit(ctx, emailBucket, loginPerEmail, throttleWindow); err != nil {
 		return Principal{}, "", time.Time{}, err
 	}
 
@@ -262,13 +232,13 @@ func (s *Service) Login(ctx context.Context, email, password string, ip netip.Ad
 		return Principal{}, "", time.Time{}, ErrInvalidCredentials
 	}
 
-	raw, tokenHash := newToken()
+	raw, tokenHash := token.New()
 	var sessionID string
 	var expires time.Time
 	if err := s.pool.QueryRow(ctx, q("insert_session"), id, tokenHash, s.absolute).Scan(&sessionID, &expires); err != nil {
 		return Principal{}, "", time.Time{}, fmt.Errorf("create session: %w", err)
 	}
-	if _, err := s.pool.Exec(ctx, q("throttle_clear"), emailBucket); err != nil {
+	if err := s.limiter.Clear(ctx, emailBucket); err != nil {
 		return Principal{}, "", time.Time{}, fmt.Errorf("clear throttle: %w", err)
 	}
 	p, err := s.Authenticate(ctx, raw)
@@ -286,7 +256,7 @@ func (s *Service) Logout(ctx context.Context, p Principal) error {
 
 // Activate sets the password of an invited account using a single-use token.
 func (s *Service) Activate(ctx context.Context, rawToken, password, displayName string, ip netip.Addr, requestID string) error {
-	if err := s.hit(ctx, ipKey("activate:ip", ip), activationPerIP); err != nil {
+	if err := s.limiter.Hit(ctx, throttle.IPKey("activate:ip", ip), activationPerIP, throttleWindow); err != nil {
 		return err
 	}
 	fields := map[string]string{}
@@ -300,7 +270,7 @@ func (s *Service) Activate(ctx context.Context, rawToken, password, displayName 
 	if len(fields) > 0 {
 		return &ValidationError{Fields: fields}
 	}
-	tokenHash, ok := hashToken(rawToken)
+	tokenHash, ok := token.Hash(rawToken)
 	if !ok {
 		return ErrTokenInvalid
 	}
@@ -419,7 +389,7 @@ func (s *Service) getStaff(ctx context.Context, db interface {
 }
 
 func (s *Service) issueToken(ctx context.Context, tx pgx.Tx, accountID string, issuer *string) (Activation, error) {
-	raw, hash := newToken()
+	raw, hash := token.New()
 	a := Activation{Token: raw}
 	err := tx.QueryRow(ctx, q("insert_token"), accountID, hash, ActivationLifetime, issuer).Scan(&a.ExpiresAt)
 	return a, err

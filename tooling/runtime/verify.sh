@@ -39,12 +39,15 @@ step "Frontends"
 make frontends-check
 
 step "Browser tests (disposable tableflow_e2e database, API on $API_ADDR)"
-E2E_MANAGER_TOKEN="$(tooling/runtime/e2e-db.sh)"
-[[ -n "$E2E_MANAGER_TOKEN" ]] || { echo "E2E bootstrap produced no activation token" >&2; exit 1; }
-export E2E_MANAGER_TOKEN
+while IFS='=' read -r name value; do
+  [[ "$name" =~ ^E2E_[A-Z_]+$ && "$value" =~ ^[A-Za-z0-9_-]{43}$ ]] || { echo "unexpected e2e-db output" >&2; exit 1; }
+  export "$name=$value"
+done < <(tooling/runtime/e2e-db.sh)
+[[ -n "${E2E_MANAGER_TOKEN:-}" && -n "${E2E_VISIT_TOKEN:-}" ]] || { echo "E2E setup produced no tokens" >&2; exit 1; }
 make api-build
 DATABASE_URL="postgres://tableflow_app:app_dev_only@127.0.0.1:${DB_PORT}/tableflow_e2e?sslmode=disable" \
-  ADMIN_ORIGINS="http://127.0.0.1:3001" \
+  ADMIN_ORIGINS="http://127.0.0.1:3001" PWA_ORIGINS="http://127.0.0.1:3000" \
+  DATA_ENCRYPTION_KEY="$(make -s -f Makefile print-data-key)" \
   HTTP_ADDR="$API_ADDR" ./tmp/tableflow-api >"$LOG_DIR/api.log" 2>&1 &
 api_pid=$!
 trap 'kill -TERM "$api_pid" 2>/dev/null || true; wait "$api_pid" 2>/dev/null || true' EXIT
