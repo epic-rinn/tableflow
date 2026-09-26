@@ -45,6 +45,11 @@ while IFS='=' read -r name value; do
 done < <(tooling/runtime/e2e-db.sh)
 [[ -n "${E2E_MANAGER_TOKEN:-}" && -n "${E2E_VISIT_TOKEN:-}" && -n "${E2E_BRANCH_ID:-}" ]] || { echo "E2E setup produced no tokens" >&2; exit 1; }
 make api-build
+# Automated tests read emails from a file outbox instead of a real inbox.
+E2E_MAIL_DIR="$PWD/$LOG_DIR/mail"
+rm -rf "$E2E_MAIL_DIR" && mkdir -p "$E2E_MAIL_DIR"
+export E2E_MAIL_DIR
+MAIL_ADAPTER=file MAIL_OUTBOX_DIR="$E2E_MAIL_DIR" \
 DATABASE_URL="postgres://tableflow_app:app_dev_only@127.0.0.1:${DB_PORT}/tableflow_e2e?sslmode=disable" \
   ADMIN_ORIGINS="http://127.0.0.1:3001" PWA_ORIGINS="http://127.0.0.1:3000" PWA_PUBLIC_URL="http://127.0.0.1:3000" \
   DATA_ENCRYPTION_KEY="$(make -s -f Makefile print-data-key)" \

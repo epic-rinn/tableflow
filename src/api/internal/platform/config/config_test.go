@@ -74,7 +74,7 @@ func TestLoadIdentityDefaultsAndValidation(t *testing.T) {
 	}
 }
 
-func TestSMTPRequiresTLSOutsideLoopback(t *testing.T) {
+func TestMailConfigRequiresTLS(t *testing.T) {
 	base := map[string]string{"DATABASE_URL": "x", "DATA_ENCRYPTION_KEY": testKey}
 	with := func(kv ...string) map[string]string {
 		m := map[string]string{}
@@ -86,16 +86,22 @@ func TestSMTPRequiresTLSOutsideLoopback(t *testing.T) {
 		}
 		return m
 	}
+	cfg, err := Load(env(with()))
+	if err != nil || cfg.SMTPAddr != "smtp.resend.com:587" || cfg.SMTPTLS != "starttls" || cfg.MailAdapter != "smtp" {
+		t.Fatalf("defaults: %+v %v", cfg, err)
+	}
 	ok := []map[string]string{
-		with(), // Mailpit default
+		with("SMTP_USERNAME", "resend", "SMTP_PASSWORD", "dummy"),
 		with("SMTP_ADDR", "smtp.resend.com:465", "SMTP_TLS", "implicit", "SMTP_USERNAME", "resend", "SMTP_PASSWORD", "dummy"),
-		with("SMTP_ADDR", "smtp.resend.com:587", "SMTP_TLS", "starttls", "SMTP_USERNAME", "resend", "SMTP_PASSWORD", "dummy"),
+		with("MAIL_ADAPTER", "file", "MAIL_OUTBOX_DIR", "/tmp/outbox"),
 	}
 	bad := []map[string]string{
-		with("SMTP_ADDR", "smtp.resend.com:587"),                                                    // plaintext to a remote relay
-		with("SMTP_USERNAME", "resend", "SMTP_PASSWORD", "dummy"),                                   // credentials without TLS
-		with("SMTP_ADDR", "smtp.resend.com:465", "SMTP_TLS", "implicit", "SMTP_USERNAME", "resend"), // half credentials
-		with("SMTP_TLS", "maybe"),
+		with("SMTP_TLS", "none"),
+		with("SMTP_TLS", "none", "SMTP_ADDR", "127.0.0.1:1025"),
+		with("SMTP_USERNAME", "resend"),
+		with("MAIL_ADAPTER", "file"),
+		with("MAIL_ADAPTER", "sendmail"),
+		with("SMTP_ADDR", "no-port"),
 	}
 	for i, m := range ok {
 		if _, err := Load(env(m)); err != nil {

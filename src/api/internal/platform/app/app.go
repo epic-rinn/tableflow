@@ -96,8 +96,16 @@ func Run(ctx context.Context, cfg config.Config, logger *slog.Logger, ln net.Lis
 	idHTTP := identity.NewHTTP(svc, cfg.AdminOrigins, cfg.TrustedProxies, logger)
 	accSvc := access.NewService(pool)
 	accHTTP := access.NewHTTP(accSvc, cfg.PWAOrigins, cfg.TrustedProxies, logger)
-	outbox := mail.NewQueue(mail.SMTP{Addr: cfg.SMTPAddr, From: cfg.MailFrom, Timeout: 10 * time.Second,
-		TLS: cfg.SMTPTLS, Username: cfg.SMTPUsername, Password: cfg.SMTPPassword}, 100, 10*time.Second, logger)
+	var sender mail.Sender = mail.SMTP{Addr: cfg.SMTPAddr, From: cfg.MailFrom, Timeout: 10 * time.Second,
+		TLS: cfg.SMTPTLS, Username: cfg.SMTPUsername, Password: cfg.SMTPPassword}
+	switch {
+	case cfg.MailAdapter == "file":
+		logger.Warn("mail adapter is the test file outbox; no email is delivered", "dir", cfg.MailOutbox)
+		sender = mail.FileOutbox{Dir: cfg.MailOutbox}
+	case cfg.SMTPUsername == "":
+		logger.Error("mail delivery not configured: set SMTP_USERNAME=resend and SMTP_PASSWORD (Resend API key); every send will fail")
+	}
+	outbox := mail.NewQueue(sender, 100, 10*time.Second, logger)
 	go outbox.Run(ctx, 2)
 	memSvc := members.NewService(pool, hasher, outbox, cfg.PWAPublicURL)
 	memHTTP := members.NewHTTP(memSvc, cfg.PWAOrigins, cfg.TrustedProxies, logger)

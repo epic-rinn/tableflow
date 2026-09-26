@@ -48,10 +48,12 @@ type Config struct {
 	// idempotency replay responses. Required; never logged.
 	DataKey []byte
 
-	// Mail: SMTP relay (Mailpit locally), sender, and the public PWA URL used
-	// in emailed links.
+	// Mail (ADR-0005): Resend over SMTP with TLS required, or the file
+	// outbox for automated tests; sender; public PWA URL for emailed links.
+	MailAdapter  string // smtp | file
+	MailOutbox   string // directory for the file adapter
 	SMTPAddr     string
-	SMTPTLS      string // none (loopback only) | implicit | starttls
+	SMTPTLS      string // implicit | starttls
 	SMTPUsername string
 	SMTPPassword string // secret; never logged
 	MailFrom     string
@@ -106,8 +108,10 @@ func Load(getenv func(string) string) (Config, error) {
 	errs = appendErr(errs, err)
 	cfg.PWAOrigins, err = origins(valueOr(getenv("PWA_ORIGINS"), "http://localhost:3000,http://127.0.0.1:3000"))
 	errs = appendErr(errs, err)
-	cfg.SMTPAddr = valueOr(getenv("SMTP_ADDR"), "127.0.0.1:1025")
-	cfg.SMTPTLS = valueOr(getenv("SMTP_TLS"), "none")
+	cfg.MailAdapter = valueOr(getenv("MAIL_ADAPTER"), "smtp")
+	cfg.MailOutbox = getenv("MAIL_OUTBOX_DIR")
+	cfg.SMTPAddr = valueOr(getenv("SMTP_ADDR"), "smtp.resend.com:587")
+	cfg.SMTPTLS = valueOr(getenv("SMTP_TLS"), "starttls")
 	cfg.SMTPUsername = getenv("SMTP_USERNAME")
 	cfg.SMTPPassword = getenv("SMTP_PASSWORD")
 	errs = appendErr(errs, validateSMTP(cfg))
@@ -218,26 +222,25 @@ func dataKey(raw string) ([]byte, error) {
 	return k, nil
 }
 
-// validateSMTP requires TLS for any non-loopback relay and for credentials;
-// plaintext is only for a local sink such as Mailpit.
+// validateSMTP allows only TLS delivery (no plaintext mode) and complete
+// credentials. Missing credentials are allowed so local work is not blocked;
+// the API then reports mail as not configured and every send fails loudly.
 func validateSMTP(cfg Config) error {
-	switch cfg.SMTPTLS {
-	case "none", "implicit", "starttls":
+	switch cfg.MailAdapter {
+	case "smtp":
+	case "file":
+		if cfg.MailOutbox == "" {
+			return errors.New("MAIL_ADAPTER=file requires MAIL_OUTBOX_DIR (automated tests only)")
+		}
+		return nil
 	default:
-		return errors.New("SMTP_TLS must be none, implicit or starttls")
+		return errors.New("MAIL_ADAPTER must be smtp or file")
 	}
-	host, _, err := net.SplitHostPort(cfg.SMTPAddr)
-	if err != nil {
+	if cfg.SMTPTLS != "implicit" && cfg.SMTPTLS != "starttls" {
+		return errors.New("SMTP_TLS must be implicit or starttls; plaintext SMTP is not supported")
+	}
+	if _, _, err := net.SplitHostPort(cfg.SMTPAddr); err != nil {
 		return errors.New("SMTP_ADDR must be host:port")
-	}
-	if cfg.SMTPTLS == "none" {
-		ip, err := netip.ParseAddr(host)
-		if host != "localhost" && (err != nil || !ip.IsLoopback()) {
-			return errors.New("SMTP_TLS=none is only allowed for a loopback relay; use implicit or starttls")
-		}
-		if cfg.SMTPUsername != "" || cfg.SMTPPassword != "" {
-			return errors.New("SMTP credentials require SMTP_TLS=implicit or starttls")
-		}
 	}
 	if (cfg.SMTPUsername == "") != (cfg.SMTPPassword == "") {
 		return errors.New("set both SMTP_USERNAME and SMTP_PASSWORD, or neither")

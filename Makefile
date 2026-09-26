@@ -18,7 +18,7 @@ specs-check:
 	python3 tooling/specs/check.py
 
 services-up:
-	docker compose up -d --wait
+	docker compose up -d --wait --remove-orphans
 
 services-down:
 	docker compose down

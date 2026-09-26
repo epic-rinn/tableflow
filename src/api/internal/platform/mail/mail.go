@@ -1,16 +1,22 @@
-// Package mail sends transactional email through a pluggable adapter. Local
-// development uses SMTP to Mailpit; the production provider is a deployment
-// decision. Message bodies may contain single-use links and are never logged.
+// Package mail sends transactional email through a replaceable adapter:
+// Resend over SMTP with TLS required (local and production, ADR-0005), or a
+// file outbox used only by automated tests. Message bodies may contain
+// single-use links and are never logged.
 package mail
 
 import (
 	"context"
+	"crypto/rand"
 	"crypto/tls"
+	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
 	"net"
 	"net/smtp"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -35,17 +41,18 @@ type Outbox interface {
 	Enqueue(m Message) bool
 }
 
-// TLS modes for SMTP delivery.
+// TLS modes for SMTP delivery. There is no plaintext mode.
 const (
-	TLSNone     = "none"     // loopback relays only (local Mailpit)
 	TLSImplicit = "implicit" // SMTPS, e.g. Resend port 465
 	TLSStartTLS = "starttls" // upgrade required, e.g. Resend port 587
 )
 
-// SMTP delivers through a relay: Mailpit locally (TLSNone on loopback) or
-// Resend in production (TLS required, username "resend", API key as the
-// password). With starttls it never falls back to plaintext. Header values
-// with line breaks are rejected.
+// ErrNotConfigured: SMTP credentials are missing; nothing is sent.
+var ErrNotConfigured = errors.New("mail: delivery not configured (set SMTP_USERNAME and SMTP_PASSWORD)")
+
+// SMTP delivers through Resend (username "resend", API key as the password)
+// with TLS required: implicit TLS, or STARTTLS with no plaintext fallback.
+// Certificates are verified. Header values with line breaks are rejected.
 type SMTP struct {
 	Addr     string
 	From     string
@@ -61,6 +68,12 @@ func headerSafe(v string) bool { return !strings.ContainsAny(v, "\r\n") }
 func (s SMTP) Send(ctx context.Context, m Message) error {
 	if !headerSafe(m.To) || !headerSafe(m.Subject) || !headerSafe(s.From) {
 		return errors.New("mail: header contains a line break")
+	}
+	if s.TLS != TLSImplicit && s.TLS != TLSStartTLS {
+		return errors.New("mail: TLS mode must be implicit or starttls")
+	}
+	if s.Username == "" || s.Password == "" {
+		return ErrNotConfigured
 	}
 	deadline := time.Now().Add(s.Timeout)
 	if d, ok := ctx.Deadline(); ok && d.Before(deadline) {
@@ -94,12 +107,9 @@ func (s SMTP) Send(ctx context.Context, m Message) error {
 			return fmt.Errorf("mail: starttls: %w", err)
 		}
 	}
-	if s.Username != "" {
-		// PlainAuth itself refuses to send credentials without TLS (except
-		// to localhost).
-		if err := c.Auth(smtp.PlainAuth("", s.Username, s.Password, host)); err != nil {
-			return fmt.Errorf("mail: auth: %w", err)
-		}
+	// PlainAuth itself also refuses to send credentials without TLS.
+	if err := c.Auth(smtp.PlainAuth("", s.Username, s.Password, host)); err != nil {
+		return fmt.Errorf("mail: auth: %w", err)
 	}
 	from := s.From
 	if i := strings.LastIndex(from, "<"); i >= 0 {
@@ -173,6 +183,23 @@ func (q *Queue) Run(ctx context.Context, workers int) {
 		})
 	}
 	wg.Wait()
+}
+
+// FileOutbox writes each message as a JSON file (mode 0600) into Dir. It is
+// for automated end-to-end tests only (MAIL_ADAPTER=file); it never
+// delivers mail.
+type FileOutbox struct{ Dir string }
+
+// Send implements Sender.
+func (f FileOutbox) Send(_ context.Context, m Message) error {
+	b, err := json.Marshal(m)
+	if err != nil {
+		return err
+	}
+	var id [8]byte
+	_, _ = rand.Read(id[:])
+	name := fmt.Sprintf("%d-%s.json", time.Now().UnixNano(), hex.EncodeToString(id[:]))
+	return os.WriteFile(filepath.Join(f.Dir, name), b, 0o600)
 }
 
 // Recorder is a synchronous Outbox for tests.
