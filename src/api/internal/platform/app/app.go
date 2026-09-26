@@ -117,7 +117,7 @@ func Run(ctx context.Context, cfg config.Config, logger *slog.Logger, ln net.Lis
 	seatHTTP := seating.NewHTTP(seating.NewService(pool, svc), store, idHTTP, accHTTP, cfg.PWAOrigins, cfg.TrustedProxies, logger)
 	menuHTTP := menu.NewHTTP(menu.NewService(pool, svc), idHTTP, logger)
 	orderHTTP := ordering.NewHTTP(ordering.NewService(pool, svc), pool, store, idHTTP, accHTTP, cfg.PWAOrigins, logger)
-	billHTTP := billing.NewHTTP(billing.NewService(pool, svc), pool, store, idHTTP, accHTTP, logger)
+	billHTTP := billing.NewHTTP(billing.NewService(pool, svc), pool, store, idHTTP, accHTTP, memHTTP, cfg.PWAOrigins, logger)
 	h := NewHandler(logger, Routes(health.New(pool, cfg.ReadinessTimeout, logger), idHTTP, accHTTP, memHTTP, seatHTTP, menuHTTP, orderHTTP, billHTTP))
 	go purgeLoop(ctx, logger, map[string]func(context.Context) (int64, error){
 		"identity":    svc.Purge,

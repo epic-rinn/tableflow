@@ -230,20 +230,28 @@ type Bill struct {
 	Lines           []BillLine     `json:"lines"`
 	UnresolvedLines int            `json:"unresolved_lines"`
 	Settlement      *SettlementRef `json:"settlement"`
-	// Member claim status arrives with MVP-14; always null until then.
-	MemberClaim any       `json:"member_claim"`
+	// Claim status only; staff also see a masked email and the tier (LOY-001).
+	MemberClaim *ClaimView `json:"member_claim"`
 	ServerTime  time.Time `json:"server_time"`
 	Totals
+}
+
+// ClaimView is what a bill reveals about a member claim.
+type ClaimView struct {
+	Claimed     bool    `json:"claimed"`
+	MaskedEmail *string `json:"masked_email,omitempty"`
+	Tier        *string `json:"tier,omitempty"`
 }
 
 type visitRow struct {
 	branchID, state, label string
 	billVersion, version   int
+	memberID               *string
 }
 
 func scanVisit(row pgx.Row) (visitRow, error) {
 	var v visitRow
-	err := row.Scan(&v.branchID, &v.state, &v.billVersion, &v.version, &v.label)
+	err := row.Scan(&v.branchID, &v.state, &v.billVersion, &v.version, &v.label, &v.memberID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return v, ErrNotFound
 	}
@@ -287,6 +295,11 @@ type snapshot struct {
 	policy Policy
 	totals Totals
 	lines  []BillLine
+	// Member benefit frozen at begin (nil for non-members).
+	memberID       *string
+	tier           *string
+	loyaltyVersion *int
+	satangPerPoint *int64
 }
 
 func loadSnapshot(ctx context.Context, db querier, visitID string, billVersion int) (snapshot, error) {
@@ -295,7 +308,7 @@ func loadSnapshot(ctx context.Context, db querier, visitID string, billVersion i
 	t := &sn.totals
 	err := db.QueryRow(ctx, q("snapshot_get"), visitID, billVersion).Scan(&sn.id, &sn.policy.Version, &sn.policy.TaxMode,
 		&sn.policy.TaxBP, &sn.policy.ServiceBP, &t.DiscountBP, &t.GrossSatang, &t.DiscountSatang, &t.ServiceSatang,
-		&t.TaxSatang, &t.TotalSatang, &raw)
+		&t.TaxSatang, &t.TotalSatang, &raw, &sn.memberID, &sn.tier, &sn.loyaltyVersion, &sn.satangPerPoint)
 	if err != nil {
 		return sn, err
 	}
@@ -317,6 +330,9 @@ func buildBill(ctx context.Context, db querier, visitID string, v visitRow) (Bil
 			return Bill{}, err
 		}
 		b.Frozen, b.Policy, b.Totals, b.Lines = true, sn.policy, sn.totals, sn.lines
+		if sn.memberID != nil {
+			b.MemberClaim = &ClaimView{Claimed: true, Tier: sn.tier}
+		}
 		if v.state != "settling" {
 			ref := SettlementRef{}
 			if err := db.QueryRow(ctx, q("settlement_for_visit"), visitID).Scan(&ref.ID, &ref.ReceiptReference, &ref.PaidAt); err != nil {
@@ -334,8 +350,23 @@ func buildBill(ctx context.Context, db querier, visitID string, v visitRow) (Bil
 	if err != nil {
 		return Bill{}, err
 	}
+	// A claimed open visit previews the member's current tier discount; the
+	// benefit is fixed only when settlement begins (LOY-003).
+	discount := 0
+	if v.memberID != nil {
+		tier, err := memberTier(ctx, db, v.branchID, *v.memberID)
+		if err != nil {
+			return Bill{}, err
+		}
+		lp, err := currentLoyalty(ctx, db, v.branchID)
+		if err != nil {
+			return Bill{}, err
+		}
+		discount = lp.DiscountBP(tier)
+		b.MemberClaim = &ClaimView{Claimed: true, Tier: &tier}
+	}
 	b.Policy, b.Lines, b.UnresolvedLines = pol.Policy, lines, len(unresolved)
-	b.Totals = Calculate(gross, pol.Policy, 0)
+	b.Totals = Calculate(gross, pol.Policy, discount)
 	return b, nil
 }
 
@@ -366,7 +397,24 @@ func (s *Service) Bill(ctx context.Context, rd Reader, visitID string) (Bill, er
 	default:
 		return Bill{}, ErrForbidden
 	}
-	return buildBill(ctx, s.pool, visitID, v)
+	b, err := buildBill(ctx, s.pool, visitID, v)
+	if err != nil || b.MemberClaim == nil {
+		return b, err
+	}
+	// Shared QR access learns only that the visit is claimed (LOY-001).
+	if rd.Staff == nil {
+		b.MemberClaim = &ClaimView{Claimed: true}
+		return b, nil
+	}
+	if v.memberID != nil {
+		var email string
+		if err := s.pool.QueryRow(ctx, q("member_email"), *v.memberID).Scan(&email); err != nil {
+			return Bill{}, err
+		}
+		masked := maskEmail(email)
+		b.MemberClaim.MaskedEmail = &masked
+	}
+	return b, nil
 }
 
 // Resolve finds a bill from the diner's dining QR token (cashier, BIL-001).

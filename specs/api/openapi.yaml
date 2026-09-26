@@ -26,6 +26,8 @@ tags:
     description: Menu, orders, kitchen lines and assistance
   - name: billing
     description: Charge policies, bills, cashier settlement, receipts and full refunds (admin origin; guests may only read their bill)
+  - name: loyalty
+    description: Loyalty policy, member visit claims and member points history
   - name: member
     description: Member accounts and sessions (PWA origin only); responses never reveal whether an email is registered
 paths:
@@ -1870,6 +1872,189 @@ paths:
         '409': {$ref: '#/components/responses/Error'}
         '415': {$ref: '#/components/responses/Error'}
         '422': {$ref: '#/components/responses/Error'}
+  /api/v1/branches/{branch_id}/loyalty-policy:
+    parameters:
+      - {name: branch_id, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      operationId: getLoyaltyPolicy
+      tags: [loyalty]
+      summary: 'Current loyalty policy (branch staff); version 0 = pilot defaults, not confirmed'
+      security: [{staffSession: []}]
+      responses:
+        '200':
+          description: Current policy
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/LoyaltyPolicy'}
+        '401': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+    put:
+      operationId: setLoyaltyPolicy
+      tags: [loyalty]
+      summary: 'Append a loyalty policy version (manager); settled bills keep their original policy'
+      security: [{staffSession: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [expected_version, satang_per_point, silver_threshold_satang, silver_discount_bp, gold_threshold_satang, gold_discount_bp]
+              properties:
+                expected_version: {type: integer, minimum: 0}
+                satang_per_point: {type: integer, minimum: 100, maximum: 10000000}
+                silver_threshold_satang: {type: integer, minimum: 1}
+                silver_discount_bp: {type: integer, minimum: 0, maximum: 5000}
+                gold_threshold_satang: {type: integer, minimum: 1}
+                gold_discount_bp: {type: integer, minimum: 0, maximum: 5000}
+      responses:
+        '200':
+          description: New version
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/LoyaltyPolicy'}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '415': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+  /api/v1/visits/{visit_id}/member-claim:
+    parameters:
+      - {name: visit_id, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      operationId: getMemberClaim
+      tags: [loyalty]
+      summary: 'Claim status for a signed-in member at this table (member + visit guest session)'
+      description: >-
+        Tier and discount are included only when the claim is the caller's own; other members learn only that the visit is claimed.
+      security: [{memberSession: [], guestSession: []}]
+      responses:
+        '200':
+          description: Claim status
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ClaimStatus'}
+        '401': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+    post:
+      operationId: claimVisit
+      tags: [loyalty]
+      summary: 'Claim an open visit for points (member + that visit''s guest session, PWA origin)'
+      description: >-
+        The shared dining QR alone cannot claim. Re-claiming one's own visit is idempotent; another member's claim returns 409 ALREADY_CLAIMED; settling or paid visits return 409 VISIT_STATE_CONFLICT. Bumps the bill version.
+      security: [{memberSession: [], guestSession: []}]
+      parameters:
+        - {$ref: '#/components/parameters/IdempotencyKey'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [expected_version]
+              properties:
+                expected_version: {type: integer, minimum: 1}
+      responses:
+        '200':
+          description: Claim status
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+            Idempotency-Replayed:
+              description: Present when a committed result is replayed
+              schema: {type: string, const: 'true'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ClaimStatus'}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '415': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+  /api/v1/visits/{visit_id}/member-detach:
+    parameters:
+      - {name: visit_id, in: path, required: true, schema: {type: string, format: uuid}}
+    post:
+      operationId: detachMember
+      tags: [loyalty]
+      summary: 'Remove a member claim from an open visit with an audited reason (cashier/manager)'
+      security: [{staffSession: []}]
+      parameters:
+        - {$ref: '#/components/parameters/IdempotencyKey'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [expected_version, reason]
+              properties:
+                expected_version: {type: integer, minimum: 1}
+                reason: {type: string, minLength: 1, maxLength: 500}
+      responses:
+        '200':
+          description: Bill without the claim
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+            Idempotency-Replayed:
+              description: Present when a committed result is replayed
+              schema: {type: string, const: 'true'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Bill'}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/BillingError'}
+        '415': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+  /api/v1/members/me/loyalty:
+    get:
+      operationId: getMyLoyalty
+      tags: [loyalty]
+      summary: 'Own points, tier and progress per branch (member)'
+      security: [{memberSession: []}]
+      responses:
+        '200':
+          description: Profiles
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/MemberLoyaltyList'}
+        '401': {$ref: '#/components/responses/Error'}
+  /api/v1/members/me/loyalty/entries:
+    get:
+      operationId: listMyLoyaltyEntries
+      tags: [loyalty]
+      summary: 'Own points history, newest first (member)'
+      security: [{memberSession: []}]
+      parameters:
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100}}
+        - {name: cursor, in: query, schema: {type: string, maxLength: 512}}
+      responses:
+        '200':
+          description: History page
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/LedgerPage'}
+        '401': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
 components:
   parameters:
     IdempotencyKey:
@@ -2475,7 +2660,11 @@ components:
           oneOf:
             - {type: 'null'}
             - {$ref: '#/components/schemas/SettlementRef'}
-        member_claim: {type: 'null', description: 'Member claim status (MVP-14); always null until then'}
+        member_claim:
+          description: Claim status; guests see only claimed, cashier/manager also a masked email and tier (LOY-001)
+          oneOf:
+            - {type: 'null'}
+            - {$ref: '#/components/schemas/ClaimView'}
         server_time: {type: string, format: date-time}
         gross_satang: {type: integer, minimum: 0}
         discount_bp: {type: integer, minimum: 0, maximum: 10000}
@@ -2487,7 +2676,7 @@ components:
     Settlement:
       type: object
       additionalProperties: false
-      required: [id, visit_id, receipt_reference, amount_satang, method, paid_at, bill]
+      required: [id, visit_id, receipt_reference, amount_satang, method, paid_at, points_earned, bill]
       properties:
         id: {type: string, format: uuid}
         visit_id: {type: string, format: uuid}
@@ -2495,6 +2684,7 @@ components:
         amount_satang: {type: integer, minimum: 0}
         method: {type: string, enum: [cash, bank_transfer, card, other]}
         paid_at: {type: string, format: date-time}
+        points_earned: {type: [integer, 'null'], minimum: 0}
         bill: {$ref: '#/components/schemas/Bill'}
     Refund:
       type: object
@@ -2511,7 +2701,7 @@ components:
       type: object
       additionalProperties: false
       required: [id, visit_id, receipt_reference, table_label, visit_state, amount_satang, method, verification_note,
-                 external_reference, confirmed_by, paid_at, bill_version, policy, lines, refund, gross_satang,
+                 external_reference, confirmed_by, paid_at, bill_version, policy, lines, refund, member, gross_satang,
                  discount_bp, discount_satang, net_satang, service_satang, tax_satang, total_satang]
       properties:
         id: {type: string, format: uuid}
@@ -2532,6 +2722,16 @@ components:
           oneOf:
             - {type: 'null'}
             - {$ref: '#/components/schemas/Refund'}
+        member:
+          oneOf:
+            - {type: 'null'}
+            - type: object
+              additionalProperties: false
+              required: [tier, points_earned, eligible_satang]
+              properties:
+                tier: {type: string, enum: [base, silver, gold]}
+                points_earned: {type: integer, minimum: 0}
+                eligible_satang: {type: integer, minimum: 0}
         gross_satang: {type: integer, minimum: 0}
         discount_bp: {type: integer, minimum: 0, maximum: 10000}
         discount_satang: {type: integer, minimum: 0}
@@ -2557,4 +2757,77 @@ components:
       required: [items, next_cursor]
       properties:
         items: {type: array, items: {$ref: '#/components/schemas/ReceiptSummary'}}
+        next_cursor: {type: [string, 'null']}
+    ClaimView:
+      type: object
+      additionalProperties: false
+      required: [claimed]
+      properties:
+        claimed: {type: boolean}
+        masked_email: {type: string, description: Staff only}
+        tier: {type: string, enum: [base, silver, gold], description: Staff only}
+    ClaimStatus:
+      type: object
+      additionalProperties: false
+      required: [claimed, mine, bill_version, visit_state]
+      properties:
+        claimed: {type: boolean}
+        mine: {type: boolean}
+        tier: {type: string, enum: [base, silver, gold], description: Only when mine}
+        discount_bp: {type: integer, minimum: 0, maximum: 5000, description: Only when mine}
+        bill_version: {type: integer, minimum: 1}
+        visit_state: {type: string, enum: [open, settling, paid, departed, closed]}
+    LoyaltyPolicy:
+      type: object
+      additionalProperties: false
+      required: [version, satang_per_point, silver_threshold_satang, silver_discount_bp, gold_threshold_satang, gold_discount_bp, configured]
+      properties:
+        version: {type: integer, minimum: 0}
+        satang_per_point: {type: integer}
+        silver_threshold_satang: {type: integer}
+        silver_discount_bp: {type: integer}
+        gold_threshold_satang: {type: integer}
+        gold_discount_bp: {type: integer}
+        configured: {type: boolean}
+    MemberLoyaltyList:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [branch_id, branch_name, points, qualifying_spend_satang, tier, discount_bp, next_tier, next_threshold_satang, satang_per_point, policy_configured]
+            properties:
+              branch_id: {type: string, format: uuid}
+              branch_name: {type: string}
+              points: {type: integer, minimum: 0}
+              qualifying_spend_satang: {type: integer, minimum: 0}
+              tier: {type: string, enum: [base, silver, gold]}
+              discount_bp: {type: integer}
+              next_tier: {type: [string, 'null'], enum: [silver, gold, null]}
+              next_threshold_satang: {type: [integer, 'null']}
+              satang_per_point: {type: integer}
+              policy_configured: {type: boolean}
+    LedgerPage:
+      type: object
+      additionalProperties: false
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [id, kind, points, qualifying_satang, receipt_reference, branch_name, created_at]
+            properties:
+              id: {type: string, format: uuid}
+              kind: {type: string, enum: [earn, reversal]}
+              points: {type: integer}
+              qualifying_satang: {type: integer}
+              receipt_reference: {type: string}
+              branch_name: {type: string}
+              created_at: {type: string, format: date-time}
         next_cursor: {type: [string, 'null']}

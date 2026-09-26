@@ -107,7 +107,7 @@ func TestHealthOpenApiValidation(t *testing.T) {
 	seatHTTP := seating.NewHTTP(nil, nil, idHTTP, accHTTP, nil, nil, discard)
 	menuHTTP := menu.NewHTTP(nil, idHTTP, discard)
 	orderHTTP := ordering.NewHTTP(nil, nil, nil, idHTTP, accHTTP, nil, discard)
-	billHTTP := billing.NewHTTP(nil, nil, nil, idHTTP, accHTTP, discard)
+	billHTTP := billing.NewHTTP(nil, nil, nil, idHTTP, accHTTP, memHTTP, nil, discard)
 	for path, methods := range Routes(health.New(fakePinger{}, time.Second, discard), idHTTP, accHTTP, memHTTP, seatHTTP, menuHTTP, orderHTTP, billHTTP) {
 		for method := range methods {
 			implemented = append(implemented, method+" "+path)

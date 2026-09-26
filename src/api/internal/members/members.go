@@ -381,3 +381,14 @@ func (s *Service) Purge(ctx context.Context) (int64, error) {
 	err := s.pool.QueryRow(ctx, q("purge")).Scan(&n)
 	return n, err
 }
+
+// Revalidate re-reads the member session under FOR SHARE inside tx; member
+// sessions are principal rows, locked before any domain row.
+func Revalidate(ctx context.Context, tx pgx.Tx, m Member) error {
+	var id string
+	err := tx.QueryRow(ctx, q("revalidate_session"), m.SessionID).Scan(&id)
+	if errors.Is(err, pgx.ErrNoRows) || (err == nil && id != m.ID) {
+		return ErrUnauthenticated
+	}
+	return err
+}

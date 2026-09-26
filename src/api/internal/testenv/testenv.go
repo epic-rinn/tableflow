@@ -26,13 +26,16 @@ import (
 	"github.com/epic-rinn/tableflow/src/api/internal/access"
 	"github.com/epic-rinn/tableflow/src/api/internal/billing"
 	"github.com/epic-rinn/tableflow/src/api/internal/identity"
+	"github.com/epic-rinn/tableflow/src/api/internal/members"
 	"github.com/epic-rinn/tableflow/src/api/internal/menu"
 	"github.com/epic-rinn/tableflow/src/api/internal/ordering"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/app"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/dbtest"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/health"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/idempotency"
+	"github.com/epic-rinn/tableflow/src/api/internal/platform/mail"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/password"
+	"github.com/epic-rinn/tableflow/src/api/internal/platform/token"
 	"github.com/epic-rinn/tableflow/src/api/internal/seating"
 )
 
@@ -97,11 +100,12 @@ func New(t *testing.T) *Env {
 	idHTTP := identity.NewHTTP(idSvc, []string{AdminOrigin}, trusted, quiet)
 	accHTTP := access.NewHTTP(access.NewService(pool), []string{PWAOrigin}, trusted, quiet)
 	store, _ := idempotency.NewStore(bytes.Repeat([]byte{5}, 32))
-	routes := app.Routes(health.New(pool, time.Second, quiet), idHTTP, accHTTP,
+	memHTTP := members.NewHTTP(members.NewService(pool, password.New(4), &mail.Recorder{}, "https://pwa.test"), []string{PWAOrigin}, trusted, quiet)
+	routes := app.Routes(health.New(pool, time.Second, quiet), idHTTP, accHTTP, memHTTP,
 		seating.NewHTTP(seating.NewService(pool, idSvc), store, idHTTP, accHTTP, []string{PWAOrigin}, trusted, quiet),
 		menu.NewHTTP(menu.NewService(pool, idSvc), idHTTP, quiet),
 		ordering.NewHTTP(ordering.NewService(pool, idSvc), pool, store, idHTTP, accHTTP, []string{PWAOrigin}, quiet),
-		billing.NewHTTP(billing.NewService(pool, idSvc), pool, store, idHTTP, accHTTP, quiet))
+		billing.NewHTTP(billing.NewService(pool, idSvc), pool, store, idHTTP, accHTTP, memHTTP, []string{PWAOrigin}, quiet))
 	srv := httptest.NewServer(app.NewHandler(quiet, routes))
 	t.Cleanup(srv.Close)
 	e := &Env{T: t, Pool: pool, Srv: srv, statements: counter}
@@ -307,10 +311,30 @@ func (e *Env) SeatWalkIn(table string, party int) (string, string) {
 	return r.Str("visit", "id"), r.Str("dining", "token")
 }
 
+// Member creates a verified member account with a live session and returns
+// its ID and member cookie value (sign-in itself is covered by members tests).
+func (e *Env) Member(email string) (id, cookie string) {
+	e.T.Helper()
+	raw, hash := token.New()
+	id = Scalar[string](e, `INSERT INTO member_accounts (email, password_hash, locale, email_verified_at)
+		VALUES ($1, 'argon2id$test', 'en', now()) RETURNING id::text`, email)
+	e.Exec("INSERT INTO member_sessions (member_id, token_hash, expires_at) VALUES ($1, $2, now() + interval '1 day')", id, hash)
+	return id, raw
+}
+
+// MemberSession issues another live session (another phone) for a member.
+func (e *Env) MemberSession(memberID string) string {
+	e.T.Helper()
+	raw, hash := token.New()
+	e.Exec("INSERT INTO member_sessions (member_id, token_hash, expires_at) VALUES ($1, $2, now() + interval '1 day')", memberID, hash)
+	return raw
+}
+
 // Guest is a diner's phone on the PWA origin with a dining session.
 type Guest struct {
-	e    *Env
-	Sess string
+	e      *Env
+	Sess   string
+	member string
 }
 
 // Diner exchanges a dining token for a new phone's guest session.
@@ -328,7 +352,21 @@ func (e *Env) Diner(token string) *Guest {
 
 // Get reads as this guest.
 func (g *Guest) Get(path string) Resp {
-	return g.e.Do("GET", path, access.GuestCookie+"="+g.Sess, "", "", nil)
+	return g.e.Do("GET", path, g.cookies(), "", "", nil)
+}
+
+// WithMember adds a member cookie to this phone (claiming needs both).
+func (g *Guest) WithMember(cookie string) *Guest {
+	g.member = cookie
+	return g
+}
+
+func (g *Guest) cookies() string {
+	c := access.GuestCookie + "=" + g.Sess
+	if g.member != "" {
+		c += "; " + members.MemberCookie + "=" + g.member
+	}
+	return c
 }
 
 // Send mutates as this guest with key ("" = fresh key).
@@ -336,5 +374,5 @@ func (g *Guest) Send(path, key string, body any) Resp {
 	if key == "" {
 		key = NewKey()
 	}
-	return g.e.Do("POST", path, access.GuestCookie+"="+g.Sess, PWAOrigin, key, body)
+	return g.e.Do("POST", path, g.cookies(), PWAOrigin, key, body)
 }

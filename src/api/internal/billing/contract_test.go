@@ -12,9 +12,10 @@ import (
 	"github.com/epic-rinn/tableflow/src/api/internal/testenv"
 )
 
-// TestBillingContractConformance: policy, bill, settlement, receipt and
-// refund responses (including conflict bodies) match OpenAPI.
-func TestBillingContractConformance(t *testing.T) {
+type checker func(method, path string, r testenv.Resp)
+
+func contract(t *testing.T) checker {
+	t.Helper()
 	_, file, _, _ := runtime.Caller(0)
 	doc, err := openapi3.NewLoader().LoadFromFile(filepath.Join(filepath.Dir(file), "..", "..", "..", "..", "specs", "api", "openapi.yaml"))
 	if err != nil {
@@ -35,6 +36,13 @@ func TestBillingContractConformance(t *testing.T) {
 			t.Fatalf("%s %s %d: %v\n%s", method, path, r.Status, err, r.Raw)
 		}
 	}
+	return check
+}
+
+// TestBillingContractConformance: policy, bill, settlement, receipt and
+// refund responses (including conflict bodies) match OpenAPI.
+func TestBillingContractConformance(t *testing.T) {
+	check := contract(t)
 	f := setup(t)
 	e := f.e
 	pol := "/api/v1/branches/" + e.Branch + "/charge-policy"
@@ -61,4 +69,32 @@ func TestBillingContractConformance(t *testing.T) {
 	check("GET", "/api/v1/settlements/{settlement_id}", e.StaffGet(e.Cashier, "/api/v1/settlements/"+c.Str("id")))
 	check("POST", "/api/v1/settlements/{settlement_id}/refund", f.refund(e.Manager, "", c.Str("id")))
 	check("POST", "/api/v1/settlements/{settlement_id}/refund", f.refund(e.Manager, "", c.Str("id"))) // ALREADY_REFUNDED
+}
+
+// TestLoyaltyContractConformance: loyalty policy, claims, detach, member
+// settlement/receipt and member history responses match OpenAPI.
+func TestLoyaltyContractConformance(t *testing.T) {
+	check := contract(t)
+	f := setup(t)
+	e := f.e
+	pol := "/api/v1/branches/" + e.Branch + "/loyalty-policy"
+	check("GET", "/api/v1/branches/{branch_id}/loyalty-policy", e.StaffGet(e.Cashier, pol))
+	check("PUT", "/api/v1/branches/{branch_id}/loyalty-policy", e.StaffSend("PUT", e.Manager, pol, map[string]any{"expected_version": 0,
+		"satang_per_point": 10000, "silver_threshold_satang": 500000, "silver_discount_bp": 300, "gold_threshold_satang": 1500000, "gold_discount_bp": 500}))
+	_, ann := f.member("ann@example.com")
+	_, bob := f.member("bob@example.com")
+	id, v := f.order(f.tea, 2)
+	check("POST", "/api/v1/visits/{visit_id}/member-claim", f.claim(ann))
+	check("POST", "/api/v1/visits/{visit_id}/member-claim", f.claim(bob)) // ALREADY_CLAIMED
+	check("GET", "/api/v1/visits/{visit_id}/member-claim", bob.Get(f.path("/member-claim")))
+	check("GET", "/api/v1/visits/{visit_id}/bill", f.bill(e.Cashier))
+	bv := f.bill(e.Cashier).Num("bill_version")
+	check("POST", "/api/v1/visits/{visit_id}/member-detach", e.StaffSend("POST", e.Cashier, f.path("/member-detach"), map[string]any{"expected_version": bv, "reason": "test"}))
+	f.claim(ann)
+	f.serve(id, v)
+	c := f.settle()
+	check("POST", "/api/v1/visits/{visit_id}/settlement/confirm", c)
+	check("GET", "/api/v1/settlements/{settlement_id}", e.StaffGet(e.Cashier, "/api/v1/settlements/"+c.Str("id")))
+	check("GET", "/api/v1/members/me/loyalty", ann.Get("/api/v1/members/me/loyalty"))
+	check("GET", "/api/v1/members/me/loyalty/entries", ann.Get("/api/v1/members/me/loyalty/entries"))
 }

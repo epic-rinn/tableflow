@@ -14,6 +14,7 @@ import (
 
 	"github.com/epic-rinn/tableflow/src/api/internal/access"
 	"github.com/epic-rinn/tableflow/src/api/internal/identity"
+	"github.com/epic-rinn/tableflow/src/api/internal/members"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/httpx"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/idempotency"
 )
@@ -27,14 +28,16 @@ type HTTP struct {
 	svc    *Service
 	pool   *pgxpool.Pool
 	store  *idempotency.Store
-	staff  *identity.HTTP
-	guests *access.HTTP
-	logger *slog.Logger
+	staff     *identity.HTTP
+	guests    *access.HTTP
+	members   *members.HTTP
+	pwaOrigin func(http.HandlerFunc) http.HandlerFunc
+	logger    *slog.Logger
 }
 
 // NewHTTP wires handlers.
-func NewHTTP(svc *Service, pool *pgxpool.Pool, store *idempotency.Store, staff *identity.HTTP, guests *access.HTTP, logger *slog.Logger) *HTTP {
-	return &HTTP{svc: svc, pool: pool, store: store, staff: staff, guests: guests, logger: logger}
+func NewHTTP(svc *Service, pool *pgxpool.Pool, store *idempotency.Store, staff *identity.HTTP, guests *access.HTTP, mem *members.HTTP, pwaOrigins []string, logger *slog.Logger) *HTTP {
+	return &HTTP{svc: svc, pool: pool, store: store, staff: staff, guests: guests, members: mem, pwaOrigin: httpx.OriginGuard(pwaOrigins), logger: logger}
 }
 
 // Routes returns path patterns and method handlers. No route accepts a
@@ -54,6 +57,15 @@ func (h *HTTP) Routes() map[string]map[string]http.HandlerFunc {
 		"/api/v1/branches/{branch_id}/settlements":     {http.MethodGet: st(h.receipts)},
 		"/api/v1/settlements/{settlement_id}":          {http.MethodGet: st(h.receipt)},
 		"/api/v1/settlements/{settlement_id}/refund":   {http.MethodPost: stw(h.refund)},
+		"/api/v1/branches/{branch_id}/loyalty-policy":  {http.MethodGet: st(h.loyaltyPolicy), http.MethodPut: stw(h.setLoyaltyPolicy)},
+		"/api/v1/visits/{visit_id}/member-detach":      {http.MethodPost: stw(h.detach)},
+		// Claims need the member session and this visit's guest session (LOY-001).
+		"/api/v1/visits/{visit_id}/member-claim": {
+			http.MethodGet:  h.memberGuest(h.claimStatus),
+			http.MethodPost: h.pwaOrigin(h.memberGuest(h.claim)),
+		},
+		"/api/v1/members/me/loyalty":         {http.MethodGet: h.members.RequireMember(h.myLoyalty)},
+		"/api/v1/members/me/loyalty/entries": {http.MethodGet: h.members.RequireMember(h.myEntries)},
 	}
 }
 
@@ -66,6 +78,10 @@ func (h *HTTP) either(staff, guest http.HandlerFunc) http.HandlerFunc {
 		}
 		guest(w, r)
 	}
+}
+
+func (h *HTTP) memberGuest(f http.HandlerFunc) http.HandlerFunc {
+	return h.members.RequireMember(h.guests.RequireGuest(access.KindVisit, f))
 }
 
 type conflictBody struct {
@@ -99,6 +115,14 @@ func (h *HTTP) fail(w http.ResponseWriter, r *http.Request, err error) {
 		httpx.WriteError(w, r, http.StatusConflict, "ALREADY_REFUNDED", "This settlement already has a refund")
 	case errors.Is(err, identity.ErrUnauthenticated):
 		h.staff.Fail(w, r, err)
+	case errors.Is(err, members.ErrUnauthenticated):
+		httpx.WriteError(w, r, http.StatusUnauthorized, "UNAUTHENTICATED", "Sign in to continue")
+	case errors.Is(err, access.ErrUnauthenticated):
+		httpx.WriteError(w, r, http.StatusUnauthorized, "UNAUTHENTICATED", "Scan the table QR code again to continue")
+	case errors.Is(err, ErrAlreadyClaimed):
+		httpx.WriteError(w, r, http.StatusConflict, "ALREADY_CLAIMED", "Another member has already claimed this visit; ask staff if this is wrong")
+	case errors.Is(err, ErrNotClaimed):
+		httpx.WriteError(w, r, http.StatusConflict, "NOT_CLAIMED", "No member has claimed this visit")
 	case errors.Is(err, idempotency.ErrConflict):
 		httpx.WriteError(w, r, http.StatusConflict, "IDEMPOTENCY_CONFLICT", "This request key was already used for a different request")
 	case errors.Is(err, ErrNotFound):
@@ -337,4 +361,126 @@ func (h *HTTP) refund(w http.ResponseWriter, r *http.Request) {
 		rc, err := h.svc.RecordRefund(ctx, tx, p, id, in, httpx.RequestID(ctx))
 		return http.StatusCreated, rc, err
 	})
+}
+
+func (h *HTTP) loyaltyPolicy(w http.ResponseWriter, r *http.Request) {
+	branch, ok := pathID(w, r, "branch_id")
+	if !ok {
+		return
+	}
+	p, _ := identity.PrincipalFrom(r.Context())
+	v, err := h.svc.LoyaltyPolicy(r.Context(), p, branch)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httpx.Private(w)
+	httpx.WriteJSON(w, http.StatusOK, v)
+}
+
+func (h *HTTP) setLoyaltyPolicy(w http.ResponseWriter, r *http.Request) {
+	branch, ok := pathID(w, r, "branch_id")
+	if !ok {
+		return
+	}
+	var in LoyaltyPolicyIn
+	if !httpx.DecodeJSON(w, r, &in) {
+		return
+	}
+	p, _ := identity.PrincipalFrom(r.Context())
+	var v LoyaltyPolicy
+	err := pgx.BeginFunc(r.Context(), h.pool, func(tx pgx.Tx) error {
+		var err error
+		v, err = h.svc.SetLoyaltyPolicy(r.Context(), tx, p, branch, in, httpx.RequestID(r.Context()))
+		return err
+	})
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httpx.Private(w)
+	httpx.WriteJSON(w, http.StatusOK, v)
+}
+
+func (h *HTTP) detach(w http.ResponseWriter, r *http.Request) {
+	visit, ok := pathID(w, r, "visit_id")
+	if !ok {
+		return
+	}
+	in, ok := h.versionBody(w, r)
+	if !ok {
+		return
+	}
+	reason := ""
+	if in.Reason != nil {
+		reason = *in.Reason
+	}
+	h.mutate(w, r, cashierRoles, "member.detach", in, func(ctx context.Context, tx pgx.Tx, p identity.Principal) (int, any, error) {
+		b, err := h.svc.Detach(ctx, tx, p, visit, *in.ExpectedVersion, reason, httpx.RequestID(ctx))
+		return http.StatusOK, b, err
+	})
+}
+
+func (h *HTTP) claim(w http.ResponseWriter, r *http.Request) {
+	visit, ok := pathID(w, r, "visit_id")
+	if !ok {
+		return
+	}
+	in, ok := h.versionBody(w, r)
+	if !ok {
+		return
+	}
+	m, _ := members.MemberFrom(r.Context())
+	g, _ := access.GuestFrom(r.Context())
+	idempotency.Mutate(w, r, h.pool, h.store, "member:"+m.ID, "member.claim", replayTTL, in,
+		func(ctx context.Context, tx pgx.Tx) (int, any, error) {
+			cs, err := h.svc.Claim(ctx, tx, m, g, visit, *in.ExpectedVersion, httpx.RequestID(ctx))
+			return http.StatusOK, cs, err
+		}, h.fail)
+}
+
+func (h *HTTP) claimStatus(w http.ResponseWriter, r *http.Request) {
+	visit, ok := pathID(w, r, "visit_id")
+	if !ok {
+		return
+	}
+	m, _ := members.MemberFrom(r.Context())
+	g, _ := access.GuestFrom(r.Context())
+	cs, err := h.svc.ClaimStatus(r.Context(), m, g, visit)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httpx.WriteJSON(w, http.StatusOK, cs)
+}
+
+func (h *HTTP) myLoyalty(w http.ResponseWriter, r *http.Request) {
+	m, _ := members.MemberFrom(r.Context())
+	items, err := h.svc.MemberLoyalty(r.Context(), m)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httpx.WriteJSON(w, http.StatusOK, struct {
+		Items []MemberLoyalty `json:"items"`
+	}{items})
+}
+
+func (h *HTTP) myEntries(w http.ResponseWriter, r *http.Request) {
+	limit := 0
+	if raw := r.URL.Query().Get("limit"); raw != "" {
+		n, err := strconv.Atoi(raw)
+		if err != nil || n < 1 || n > pageMax {
+			httpx.ValidationError(w, r, map[string]string{"limit": "must be 1–100"})
+			return
+		}
+		limit = n
+	}
+	m, _ := members.MemberFrom(r.Context())
+	page, err := h.svc.MemberEntries(r.Context(), m, r.URL.Query().Get("cursor"), limit)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httpx.WriteJSON(w, http.StatusOK, page)
 }

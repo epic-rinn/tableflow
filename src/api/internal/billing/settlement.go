@@ -94,8 +94,24 @@ func (s *Service) BeginSettlement(ctx context.Context, tx pgx.Tx, p identity.Pri
 	if err != nil {
 		return Bill{}, err
 	}
-	// Non-member settlement only: the tier discount arrives with MVP-14/15.
-	t := Calculate(gross, pol.Policy, 0)
+	// A claimed visit snapshots the member's tier benefit after locking the
+	// profile (LOY-003); a tier earned by this bill applies to later bills.
+	discount := 0
+	var tier *string
+	var loyaltyVersion *int
+	var satangPerPoint *int64
+	if v.memberID != nil {
+		prof, err := lockProfile(ctx, tx, v.branchID, *v.memberID)
+		if err != nil {
+			return Bill{}, err
+		}
+		lp, err := currentLoyalty(ctx, tx, v.branchID)
+		if err != nil {
+			return Bill{}, err
+		}
+		discount, tier, loyaltyVersion, satangPerPoint = lp.DiscountBP(prof.tier), &prof.tier, &lp.Version, &lp.SatangPerPoint
+	}
+	t := Calculate(gross, pol.Policy, discount)
 	if err := tx.QueryRow(ctx, q("visit_set_state"), visitID, "settling", true).Scan(&v.billVersion, &v.version); err != nil {
 		return Bill{}, err
 	}
@@ -106,7 +122,8 @@ func (s *Service) BeginSettlement(ctx context.Context, tx pgx.Tx, p identity.Pri
 	}
 	var snapID string
 	if err := tx.QueryRow(ctx, q("snapshot_insert"), v.branchID, visitID, v.billVersion, pol.Version, pol.TaxMode, pol.TaxBP,
-		pol.ServiceBP, t.DiscountBP, t.GrossSatang, t.DiscountSatang, t.ServiceSatang, t.TaxSatang, t.TotalSatang, raw, p.StaffID).
+		pol.ServiceBP, t.DiscountBP, t.GrossSatang, t.DiscountSatang, t.ServiceSatang, t.TaxSatang, t.TotalSatang, raw, p.StaffID,
+		v.memberID, tier, loyaltyVersion, satangPerPoint).
 		Scan(&snapID); err != nil {
 		return Bill{}, err
 	}
@@ -205,6 +222,7 @@ type Settlement struct {
 	AmountSatang     int64     `json:"amount_satang"`
 	Method           string    `json:"method"`
 	PaidAt           time.Time `json:"paid_at"`
+	PointsEarned     *int64    `json:"points_earned"`
 	Bill             Bill      `json:"bill"`
 }
 
@@ -245,11 +263,28 @@ func (s *Service) ConfirmSettlement(ctx context.Context, tx pgx.Tx, p identity.P
 	if *in.AmountSatang != sn.totals.TotalSatang {
 		return Settlement{}, ErrAmountMismatch
 	}
+	// Member earning uses the benefit frozen at begin (LOY-004/005); the
+	// profile lock precedes the capability and settlement rows.
+	var prof profileRow
+	var eligible, points *int64
+	if sn.memberID != nil {
+		if prof, err = lockProfile(ctx, tx, v.branchID, *sn.memberID); err != nil {
+			return Settlement{}, err
+		}
+		e := EligibleSpend(sn.totals, sn.policy)
+		pts := Points(e, *sn.satangPerPoint)
+		eligible, points = &e, &pts
+	}
 	ref := receiptReference()
 	var id string
 	if err := tx.QueryRow(ctx, q("settlement_insert"), v.branchID, visitID, sn.id, ref, sn.totals.TotalSatang, in.Method,
-		in.VerificationNote, in.ExternalReference, p.StaffID).Scan(&id); err != nil {
+		in.VerificationNote, in.ExternalReference, p.StaffID, sn.memberID, eligible, points, sn.loyaltyVersion).Scan(&id); err != nil {
 		return Settlement{}, err
+	}
+	if sn.memberID != nil {
+		if err := applyLedger(ctx, tx, v.branchID, *sn.memberID, id, "earn", prof, *points, *eligible, *sn.loyaltyVersion); err != nil {
+			return Settlement{}, err
+		}
 	}
 	if err := tx.QueryRow(ctx, q("visit_set_state"), visitID, "paid", false).Scan(&v.billVersion, &v.version); err != nil {
 		return Settlement{}, err
@@ -261,7 +296,7 @@ func (s *Service) ConfirmSettlement(ctx context.Context, tx pgx.Tx, p identity.P
 	if err := audit.Record(ctx, tx, audit.Event{BranchID: v.branchID, ActorStaffID: &p.StaffID, Action: "settlement.confirmed",
 		ResourceType: "settlement", ResourceID: id, RequestID: requestID,
 		Details: map[string]any{"visit_id": visitID, "amount_satang": sn.totals.TotalSatang, "method": in.Method,
-			"receipt_reference": ref}}); err != nil {
+			"receipt_reference": ref, "member_id": sn.memberID, "points_earned": points}}); err != nil {
 		return Settlement{}, err
 	}
 	b, err := buildBill(ctx, tx, visitID, v)
@@ -269,5 +304,5 @@ func (s *Service) ConfirmSettlement(ctx context.Context, tx pgx.Tx, p identity.P
 		return Settlement{}, err
 	}
 	return Settlement{ID: id, VisitID: visitID, ReceiptReference: ref, AmountSatang: sn.totals.TotalSatang,
-		Method: in.Method, PaidAt: b.Settlement.PaidAt, Bill: b}, nil
+		Method: in.Method, PaidAt: b.Settlement.PaidAt, PointsEarned: points, Bill: b}, nil
 }

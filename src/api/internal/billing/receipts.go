@@ -50,7 +50,15 @@ type Receipt struct {
 	Policy            Policy          `json:"policy"`
 	Lines             json.RawMessage `json:"lines"`
 	Refund            *Refund         `json:"refund"`
+	Member            *ReceiptMember  `json:"member"`
 	Totals
+}
+
+// ReceiptMember is the loyalty outcome recorded with a member settlement.
+type ReceiptMember struct {
+	Tier           string `json:"tier"`
+	PointsEarned   int64  `json:"points_earned"`
+	EligibleSatang int64  `json:"eligible_satang"`
 }
 
 func loadReceipt(ctx context.Context, db querier, id string) (Receipt, string, error) {
@@ -59,12 +67,15 @@ func loadReceipt(ctx context.Context, db querier, id string) (Receipt, string, e
 	var rid, rreason, rref, rby *string
 	var ramount *int64
 	var rat *time.Time
+	var isMember bool
+	var mPoints, mEligible *int64
+	var mTier *string
 	t := &rc.Totals
 	err := db.QueryRow(ctx, q("receipt_get"), id).Scan(&rc.ID, &branch, &rc.VisitID, &rc.ReceiptReference, &rc.AmountSatang,
 		&rc.Method, &rc.VerificationNote, &rc.ExternalReference, &rc.PaidAt, &rc.ConfirmedBy, &rc.TableLabel, &rc.VisitState,
 		&rc.BillVersion, &rc.Policy.Version, &rc.Policy.TaxMode, &rc.Policy.TaxBP, &rc.Policy.ServiceBP, &t.DiscountBP,
 		&t.GrossSatang, &t.DiscountSatang, &t.ServiceSatang, &t.TaxSatang, &t.TotalSatang, &rc.Lines,
-		&rid, &ramount, &rreason, &rref, &rby, &rat)
+		&rid, &ramount, &rreason, &rref, &rby, &rat, &isMember, &mPoints, &mEligible, &mTier)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return rc, "", ErrNotFound
 	}
@@ -73,6 +84,9 @@ func loadReceipt(ctx context.Context, db querier, id string) (Receipt, string, e
 	}
 	rc.Policy.Configured = rc.Policy.Version > 0
 	t.NetSatang = t.GrossSatang - t.DiscountSatang
+	if isMember && mPoints != nil && mEligible != nil && mTier != nil {
+		rc.Member = &ReceiptMember{Tier: *mTier, PointsEarned: *mPoints, EligibleSatang: *mEligible}
+	}
 	if rid != nil {
 		rc.Refund = &Refund{ID: *rid, AmountSatang: *ramount, Reason: *rreason, ExternalReference: *rref, RecordedBy: *rby, CreatedAt: *rat}
 	}
@@ -192,7 +206,8 @@ func (s *Service) RecordRefund(ctx context.Context, tx pgx.Tx, p identity.Princi
 		return Receipt{}, err
 	}
 	var visitID string
-	err = tx.QueryRow(ctx, q("settlement_visit"), settlementID).Scan(&visitID)
+	var memberID *string
+	err = tx.QueryRow(ctx, q("settlement_visit"), settlementID).Scan(&visitID, &memberID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return Receipt{}, ErrNotFound
 	}
@@ -206,9 +221,19 @@ func (s *Service) RecordRefund(ctx context.Context, tx pgx.Tx, p identity.Princi
 	if v.branchID != p.BranchID {
 		return Receipt{}, ErrNotFound
 	}
+	// Lock order: visit → member profile → settlement → refund (data model).
+	var prof profileRow
+	if memberID != nil {
+		if prof, err = lockProfile(ctx, tx, v.branchID, *memberID); err != nil {
+			return Receipt{}, err
+		}
+	}
 	var branch string
 	var amount int64
-	if err := tx.QueryRow(ctx, q("settlement_lock"), settlementID).Scan(&branch, &amount); err != nil {
+	var sMember *string
+	var eligible, points *int64
+	var loyaltyVersion *int
+	if err := tx.QueryRow(ctx, q("settlement_lock"), settlementID).Scan(&branch, &amount, &sMember, &eligible, &points, &loyaltyVersion); err != nil {
 		return Receipt{}, err
 	}
 	var existing string
@@ -223,7 +248,14 @@ func (s *Service) RecordRefund(ctx context.Context, tx pgx.Tx, p identity.Princi
 	if err := tx.QueryRow(ctx, q("refund_insert"), branch, settlementID, amount, reason, ref, p.StaffID).Scan(&id); err != nil {
 		return Receipt{}, err
 	}
-	// Member point reversal joins this transaction in MVP-15.
+	// The original award is reversed exactly once with the original amounts
+	// and policy version, never today's rates (LOY-006); the unique
+	// (settlement, kind) key backs the refund's own uniqueness.
+	if sMember != nil {
+		if err := applyLedger(ctx, tx, branch, *sMember, settlementID, "reversal", prof, -*points, -*eligible, *loyaltyVersion); err != nil {
+			return Receipt{}, err
+		}
+	}
 	if err := audit.Record(ctx, tx, audit.Event{BranchID: branch, ActorStaffID: &p.StaffID, Action: "settlement.refunded",
 		ResourceType: "settlement", ResourceID: settlementID, Reason: &reason, RequestID: requestID,
 		Details: map[string]any{"refund_id": id, "amount_satang": amount, "external_reference": ref}}); err != nil {
