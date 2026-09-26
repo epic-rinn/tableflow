@@ -1,0 +1,4 @@
+{"route": "POST /sessions/capability (exchange)", "samples": 500, "codes": {"201": 500}, "bytes": 164, "p50_ms": 0.88, "p95_ms": 1.82, "p99_ms": 2.8, "max_ms": 2.94}
+{"route": "GET /sessions/guest", "samples": 1000, "codes": {"200": 1000}, "bytes": 164, "p50_ms": 0.28, "p95_ms": 0.35, "p99_ms": 1.5, "max_ms": 1.77}
+{"route": "POST /sessions/anonymous (new)", "samples": 500, "codes": {"201": 500}, "bytes": 45, "p50_ms": 0.59, "p95_ms": 0.92, "p99_ms": 1.94, "max_ms": 6.23}
+{"route": "GET /members/me", "samples": 1000, "codes": {"200": 1000}, "bytes": 114, "p50_ms": 0.28, "p95_ms": 0.42, "p99_ms": 1.45, "max_ms": 1.97}

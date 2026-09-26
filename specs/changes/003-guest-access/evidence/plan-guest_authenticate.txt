@@ -1,0 +1,16 @@
+Nested Loop  (cost=0.85..16.91 rows=1 width=78) (actual time=0.014..0.015 rows=1.00 loops=1)
+  Buffers: shared hit=8
+  ->  Index Scan using guest_sessions_token_hash_key on guest_sessions g  (cost=0.43..8.45 rows=1 width=44) (actual time=0.011..0.011 rows=1.00 loops=1)
+        Index Cond: (token_hash = sha256(convert_to('gs-live'::text, 'UTF8'::name)))
+        Filter: ((revoked_at IS NULL) AND (expires_at > now()))
+        Index Searches: 1
+        Buffers: shared hit=4
+  ->  Index Scan using capabilities_pkey on capabilities c  (cost=0.42..8.45 rows=1 width=58) (actual time=0.002..0.002 rows=1.00 loops=1)
+        Index Cond: (id = g.capability_id)
+        Filter: ((revoked_at IS NULL) AND (generation = g.generation) AND ((expires_at IS NULL) OR (expires_at > now())))
+        Index Searches: 1
+        Buffers: shared hit=4
+Planning:
+  Buffers: shared hit=486
+Planning Time: 0.497 ms
+Execution Time: 0.029 ms

@@ -1,0 +1,20 @@
+Insert on idempotency_requests  (cost=4.63..4.66 rows=1 width=180) (actual time=0.144..0.145 rows=0.00 loops=1)
+  Conflict Resolution: NOTHING
+  Conflict Arbiter Indexes: idempotency_requests_scope_operation_idem_key_key
+  Tuples Inserted: 0
+  Conflicting Tuples: 1
+  Buffers: shared hit=32
+  InitPlan 1
+    ->  Limit  (cost=0.42..4.63 rows=1 width=16) (actual time=0.017..0.017 rows=1.00 loops=1)
+          Buffers: shared hit=4
+          ->  Index Only Scan using idempotency_requests_scope_operation_idem_key_key on idempotency_requests idempotency_requests_1  (cost=0.42..84.75 rows=20 width=16) (actual time=0.016..0.016 rows=1.00 loops=1)
+                Index Cond: (scope = 'guest:1'::text)
+                Heap Fetches: 1
+                Index Searches: 1
+                Buffers: shared hit=4
+  ->  Result  (cost=0.00..0.03 rows=1 width=180) (actual time=0.107..0.107 rows=1.00 loops=1)
+        Buffers: shared hit=4
+Planning:
+  Buffers: shared hit=110
+Planning Time: 0.133 ms
+Execution Time: 0.160 ms

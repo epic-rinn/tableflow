@@ -1,0 +1,22 @@
+Delete on idempotency_requests  (cost=818.57..7692.69 rows=0 width=0) (actual time=15.355..15.379 rows=0.00 loops=1)
+  Buffers: shared hit=10824 read=290
+  ->  Hash Semi Join  (cost=818.57..7692.69 rows=5000 width=46) (actual time=2.798..14.562 rows=5000.00 loops=1)
+        Hash Cond: (idempotency_requests.id = "ANY_subquery".id)
+        Buffers: shared hit=5824 read=290
+        ->  Seq Scan on idempotency_requests  (cost=0.00..6556.00 rows=100000 width=22) (actual time=0.005..7.108 rows=100000.00 loops=1)
+              Buffers: shared hit=5266 read=290
+        ->  Hash  (cost=756.07..756.07 rows=5000 width=56) (actual time=2.782..2.783 rows=5000.00 loops=1)
+              Buckets: 8192  Batches: 1  Memory Usage: 480kB
+              Buffers: shared hit=558
+              ->  Subquery Scan on "ANY_subquery"  (cost=0.00..756.07 rows=5000 width=56) (actual time=0.013..2.484 rows=5000.00 loops=1)
+                    Buffers: shared hit=558
+                    ->  Limit  (cost=0.00..706.07 rows=5000 width=16) (actual time=0.011..2.157 rows=5000.00 loops=1)
+                          Buffers: shared hit=558
+                          ->  Seq Scan on idempotency_requests idempotency_requests_1  (cost=0.00..7056.00 rows=49967 width=16) (actual time=0.010..1.970 rows=5000.00 loops=1)
+                                Filter: (expires_at < now())
+                                Rows Removed by Filter: 5015
+                                Buffers: shared hit=558
+Planning:
+  Buffers: shared hit=261
+Planning Time: 0.283 ms
+Execution Time: 15.411 ms

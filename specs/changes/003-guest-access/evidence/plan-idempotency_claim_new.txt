@@ -1,0 +1,11 @@
+Insert on idempotency_requests  (cost=0.00..0.03 rows=1 width=180) (actual time=0.215..0.216 rows=1.00 loops=1)
+  Conflict Resolution: NOTHING
+  Conflict Arbiter Indexes: idempotency_requests_scope_operation_idem_key_key
+  Tuples Inserted: 1
+  Conflicting Tuples: 0
+  Buffers: shared hit=45
+  ->  Result  (cost=0.00..0.03 rows=1 width=180) (actual time=0.100..0.100 rows=1.00 loops=1)
+Planning:
+  Buffers: shared hit=74
+Planning Time: 0.057 ms
+Execution Time: 0.234 ms

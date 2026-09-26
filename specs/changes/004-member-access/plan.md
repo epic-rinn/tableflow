@@ -1,6 +1,6 @@
 # Change: 004-member-access — Member identity
 
-Status: implemented-unverified. Date: 2026-09-26. Scope owner: Claude. Task: MVP-04. Verification: M0 milestone gate ([ADR-0004](../../decisions/0004-milestone-verification.md)).
+Status: done (M0 gate). Date: 2026-09-26. Scope owner: Claude. Task: MVP-04. Verification: M0 milestone gate ([ADR-0004](../../decisions/0004-milestone-verification.md)).
 
 ## Problem and behavior
 
@@ -39,18 +39,18 @@ These follow the staff patterns: authentication is one unique-hash lookup; confi
 
 | Requirement / scenario | Named test | Status |
 | --- | --- | --- |
-| ACC-002 signup/verify/login/logout | TestMemberSignupVerifyLogin | written, not run |
-| Neutral discovery | TestMemberAccountDiscoveryIsNeutral | written, not run |
-| Single-use, expired and replayed tokens | TestMemberTokensSingleUseAndExpiry | written, not run |
-| Reset revokes sessions and verifies email | TestPasswordResetRevokesSessions | written, not run |
-| Concurrent reset confirmation, one winner | TestConcurrentResetConfirmOneWinner | written, not run |
-| Rate limits | TestMemberRateLimits | written, not run |
-| Coexistence with guest cookies; isolation from staff | TestMemberCookieCoexistsAndIsolated | written, not run |
-| Cross-account denial | TestMemberSeesOnlyOwnAccount | written, not run |
-| No credential caching (headers) | TestMemberResponsesPrivate | written, not run |
-| Contract | TestMemberContractConformance | written, not run |
-| Browser journey through Mailpit | PWA `account.spec.ts` | written, not run |
+| ACC-002 signup/verify/login/logout | TestMemberSignupVerifyLogin | passed (M0 gate) |
+| Neutral discovery | TestMemberAccountDiscoveryIsNeutral | passed (M0 gate) |
+| Single-use, expired and replayed tokens | TestMemberTokensSingleUseAndExpiry | passed (M0 gate) |
+| Reset revokes sessions and verifies email | TestPasswordResetRevokesSessions | passed (M0 gate) |
+| Concurrent reset confirmation, one winner | TestConcurrentResetConfirmOneWinner | passed (M0 gate) |
+| Rate limits | TestMemberRateLimits | passed (M0 gate) |
+| Coexistence with guest cookies; isolation from staff | TestMemberCookieCoexistsAndIsolated | passed (M0 gate) |
+| Cross-account denial | TestMemberSeesOnlyOwnAccount | passed (M0 gate) |
+| No credential caching (headers) | TestMemberResponsesPrivate | passed (M0 gate) |
+| Contract | TestMemberContractConformance | passed (M0 gate) |
+| Browser journey through Mailpit | PWA `account.spec.ts` | passed (M0 gate) |
 
 ## Final decisions
 
-Filled in at the M0 gate. Unresolved for the user: production email provider and sender domain (MVP-21).
+Implemented as planned. Gate fixes are listed in [review](review.md). Unresolved for the user: production email provider and sender domain (MVP-21).

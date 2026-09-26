@@ -1,6 +1,6 @@
 # Tasks: 003-guest-access
 
-Status: implemented-unverified (2026-09-26); M0 gate pending. Owner: Claude. Backlog task: MVP-03. Verification at the M0 gate (ADR-0004).
+Status: done (M0 gate, 2026-09-26). Owner: Claude. Backlog task: MVP-03. Verification at the M0 gate (ADR-0004).
 
 - [x] Plan and requirement mapping.
 - [x] Migration: capabilities, guest/anonymous sessions, idempotency_requests.
@@ -10,4 +10,4 @@ Status: implemented-unverified (2026-09-26); M0 gate pending. Owner: Claude. Bac
 - [x] OpenAPI and HTTP contract updates.
 - [x] PWA QR entry pages.
 - [x] Tests written (Go + browser); compile checks only until the gate.
-- [ ] M0 gate: run tests, measure, review, fix.
+- [x] M0 gate: run tests, measure, review, fix.

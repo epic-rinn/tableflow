@@ -1,0 +1,16 @@
+LockRows  (cost=8.56..16.33 rows=1 width=22) (actual time=0.016..0.017 rows=0.00 loops=1)
+  Buffers: shared hit=6
+  InitPlan 1
+    ->  Index Scan using member_tokens_token_hash_key on member_tokens member_tokens_1  (cost=0.42..8.44 rows=1 width=16) (actual time=0.013..0.013 rows=1.00 loops=1)
+          Index Cond: (token_hash = sha256(convert_to('mtok-5'::text, 'UTF8'::name)))
+          Index Searches: 1
+          Buffers: shared hit=4
+  ->  Index Scan using member_tokens_open on member_tokens  (cost=0.12..7.88 rows=1 width=22) (actual time=0.016..0.016 rows=0.00 loops=1)
+        Index Cond: ((member_id = (InitPlan 1).col1) AND (purpose = 'reset'::text))
+        Filter: ((used_at IS NULL) AND (revoked_at IS NULL) AND (expires_at > now()) AND (token_hash = sha256(convert_to('mtok-5'::text, 'UTF8'::name))))
+        Index Searches: 1
+        Buffers: shared hit=6
+Planning:
+  Buffers: shared hit=202
+Planning Time: 0.337 ms
+Execution Time: 0.029 ms

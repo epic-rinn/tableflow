@@ -1,0 +1,16 @@
+Update on capabilities  (cost=8.86..16.89 rows=1 width=50) (actual time=0.095..0.096 rows=1.00 loops=1)
+  Buffers: shared hit=46
+  InitPlan 1
+    ->  Index Scan using capabilities_token_hash_key on capabilities capabilities_1  (cost=0.42..8.44 rows=1 width=16) (actual time=0.011..0.011 rows=1.00 loops=1)
+          Index Cond: (token_hash = sha256(convert_to('cap-live-8'::text, 'UTF8'::name)))
+          Index Searches: 1
+          Buffers: shared hit=4
+  ->  Index Scan using capabilities_kind_resource_id_key on capabilities  (cost=0.42..8.45 rows=1 width=50) (actual time=0.021..0.022 rows=1.00 loops=1)
+        Index Cond: ((kind = 'visit'::text) AND (resource_id = (InitPlan 1).col1))
+        Filter: (revoked_at IS NULL)
+        Index Searches: 1
+        Buffers: shared hit=10
+Planning:
+  Buffers: shared hit=159
+Planning Time: 0.267 ms
+Execution Time: 0.123 ms

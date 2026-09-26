@@ -1,0 +1,17 @@
+Update on member_sessions  (cost=8.85..20.47 rows=0 width=0) (actual time=0.027..0.027 rows=0.00 loops=1)
+  Buffers: shared hit=8
+  InitPlan 1
+    ->  Index Scan using member_accounts_email_key on member_accounts  (cost=0.41..8.43 rows=1 width=16) (actual time=0.014..0.014 rows=1.00 loops=1)
+          Index Cond: (email = 'm777@perf.test'::text)
+          Index Searches: 1
+          Buffers: shared hit=4
+  ->  Index Scan using member_sessions_active_by_member on member_sessions  (cost=0.42..12.03 rows=1 width=14) (actual time=0.026..0.026 rows=0.00 loops=1)
+        Index Cond: (member_id = (InitPlan 1).col1)
+        Filter: ((revoked_at IS NULL) AND (expires_at > now()))
+        Rows Removed by Filter: 3
+        Index Searches: 1
+        Buffers: shared hit=8
+Planning:
+  Buffers: shared hit=177
+Planning Time: 0.178 ms
+Execution Time: 0.050 ms

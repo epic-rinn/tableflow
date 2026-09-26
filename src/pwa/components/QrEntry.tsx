@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api/client";
+import { useFragmentToken } from "@/lib/useFragmentToken";
 import type { CapabilityKind, GuestSession } from "@/lib/api/types";
 
 type State =
@@ -21,26 +22,34 @@ const COPY: Record<CapabilityKind, { title: string; connected: string }> = {
 // history immediately, then exchanged once through a POST body for an
 // HttpOnly session cookie. The token is never stored in browser storage.
 export function QrEntry({ kind }: { kind: CapabilityKind }) {
-  const [state, setState] = useState<State>({ step: "reading" });
-  const started = useRef(false);
+  const token = useFragmentToken(); // re-read when another QR link opens in this tab
+  const [result, setResult] = useState<{ token: string; state: State } | null>(null);
+  const exchanged = useRef<string | null>(null);
 
   useEffect(() => {
-    if (started.current) return; // StrictMode double-invokes effects in dev
-    started.current = true;
-    const token = window.location.hash.slice(1);
-    if (token) window.history.replaceState(null, "", window.location.pathname);
-    async function run() {
-      if (!token) {
-        setState({ step: "missing" });
-        return;
-      }
-      setState({ step: "exchanging" });
-      const res = await api<GuestSession>("/sessions/capability", { method: "POST", body: { token, kind } });
-      setState(res.ok ? { step: "connected", session: res.data } : { step: "failed", message: res.error.message });
-    }
-    void run();
-  }, [kind]);
+    if (!token || exchanged.current === token) return; // StrictMode re-runs effects in dev
+    exchanged.current = token;
+    let cancelled = false;
+    void api<GuestSession>("/sessions/capability", { method: "POST", body: { token, kind } }).then((res) => {
+      if (cancelled) return;
+      setResult({
+        token,
+        state: res.ok ? { step: "connected", session: res.data } : { step: "failed", message: res.error.message },
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [token, kind]);
 
+  const state: State =
+    token === null
+      ? { step: "reading" }
+      : token === ""
+        ? { step: "missing" }
+        : result?.token === token
+          ? result.state
+          : { step: "exchanging" };
   const copy = COPY[kind];
   return (
     <main>

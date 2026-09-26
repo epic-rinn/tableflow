@@ -1,0 +1,22 @@
+Delete on guest_sessions  (cost=291.85..11507.47 rows=0 width=0) (actual time=36.241..36.245 rows=0.00 loops=1)
+  Buffers: shared hit=6000 read=5190 written=87
+  ->  Hash Semi Join  (cost=291.85..11507.47 rows=5000 width=46) (actual time=1.504..35.564 rows=5000.00 loops=1)
+        Hash Cond: (guest_sessions.id = "ANY_subquery".id)
+        Buffers: shared hit=1000 read=5190 written=87
+        ->  Seq Scan on guest_sessions  (cost=0.00..10110.00 rows=400000 width=22) (actual time=0.004..18.086 rows=400000.00 loops=1)
+              Buffers: shared hit=920 read=5190 written=87
+        ->  Hash  (cost=229.35..229.35 rows=5000 width=56) (actual time=1.489..1.490 rows=5000.00 loops=1)
+              Buckets: 8192  Batches: 1  Memory Usage: 480kB
+              Buffers: shared hit=80
+              ->  Subquery Scan on "ANY_subquery"  (cost=0.00..229.35 rows=5000 width=56) (actual time=0.011..1.208 rows=5000.00 loops=1)
+                    Buffers: shared hit=80
+                    ->  Limit  (cost=0.00..179.35 rows=5000 width=16) (actual time=0.006..0.889 rows=5000.00 loops=1)
+                          Buffers: shared hit=80
+                          ->  Seq Scan on guest_sessions guest_sessions_1  (cost=0.00..13110.00 rows=365494 width=16) (actual time=0.006..0.711 rows=5000.00 loops=1)
+                                Filter: (expires_at < (now() - '30 days'::interval))
+                                Rows Removed by Filter: 494
+                                Buffers: shared hit=80
+Planning:
+  Buffers: shared hit=260
+Planning Time: 0.264 ms
+Execution Time: 36.276 ms

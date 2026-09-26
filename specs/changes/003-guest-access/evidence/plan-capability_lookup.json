@@ -1,0 +1,53 @@
+[
+  {
+    "Plan": {
+      "Node Type": "Index Scan",
+      "Parallel Aware": false,
+      "Async Capable": false,
+      "Scan Direction": "Forward",
+      "Index Name": "capabilities_token_hash_key",
+      "Relation Name": "capabilities",
+      "Alias": "capabilities",
+      "Startup Cost": 0.42,
+      "Total Cost": 8.45,
+      "Plan Rows": 1,
+      "Plan Width": 60,
+      "Actual Startup Time": 0.010,
+      "Actual Total Time": 0.012,
+      "Actual Rows": 1.00,
+      "Actual Loops": 1,
+      "Disabled": false,
+      "Index Cond": "(token_hash = sha256(convert_to('cap-live-8'::text, 'UTF8'::name)))",
+      "Rows Removed by Index Recheck": 0,
+      "Filter": "((revoked_at IS NULL) AND (kind = 'visit'::text) AND ((expires_at IS NULL) OR (expires_at > now())))",
+      "Rows Removed by Filter": 0,
+      "Index Searches": 1,
+      "Shared Hit Blocks": 4,
+      "Shared Read Blocks": 0,
+      "Shared Dirtied Blocks": 0,
+      "Shared Written Blocks": 0,
+      "Local Hit Blocks": 0,
+      "Local Read Blocks": 0,
+      "Local Dirtied Blocks": 0,
+      "Local Written Blocks": 0,
+      "Temp Read Blocks": 0,
+      "Temp Written Blocks": 0
+    },
+    "Planning": {
+      "Shared Hit Blocks": 160,
+      "Shared Read Blocks": 0,
+      "Shared Dirtied Blocks": 0,
+      "Shared Written Blocks": 0,
+      "Local Hit Blocks": 0,
+      "Local Read Blocks": 0,
+      "Local Dirtied Blocks": 0,
+      "Local Written Blocks": 0,
+      "Temp Read Blocks": 0,
+      "Temp Written Blocks": 0
+    },
+    "Planning Time": 0.305,
+    "Triggers": [
+    ],
+    "Execution Time": 0.025
+  }
+]

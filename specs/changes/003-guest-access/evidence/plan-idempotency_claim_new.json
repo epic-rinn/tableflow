@@ -1,0 +1,78 @@
+[
+  {
+    "Plan": {
+      "Node Type": "ModifyTable",
+      "Operation": "Insert",
+      "Parallel Aware": false,
+      "Async Capable": false,
+      "Relation Name": "idempotency_requests",
+      "Alias": "idempotency_requests",
+      "Startup Cost": 0.00,
+      "Total Cost": 0.03,
+      "Plan Rows": 1,
+      "Plan Width": 180,
+      "Actual Startup Time": 0.193,
+      "Actual Total Time": 0.194,
+      "Actual Rows": 1.00,
+      "Actual Loops": 1,
+      "Disabled": false,
+      "Conflict Resolution": "NOTHING",
+      "Conflict Arbiter Indexes": ["idempotency_requests_scope_operation_idem_key_key"],
+      "Tuples Inserted": 1,
+      "Conflicting Tuples": 0,
+      "Shared Hit Blocks": 45,
+      "Shared Read Blocks": 0,
+      "Shared Dirtied Blocks": 0,
+      "Shared Written Blocks": 0,
+      "Local Hit Blocks": 0,
+      "Local Read Blocks": 0,
+      "Local Dirtied Blocks": 0,
+      "Local Written Blocks": 0,
+      "Temp Read Blocks": 0,
+      "Temp Written Blocks": 0,
+      "Plans": [
+        {
+          "Node Type": "Result",
+          "Parent Relationship": "Outer",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Startup Cost": 0.00,
+          "Total Cost": 0.03,
+          "Plan Rows": 1,
+          "Plan Width": 180,
+          "Actual Startup Time": 0.094,
+          "Actual Total Time": 0.094,
+          "Actual Rows": 1.00,
+          "Actual Loops": 1,
+          "Disabled": false,
+          "Shared Hit Blocks": 0,
+          "Shared Read Blocks": 0,
+          "Shared Dirtied Blocks": 0,
+          "Shared Written Blocks": 0,
+          "Local Hit Blocks": 0,
+          "Local Read Blocks": 0,
+          "Local Dirtied Blocks": 0,
+          "Local Written Blocks": 0,
+          "Temp Read Blocks": 0,
+          "Temp Written Blocks": 0
+        }
+      ]
+    },
+    "Planning": {
+      "Shared Hit Blocks": 74,
+      "Shared Read Blocks": 0,
+      "Shared Dirtied Blocks": 0,
+      "Shared Written Blocks": 0,
+      "Local Hit Blocks": 0,
+      "Local Read Blocks": 0,
+      "Local Dirtied Blocks": 0,
+      "Local Written Blocks": 0,
+      "Temp Read Blocks": 0,
+      "Temp Written Blocks": 0
+    },
+    "Planning Time": 0.059,
+    "Triggers": [
+    ],
+    "Execution Time": 0.212
+  }
+]

@@ -131,7 +131,7 @@ func (h *HTTP) resend(w http.ResponseWriter, r *http.Request) {
 	if !httpx.DecodeJSON(w, r, &in) {
 		return
 	}
-	if err := h.svc.ResendVerification(r.Context(), in.Email); err != nil {
+	if err := h.svc.ResendVerification(r.Context(), in.Email, httpx.ClientIP(r, h.trusted)); err != nil {
 		h.fail(w, r, err)
 		return
 	}

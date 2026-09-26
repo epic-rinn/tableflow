@@ -1,0 +1,56 @@
+Result  (cost=7992.06..7992.08 rows=1 width=8) (actual time=28.192..28.198 rows=1.00 loops=1)
+  Buffers: shared hit=24069
+  CTE s
+    ->  Delete on member_sessions  (cost=308.70..4602.07 rows=5000 width=46) (actual time=1.661..15.914 rows=5000.00 loops=1)
+          Buffers: shared hit=12438
+          ->  Hash Semi Join  (cost=308.70..4602.07 rows=5000 width=46) (actual time=1.649..14.760 rows=5000.00 loops=1)
+                Hash Cond: (member_sessions.id = "ANY_subquery".id)
+                Buffers: shared hit=2438
+                ->  Seq Scan on member_sessions  (cost=0.00..3844.00 rows=150000 width=22) (actual time=0.002..7.047 rows=150000.00 loops=1)
+                      Buffers: shared hit=2344
+                ->  Hash  (cost=246.20..246.20 rows=5000 width=56) (actual time=1.623..1.624 rows=5000.00 loops=1)
+                      Buckets: 8192  Batches: 1  Memory Usage: 480kB
+                      Buffers: shared hit=94
+                      ->  Subquery Scan on "ANY_subquery"  (cost=0.00..246.20 rows=5000 width=56) (actual time=0.022..1.336 rows=5000.00 loops=1)
+                            Buffers: shared hit=94
+                            ->  Limit  (cost=0.00..196.20 rows=5000 width=16) (actual time=0.018..1.005 rows=5000.00 loops=1)
+                                  Buffers: shared hit=94
+                                  ->  Seq Scan on member_sessions member_sessions_1  (cost=0.00..4969.00 rows=126632 width=16) (actual time=0.018..0.827 rows=5000.00 loops=1)
+                                        Filter: (expires_at < (now() - '30 days'::interval))
+                                        Rows Removed by Filter: 900
+                                        Buffers: shared hit=94
+  CTE t
+    ->  Delete on member_tokens  (cost=307.85..3164.97 rows=5000 width=46) (actual time=1.698..11.185 rows=5000.00 loops=1)
+          Buffers: shared hit=11631
+          ->  Hash Semi Join  (cost=307.85..3164.97 rows=5000 width=46) (actual time=1.695..10.162 rows=5000.00 loops=1)
+                Hash Cond: (member_tokens.id = "ANY_subquery_1".id)
+                Buffers: shared hit=1631
+                ->  Seq Scan on member_tokens  (cost=0.00..2539.00 rows=100000 width=22) (actual time=0.007..4.503 rows=100000.00 loops=1)
+                      Buffers: shared hit=1539
+                ->  Hash  (cost=245.35..245.35 rows=5000 width=56) (actual time=1.669..1.669 rows=5000.00 loops=1)
+                      Buckets: 8192  Batches: 1  Memory Usage: 480kB
+                      Buffers: shared hit=92
+                      ->  Subquery Scan on "ANY_subquery_1"  (cost=0.00..245.35 rows=5000 width=56) (actual time=0.010..1.376 rows=5000.00 loops=1)
+                            Buffers: shared hit=92
+                            ->  Limit  (cost=0.00..195.35 rows=5000 width=16) (actual time=0.008..1.063 rows=5000.00 loops=1)
+                                  Buffers: shared hit=92
+                                  ->  Seq Scan on member_tokens member_tokens_1  (cost=0.00..3289.00 rows=84184 width=16) (actual time=0.007..0.885 rows=5000.00 loops=1)
+                                        Filter: (expires_at < (now() - '30 days'::interval))
+                                        Rows Removed by Filter: 900
+                                        Buffers: shared hit=92
+  InitPlan 3
+    ->  Aggregate  (cost=112.50..112.51 rows=1 width=8) (actual time=16.488..16.488 rows=1.00 loops=1)
+          Buffers: shared hit=12438
+          ->  CTE Scan on s  (cost=0.00..100.00 rows=5000 width=0) (actual time=1.662..16.360 rows=5000.00 loops=1)
+                Storage: Memory  Maximum Storage: 221kB
+                Buffers: shared hit=12438
+  InitPlan 4
+    ->  Aggregate  (cost=112.50..112.51 rows=1 width=8) (actual time=11.701..11.701 rows=1.00 loops=1)
+          Buffers: shared hit=11631
+          ->  CTE Scan on t  (cost=0.00..100.00 rows=5000 width=0) (actual time=1.699..11.579 rows=5000.00 loops=1)
+                Storage: Memory  Maximum Storage: 221kB
+                Buffers: shared hit=11631
+Planning:
+  Buffers: shared hit=344
+Planning Time: 0.424 ms
+Execution Time: 28.272 ms

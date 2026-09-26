@@ -1,6 +1,6 @@
 # Change: 003-guest-access — Guest capabilities and mutation infrastructure
 
-Status: implemented-unverified. Date: 2026-09-26. Scope owner: Claude. Task: MVP-03. Verification: M0 milestone gate ([ADR-0004](../../decisions/0004-milestone-verification.md)).
+Status: done (M0 gate). Date: 2026-09-26. Scope owner: Claude. Task: MVP-03. Verification: M0 milestone gate ([ADR-0004](../../decisions/0004-milestone-verification.md)).
 
 ## Problem and behavior
 
@@ -43,18 +43,18 @@ Exchange: 1 throttle upsert, 1 capability lookup by unique hash, 1 session inser
 
 | Requirement / scenario | Named test | Status |
 | --- | --- | --- |
-| ACC-001 hashed tokens, multi-diner exchange | TestCapabilityExchangeMultipleDiners, TestTokensStoredHashedOnly | written, not run |
-| ACC-A2 rotation invalidates derived sessions | TestRotationRevokesDerivedSessions | written, not run |
-| ACC-001 revocation, wrong kind, expiry | TestRevokedExpiredAndWrongKindRejected | written, not run |
-| ACC-004 Origin, cookie isolation | TestGuestRoutesRequirePwaOrigin, TestCookieKindsAreIsolated | written, not run |
-| ACC-004 throttling | TestCapabilityExchangeRateLimited | written, not run |
-| Anonymous bootstrap | TestAnonymousSessionReuse | written, not run |
-| Idempotency: same key concurrent → one result | TestIdempotencyConcurrentSameKey | written, not run |
-| Idempotency: different body conflict, replay, rollback | TestIdempotencyConflictReplayRollback | written, not run |
-| Replay encrypted at rest | TestIdempotencyResponseEncrypted | written, not run |
-| Fragment → POST, history cleanup (browser) | PWA `entry.spec.ts` | written, not run |
-| Contract | TestHealthOpenApiValidation + TestGuestContractConformance | written, not run |
+| ACC-001 hashed tokens, multi-diner exchange | TestCapabilityExchangeMultipleDiners, TestTokensStoredHashedOnly | passed (M0 gate) |
+| ACC-A2 rotation invalidates derived sessions | TestRotationRevokesDerivedSessions | passed (M0 gate) |
+| ACC-001 revocation, wrong kind, expiry | TestRevokedExpiredAndWrongKindRejected | passed (M0 gate) |
+| ACC-004 Origin, cookie isolation | TestGuestRoutesRequirePwaOrigin, TestCookieKindsAreIsolated | passed (M0 gate) |
+| ACC-004 throttling | TestCapabilityExchangeRateLimited | passed (M0 gate) |
+| Anonymous bootstrap | TestAnonymousSessionReuse | passed (M0 gate) |
+| Idempotency: same key concurrent → one result | TestIdempotencyConcurrentSameKey | passed (M0 gate) |
+| Idempotency: different body conflict, replay, rollback | TestIdempotencyConflictReplayRollback | passed (M0 gate) |
+| Replay encrypted at rest | TestIdempotencyResponseEncrypted | passed (M0 gate) |
+| Fragment → POST, history cleanup (browser) | PWA `entry.spec.ts` | passed (M0 gate) |
+| Contract | TestHealthOpenApiValidation + TestGuestContractConformance | passed (M0 gate) |
 
 ## Final decisions
 
-Filled in at the M0 gate.
+Implemented as planned. Gate fixes are listed in [review](review.md).

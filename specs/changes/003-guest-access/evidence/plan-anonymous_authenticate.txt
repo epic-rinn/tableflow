@@ -1,0 +1,10 @@
+Index Scan using anonymous_sessions_token_hash_key on anonymous_sessions  (cost=0.42..8.44 rows=1 width=24) (actual time=0.008..0.009 rows=0.00 loops=1)
+  Index Cond: (token_hash = sha256(convert_to('anon-3'::text, 'UTF8'::name)))
+  Filter: (expires_at > now())
+  Rows Removed by Filter: 1
+  Index Searches: 1
+  Buffers: shared hit=4
+Planning:
+  Buffers: shared hit=137
+Planning Time: 0.265 ms
+Execution Time: 0.017 ms

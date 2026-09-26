@@ -1,0 +1,18 @@
+LockRows  (cost=0.84..16.91 rows=1 width=74) (actual time=0.022..0.024 rows=1.00 loops=1)
+  Buffers: shared hit=10
+  ->  Nested Loop  (cost=0.84..16.90 rows=1 width=74) (actual time=0.011..0.011 rows=1.00 loops=1)
+        Buffers: shared hit=8
+        ->  Index Scan using guest_sessions_pkey on guest_sessions g  (cost=0.42..8.45 rows=1 width=34) (actual time=0.007..0.007 rows=1.00 loops=1)
+              Index Cond: (id = '0198f0c0-0000-7000-8000-00000000abcd'::uuid)
+              Filter: ((revoked_at IS NULL) AND (expires_at > now()))
+              Index Searches: 1
+              Buffers: shared hit=4
+        ->  Index Scan using capabilities_pkey on capabilities c  (cost=0.42..8.45 rows=1 width=64) (actual time=0.002..0.002 rows=1.00 loops=1)
+              Index Cond: (id = g.capability_id)
+              Filter: ((revoked_at IS NULL) AND (generation = g.generation) AND ((expires_at IS NULL) OR (expires_at > now())))
+              Index Searches: 1
+              Buffers: shared hit=4
+Planning:
+  Buffers: shared hit=450
+Planning Time: 0.363 ms
+Execution Time: 0.037 ms

@@ -428,3 +428,30 @@ func TestGuestRevalidateBlocksOnRotation(t *testing.T) {
 		t.Fatalf("guest valid after rotation: %v", err)
 	}
 }
+
+// TestStaleAnonymousCookieKeepsGuestSession: rejecting an expired anonymous
+// cookie clears only that cookie, never the diner's guest session.
+func TestStaleAnonymousCookieKeepsGuestSession(t *testing.T) {
+	e := newEnv(t)
+	h := access.NewHTTP(access.NewService(e.pool), []string{pwaOrigin}, nil, quiet)
+	probe := httptest.NewServer(h.RequireAnonymous(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(204) }))
+	defer probe.Close()
+	r, _ := http.NewRequest("GET", probe.URL, nil)
+	r.Header.Set("Cookie", access.AnonymousCookie+"=stale; "+access.GuestCookie+"=keep")
+	res, err := http.DefaultClient.Do(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	res.Body.Close()
+	if res.StatusCode != 401 {
+		t.Fatalf("status %d", res.StatusCode)
+	}
+	for _, c := range res.Cookies() {
+		if c.Name == access.GuestCookie {
+			t.Fatalf("guest cookie cleared: %v", c)
+		}
+	}
+	if !strings.Contains(res.Header.Get("Set-Cookie"), access.AnonymousCookie+"=") {
+		t.Fatalf("stale anonymous cookie not cleared: %q", res.Header.Get("Set-Cookie"))
+	}
+}

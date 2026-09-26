@@ -1,0 +1,16 @@
+Update on guest_sessions  (cost=8.73..16.75 rows=0 width=0) (actual time=0.105..0.106 rows=0.00 loops=1)
+  Buffers: shared hit=52
+  InitPlan 1
+    ->  Index Scan using capabilities_token_hash_key on capabilities  (cost=0.42..8.44 rows=1 width=16) (actual time=0.008..0.008 rows=1.00 loops=1)
+          Index Cond: (token_hash = sha256(convert_to('cap-live-8'::text, 'UTF8'::name)))
+          Index Searches: 1
+          Buffers: shared hit=4
+  ->  Index Scan using guest_sessions_active_by_capability on guest_sessions  (cost=0.29..8.31 rows=1 width=14) (actual time=0.020..0.021 rows=2.00 loops=1)
+        Index Cond: (capability_id = (InitPlan 1).col1)
+        Filter: (revoked_at IS NULL)
+        Index Searches: 1
+        Buffers: shared hit=7
+Planning:
+  Buffers: shared hit=205
+Planning Time: 0.300 ms
+Execution Time: 0.131 ms

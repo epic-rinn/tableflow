@@ -1,0 +1,8 @@
+Index Scan using member_accounts_email_key on member_accounts  (cost=0.41..8.43 rows=1 width=36) (actual time=0.015..0.016 rows=1.00 loops=1)
+  Index Cond: (email = 'm777@perf.test'::text)
+  Index Searches: 1
+  Buffers: shared hit=4
+Planning:
+  Buffers: shared hit=93
+Planning Time: 0.121 ms
+Execution Time: 0.033 ms

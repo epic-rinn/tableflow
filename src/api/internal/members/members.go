@@ -42,6 +42,8 @@ const (
 	loginPerEmail    = 10
 	loginPerIP       = 100
 	signupPerIP      = 20
+	signupPerEmail   = 5 // bounds "account exists" notices to one mailbox
+	resendPerIP      = 30
 	resetPerEmail    = 5
 	resetPerIP       = 30
 	resendPerEmail   = 5
@@ -119,6 +121,9 @@ func (s *Service) Signup(ctx context.Context, email, pw, locale string, ip netip
 	if err := s.limiter.Hit(ctx, throttle.IPKey("member-signup:ip", ip), signupPerIP, window); err != nil {
 		return err
 	}
+	if err := s.limiter.Hit(ctx, throttle.HashedKey("member-signup:email", norm), signupPerEmail, window); err != nil {
+		return err
+	}
 	hash, err := s.hasher.Hash(ctx, pw)
 	if err != nil {
 		return err
@@ -150,10 +155,13 @@ func (s *Service) Signup(ctx context.Context, email, pw, locale string, ip netip
 
 // ResendVerification emails a fresh verification link to an unverified
 // account. Always succeeds from the caller's perspective.
-func (s *Service) ResendVerification(ctx context.Context, email string) error {
+func (s *Service) ResendVerification(ctx context.Context, email string, ip netip.Addr) error {
 	norm, ok := identity.NormalizeEmail(email)
 	if !ok {
 		return &ValidationError{Fields: map[string]string{"email": "must be a valid email address"}}
+	}
+	if err := s.limiter.Hit(ctx, throttle.IPKey("member-resend:ip", ip), resendPerIP, window); err != nil {
+		return err
 	}
 	if err := s.limiter.Hit(ctx, throttle.HashedKey("member-resend:email", norm), resendPerEmail, window); err != nil {
 		return err

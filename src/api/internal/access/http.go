@@ -89,6 +89,12 @@ func (h *HTTP) RequireAnonymous(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 		a, err := h.svc.AuthenticateAnonymous(r.Context(), c.Value)
+		if errors.Is(err, ErrUnauthenticated) {
+			// Clear only the anonymous cookie; a guest session is unaffected.
+			setCookie(w, AnonymousCookie, "", time.Time{})
+			httpx.WriteError(w, r, http.StatusUnauthorized, "UNAUTHENTICATED", "Reload the page to continue")
+			return
+		}
 		if err != nil {
 			h.fail(w, r, err)
 			return

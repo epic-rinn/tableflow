@@ -1,0 +1,9 @@
+Index Scan using capabilities_token_hash_key on capabilities  (cost=0.42..8.45 rows=1 width=60) (actual time=0.010..0.012 rows=1.00 loops=1)
+  Index Cond: (token_hash = sha256(convert_to('cap-live-8'::text, 'UTF8'::name)))
+  Filter: ((revoked_at IS NULL) AND (kind = 'visit'::text) AND ((expires_at IS NULL) OR (expires_at > now())))
+  Index Searches: 1
+  Buffers: shared hit=4
+Planning:
+  Buffers: shared hit=160
+Planning Time: 0.280 ms
+Execution Time: 0.024 ms

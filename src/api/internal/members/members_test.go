@@ -330,6 +330,15 @@ func TestMemberRateLimits(t *testing.T) {
 	if r := e.req("POST", "/api/v1/members/password-reset/request", map[string]any{"email": "r@example.com"}, ""); r.status != 429 {
 		t.Fatalf("reset request not limited: %d", r.status)
 	}
+	for range 5 {
+		e.req("POST", "/api/v1/members", map[string]any{"email": "victim@example.com", "password": pw, "locale": "en"}, "", "X-Forwarded-For", "198.51.100.30")
+	}
+	if r := e.req("POST", "/api/v1/members", map[string]any{"email": "victim@example.com", "password": pw, "locale": "en"}, "", "X-Forwarded-For", "198.51.100.31"); r.status != 429 {
+		t.Fatalf("per-email signup limit missing: %d", r.status)
+	}
+	if n := len(e.mail.Messages("victim@example.com")); n != 5 {
+		t.Fatalf("victim received %d emails, want 5", n)
+	}
 	for i := range 20 {
 		e.req("POST", "/api/v1/members", map[string]any{"email": fmt.Sprintf("s%d@example.com", i), "password": pw, "locale": "en"}, "", "X-Forwarded-For", "198.51.100.20")
 	}
