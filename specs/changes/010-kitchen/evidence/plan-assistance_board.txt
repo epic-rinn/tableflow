@@ -1,0 +1,22 @@
+Limit  (cost=0.70..348.36 rows=33 width=112) (actual time=0.023..0.068 rows=30.00 loops=1)
+  Buffers: shared hit=186
+  ->  Nested Loop  (cost=0.70..348.36 rows=33 width=112) (actual time=0.022..0.065 rows=30.00 loops=1)
+        Buffers: shared hit=186
+        ->  Nested Loop  (cost=0.56..343.07 rows=33 width=123) (actual time=0.012..0.032 rows=30.00 loops=1)
+              Buffers: shared hit=123
+              ->  Index Scan using assistance_board on assistance_requests a  (cost=0.14..68.72 rows=33 width=107) (actual time=0.006..0.009 rows=30.00 loops=1)
+                    Index Cond: (branch_id = '00000000-0000-7000-8000-0000000000c1'::uuid)
+                    Index Searches: 1
+                    Buffers: shared hit=3
+              ->  Index Scan using visits_pkey on visits v  (cost=0.42..8.31 rows=1 width=32) (actual time=0.001..0.001 rows=1.00 loops=30)
+                    Index Cond: (id = a.visit_id)
+                    Index Searches: 30
+                    Buffers: shared hit=120
+        ->  Index Scan using dining_tables_branch_id_id_key on dining_tables t  (cost=0.14..0.16 rows=1 width=21) (actual time=0.001..0.001 rows=1.00 loops=30)
+              Index Cond: (id = v.table_id)
+              Index Searches: 30
+              Buffers: shared hit=63
+Planning:
+  Buffers: shared hit=390
+Planning Time: 0.444 ms
+Execution Time: 0.095 ms

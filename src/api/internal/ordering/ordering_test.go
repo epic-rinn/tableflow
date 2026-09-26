@@ -31,7 +31,7 @@ func setup(t *testing.T) *fixture {
 		"categories": []map[string]any{{"name_th": "อาหาร", "name_en": "Food", "items": []map[string]any{
 			{"name_th": "ผัดไทย", "name_en": "Pad Thai", "price_satang": 12000, "option_groups": []map[string]any{
 				{"name_th": "เนื้อ", "name_en": "Protein", "min_choices": 1, "max_choices": 1, "options": []map[string]any{opt("ไก่", "Chicken", 0), opt("กุ้ง", "Shrimp", 3000)}},
-				{"name_th": "เพิ่ม", "name_en": "Extras", "min_choices": 0, "max_choices": 2, "options": []map[string]any{opt("ไข่", "Egg", 1000)}},
+				{"name_th": "เพิ่ม", "name_en": "Extras", "min_choices": 0, "max_choices": 2, "options": []map[string]any{opt("ไข่", "Egg", 1000), opt("ถั่ว", "Peanuts", 500)}},
 			}},
 			{"name_th": "ชาไทย", "name_en": "Thai Tea", "price_satang": 6000, "option_groups": []map[string]any{}},
 		}}},

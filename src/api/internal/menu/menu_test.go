@@ -220,4 +220,13 @@ func TestMenuBrowseBatched(t *testing.T) {
 	if r := e.Do("GET", "/api/v1/branches/0198f0c0-0000-7000-8000-000000000000/menu", "", "", "", nil); r.Status != 404 {
 		t.Fatalf("unknown branch: %d", r.Status)
 	}
+	// Category split: every category listed, items only for the chosen one.
+	cat := pub.Str("categories", 2, "id")
+	one := e.Do("GET", "/api/v1/branches/"+e.Branch+"/menu?category_id="+cat, "", "", "", nil)
+	if one.Status != 200 || one.Len("categories") != 5 || one.Len("categories", 2, "items") != 20 || one.Len("categories", 0, "items") != 0 {
+		t.Fatalf("category split: %d", one.Status)
+	}
+	if len(one.Raw)*3 > len(pub.Raw) {
+		t.Fatalf("category response %d bytes is not much smaller than the full %d", len(one.Raw), len(pub.Raw))
+	}
 }

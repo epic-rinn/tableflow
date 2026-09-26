@@ -1,10 +1,13 @@
 package menu
 
 import (
+	"compress/gzip"
 	"context"
+	"encoding/json"
 	"errors"
 	"log/slog"
 	"net/http"
+	"strings"
 
 	"github.com/epic-rinn/tableflow/src/api/internal/identity"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/httpx"
@@ -68,9 +71,36 @@ func (h *HTTP) get(w http.ResponseWriter, r *http.Request) {
 		httpx.NotFound(w, r)
 		return
 	}
-	m, err := h.svc.Get(r.Context(), branch)
+	var category *string
+	if c := r.URL.Query().Get("category_id"); c != "" {
+		if !validID(c) {
+			httpx.ValidationError(w, r, map[string]string{"category_id": "must be a category ID"})
+			return
+		}
+		category = &c
+	}
+	m, err := h.svc.Get(r.Context(), branch, category)
 	if err != nil {
 		h.fail(w, r, err)
+		return
+	}
+	// The menu is large and holds no secrets, so it is safe to compress
+	// (BREACH needs a secret next to attacker input; other routes stay raw).
+	if strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
+		body, err := json.Marshal(m)
+		if err != nil {
+			h.fail(w, r, err)
+			return
+		}
+		h := w.Header()
+		h.Set("Content-Type", "application/json; charset=utf-8")
+		h.Set("Cache-Control", "no-store")
+		h.Set("Content-Encoding", "gzip")
+		h.Add("Vary", "Accept-Encoding")
+		w.WriteHeader(http.StatusOK)
+		gz := gzip.NewWriter(w)
+		_, _ = gz.Write(append(body, '\n'))
+		_ = gz.Close()
 		return
 	}
 	httpx.WriteJSON(w, http.StatusOK, m)

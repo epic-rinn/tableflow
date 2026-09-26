@@ -1,0 +1,10 @@
+Aggregate  (cost=8.73..8.74 rows=1 width=16) (actual time=0.021..0.021 rows=1.00 loops=1)
+  Buffers: shared hit=15
+  ->  Index Scan using order_lines_by_visit on order_lines  (cost=0.42..8.60 rows=10 width=19) (actual time=0.007..0.015 rows=12.00 loops=1)
+        Index Cond: (visit_id = '01a0ddbb-78b4-7ac1-96cd-23c36c85b438'::uuid)
+        Index Searches: 1
+        Buffers: shared hit=15
+Planning:
+  Buffers: shared hit=161
+Planning Time: 0.182 ms
+Execution Time: 0.043 ms

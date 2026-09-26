@@ -1,0 +1,12 @@
+Sort  (cost=69.29..69.36 rows=30 width=148) (actual time=0.032..0.034 rows=12.00 loops=1)
+  Sort Key: created_at, id
+  Sort Method: quicksort  Memory: 26kB
+  Buffers: shared hit=27
+  ->  Index Scan using order_lines_by_order on order_lines  (cost=0.42..68.55 rows=30 width=148) (actual time=0.009..0.022 rows=12.00 loops=1)
+        Index Cond: (order_id = ANY ('{01a0dde7-4a57-78f2-946e-26391b1e7958,01a0dde7-4a57-76c1-ba2c-6d129af81c6b,01a0dde7-4a57-7448-bd3b-e3d2355c50ac}'::uuid[]))
+        Index Searches: 3
+        Buffers: shared hit=21
+Planning:
+  Buffers: shared hit=169
+Planning Time: 0.170 ms
+Execution Time: 0.048 ms

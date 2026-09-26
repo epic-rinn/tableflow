@@ -35,11 +35,11 @@ test.describe.serial("kitchen", () => {
   test("sold-out toggle and menu editor", async ({ page }) => {
     await signIn(page);
     await page.goto("/kitchen");
-    const toggle = page.getByLabel("Sold out: กาแฟเย็น (Iced Coffee)");
-    await toggle.check();
-    await expect(toggle).toBeChecked();
-    await toggle.uncheck();
-    await expect(toggle).not.toBeChecked();
+    const availability = page.getByRole("region", { name: "Availability" });
+    await availability.getByRole("button", { name: "Mark Iced Coffee sold out" }).click();
+    await expect(availability.getByRole("button", { name: "Mark Iced Coffee available" })).toBeVisible();
+    await availability.getByRole("button", { name: "Mark Iced Coffee available" }).click();
+    await expect(availability.getByRole("button", { name: "Mark Iced Coffee sold out" })).toBeVisible();
 
     await page.goto("/menu");
     await expect(page.getByText(/Revision \d+/)).toBeVisible();

@@ -1,0 +1,11 @@
+Sort  (cost=38.66..39.91 rows=500 width=82) (actual time=0.113..0.126 rows=500.00 loops=1)
+  Sort Key: sort, id
+  Sort Method: quicksort  Memory: 76kB
+  Buffers: shared hit=16
+  ->  Seq Scan on menu_items  (cost=0.00..16.25 rows=500 width=82) (actual time=0.007..0.056 rows=500.00 loops=1)
+        Filter: ((retired_at IS NULL) AND (branch_id = '00000000-0000-7000-8000-0000000000c1'::uuid))
+        Buffers: shared hit=10
+Planning:
+  Buffers: shared hit=144
+Planning Time: 0.150 ms
+Execution Time: 0.166 ms

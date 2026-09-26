@@ -119,7 +119,7 @@ type querier interface {
 }
 
 // load reads the active menu in four statements.
-func load(ctx context.Context, db querier, branchID string) (Menu, error) {
+func load(ctx context.Context, db querier, branchID string, category *string) (Menu, error) {
 	m := Menu{BranchID: branchID, Currency: "THB", Categories: []Category{}}
 	err := db.QueryRow(ctx, q("menu_revision"), branchID).Scan(&m.Revision)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -138,7 +138,7 @@ func load(ctx context.Context, db querier, branchID string) (Menu, error) {
 	if err != nil {
 		return Menu{}, err
 	}
-	rows, err = db.Query(ctx, q("items"), branchID)
+	rows, err = db.Query(ctx, q("items"), branchID, category)
 	if err != nil {
 		return Menu{}, err
 	}
@@ -150,7 +150,7 @@ func load(ctx context.Context, db querier, branchID string) (Menu, error) {
 		return Menu{}, err
 	}
 	groups := map[string][]OptionGroup{} // item → groups in order
-	rows, err = db.Query(ctx, q("groups_options"), branchID)
+	rows, err = db.Query(ctx, q("groups_options"), branchID, category)
 	if err != nil {
 		return Menu{}, err
 	}
@@ -194,7 +194,9 @@ func load(ctx context.Context, db querier, branchID string) (Menu, error) {
 }
 
 // Get returns the public active menu (no authentication; no private data).
-func (s *Service) Get(ctx context.Context, branchID string) (Menu, error) {
+// With category set, all categories are listed but only that category's
+// items are returned (the HTTP contract's split for large menus).
+func (s *Service) Get(ctx context.Context, branchID string, category *string) (Menu, error) {
 	var exists bool
 	if err := s.pool.QueryRow(ctx, "SELECT EXISTS (SELECT 1 FROM branches WHERE id = $1)", branchID).Scan(&exists); err != nil {
 		return Menu{}, err
@@ -202,7 +204,7 @@ func (s *Service) Get(ctx context.Context, branchID string) (Menu, error) {
 	if !exists {
 		return Menu{}, ErrNotFound
 	}
-	return load(ctx, s.pool, branchID)
+	return load(ctx, s.pool, branchID, category)
 }
 
 // --- replacement -------------------------------------------------------
@@ -370,7 +372,7 @@ func (s *Service) Replace(ctx context.Context, p identity.Principal, branchID st
 		if _, err := tx.Exec(ctx, q("items_lock"), branchID); err != nil {
 			return err
 		}
-		current, err := load(ctx, tx, branchID)
+		current, err := load(ctx, tx, branchID, nil)
 		if err != nil {
 			return err
 		}
@@ -384,7 +386,7 @@ func (s *Service) Replace(ctx context.Context, p identity.Principal, branchID st
 			ResourceType: "menu", ResourceID: branchID, RequestID: requestID, Details: map[string]any{"revision": newRev}}); err != nil {
 			return err
 		}
-		out, err = load(ctx, tx, branchID)
+		out, err = load(ctx, tx, branchID, nil)
 		return err
 	})
 	return out, err

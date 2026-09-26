@@ -29,15 +29,21 @@ export function QrEntry({ kind }: { kind: CapabilityKind }) {
   const exchanged = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!token || exchanged.current === token) return; // StrictMode re-runs effects in dev
+    if (token === null || exchanged.current === token) return; // StrictMode re-runs effects in dev
     exchanged.current = token;
     let cancelled = false;
-    void api<GuestSession>("/sessions/capability", { method: "POST", body: { token, kind } }).then((res) => {
+    // No fragment (reload, reopened app): resume this phone's existing guest
+    // session for this kind of page, if any; otherwise exchange the token.
+    const request = token
+      ? api<GuestSession>("/sessions/capability", { method: "POST", body: { token, kind } })
+      : api<GuestSession>("/sessions/guest");
+    void request.then((res) => {
       if (cancelled) return;
-      setResult({
-        token,
-        state: res.ok ? { step: "connected", session: res.data } : { step: "failed", message: res.error.message },
-      });
+      let next: State;
+      if (res.ok && res.data.kind === kind) next = { step: "connected", session: res.data };
+      else if (!token) next = { step: "missing" };
+      else next = { step: "failed", message: res.ok ? "This QR code is for a different page." : res.error.message };
+      setResult({ token, state: next });
     });
     return () => {
       cancelled = true;
@@ -45,13 +51,7 @@ export function QrEntry({ kind }: { kind: CapabilityKind }) {
   }, [token, kind]);
 
   const state: State =
-    token === null
-      ? { step: "reading" }
-      : token === ""
-        ? { step: "missing" }
-        : result?.token === token
-          ? result.state
-          : { step: "exchanging" };
+    token === null ? { step: "reading" } : result?.token === token ? result.state : { step: "exchanging" };
   const copy = COPY[kind];
   return (
     <main>

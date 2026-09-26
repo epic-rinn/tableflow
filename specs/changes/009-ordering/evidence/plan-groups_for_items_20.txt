@@ -1,0 +1,21 @@
+Hash Right Join  (cost=31.28..119.19 rows=120 width=136) (actual time=0.029..0.302 rows=120.00 loops=1)
+  Hash Cond: (o.group_id = g.id)
+  Buffers: shared hit=54
+  ->  Seq Scan on menu_options o  (cost=0.00..80.00 rows=3000 width=76) (actual time=0.004..0.165 rows=3000.00 loops=1)
+        Filter: (retired_at IS NULL)
+        Buffers: shared hit=50
+  ->  Hash  (cost=30.78..30.78 rows=40 width=76) (actual time=0.019..0.019 rows=40.00 loops=1)
+        Buckets: 1024  Batches: 1  Memory Usage: 13kB
+        Buffers: shared hit=4
+        ->  Bitmap Heap Scan on option_groups g  (cost=13.18..30.78 rows=40 width=76) (actual time=0.011..0.015 rows=40.00 loops=1)
+              Recheck Cond: ((item_id = ANY ('{01a0dde7-30cc-71f3-a987-c1c214de69ed,01a0dde7-30cc-7483-a5d1-412ee6fb1cc5,01a0dde7-30cc-749f-bf84-bcea10bbcb62,01a0dde7-30cc-74aa-995d-965a5baa7b3c,01a0dde7-30cc-74b6-8a4b-f692dfda756d,01a0dde7-30cc-74bf-9777-abc0ca0847e9,01a0dde7-30cc-74c8-adb9-d758cb021fd3,01a0dde7-30cc-74d1-842c-cdc2233254f1,01a0dde7-30cc-74d9-afb8-cb2578dd6980,01a0dde7-30cc-74e1-8483-6f69c89e414b,01a0dde7-30cc-74ec-8d1e-a06807c7912a,01a0dde7-30cc-74f5-9795-b6ef2b6c58a1,01a0dde7-30cc-74fd-9ad7-b646bc6cd36b,01a0dde7-30cc-7528-a0c0-4b3e748b75b9,01a0dde7-30cc-7539-90ef-99e2ea154871,01a0dde7-30cc-7542-b448-68361f3fab01,01a0dde7-30cc-754a-a0b0-39001c5054d4,01a0dde7-30cc-7552-9942-ca1b862e6fdd,01a0dde7-30cc-755a-9b12-6cffc3c695c2,01a0dde7-30cc-7562-bad3-7db6193b12bd}'::uuid[])) AND (retired_at IS NULL))
+              Heap Blocks: exact=2
+              Buffers: shared hit=4
+              ->  Bitmap Index Scan on option_groups_by_item  (cost=0.00..13.12 rows=40 width=0) (actual time=0.007..0.007 rows=40.00 loops=1)
+                    Index Cond: (item_id = ANY ('{01a0dde7-30cc-71f3-a987-c1c214de69ed,01a0dde7-30cc-7483-a5d1-412ee6fb1cc5,01a0dde7-30cc-749f-bf84-bcea10bbcb62,01a0dde7-30cc-74aa-995d-965a5baa7b3c,01a0dde7-30cc-74b6-8a4b-f692dfda756d,01a0dde7-30cc-74bf-9777-abc0ca0847e9,01a0dde7-30cc-74c8-adb9-d758cb021fd3,01a0dde7-30cc-74d1-842c-cdc2233254f1,01a0dde7-30cc-74d9-afb8-cb2578dd6980,01a0dde7-30cc-74e1-8483-6f69c89e414b,01a0dde7-30cc-74ec-8d1e-a06807c7912a,01a0dde7-30cc-74f5-9795-b6ef2b6c58a1,01a0dde7-30cc-74fd-9ad7-b646bc6cd36b,01a0dde7-30cc-7528-a0c0-4b3e748b75b9,01a0dde7-30cc-7539-90ef-99e2ea154871,01a0dde7-30cc-7542-b448-68361f3fab01,01a0dde7-30cc-754a-a0b0-39001c5054d4,01a0dde7-30cc-7552-9942-ca1b862e6fdd,01a0dde7-30cc-755a-9b12-6cffc3c695c2,01a0dde7-30cc-7562-bad3-7db6193b12bd}'::uuid[]))
+                    Index Searches: 1
+                    Buffers: shared hit=2
+Planning:
+  Buffers: shared hit=324
+Planning Time: 0.327 ms
+Execution Time: 0.330 ms

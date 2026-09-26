@@ -105,9 +105,11 @@ function SoldOutToggles({ branchId }: { branchId: string }) {
       <ul>
         {items.map((i) => (
           <li key={`${i.id}:${i.version}`}>
-            <label>
-              <input type="checkbox" checked={i.sold_out} onChange={(e) => void toggle(i.id, i.version, e.target.checked)} /> Sold out: {i.name_th} ({i.name_en})
-            </label>
+            {i.name_th} ({i.name_en}): <strong>{i.sold_out ? "sold out" : "available"}</strong>{" "}
+            {/* The state shown is the server's; the button states the action. */}
+            <button type="button" onClick={() => void toggle(i.id, i.version, !i.sold_out)}>
+              {i.sold_out ? `Mark ${i.name_en} available` : `Mark ${i.name_en} sold out`}
+            </button>
           </li>
         ))}
       </ul>

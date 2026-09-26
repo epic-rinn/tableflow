@@ -1,0 +1,11 @@
+LockRows  (cost=0.27..13.14 rows=20 width=65) (actual time=0.021..0.027 rows=20.00 loops=1)
+  Buffers: shared hit=23
+  ->  Index Scan using menu_items_pkey on menu_items  (cost=0.27..12.95 rows=20 width=65) (actual time=0.011..0.013 rows=20.00 loops=1)
+        Index Cond: (id = ANY ('{01a0dde7-30cc-71f3-a987-c1c214de69ed,01a0dde7-30cc-7483-a5d1-412ee6fb1cc5,01a0dde7-30cc-749f-bf84-bcea10bbcb62,01a0dde7-30cc-74aa-995d-965a5baa7b3c,01a0dde7-30cc-74b6-8a4b-f692dfda756d,01a0dde7-30cc-74bf-9777-abc0ca0847e9,01a0dde7-30cc-74c8-adb9-d758cb021fd3,01a0dde7-30cc-74d1-842c-cdc2233254f1,01a0dde7-30cc-74d9-afb8-cb2578dd6980,01a0dde7-30cc-74e1-8483-6f69c89e414b,01a0dde7-30cc-74ec-8d1e-a06807c7912a,01a0dde7-30cc-74f5-9795-b6ef2b6c58a1,01a0dde7-30cc-74fd-9ad7-b646bc6cd36b,01a0dde7-30cc-7528-a0c0-4b3e748b75b9,01a0dde7-30cc-7539-90ef-99e2ea154871,01a0dde7-30cc-7542-b448-68361f3fab01,01a0dde7-30cc-754a-a0b0-39001c5054d4,01a0dde7-30cc-7552-9942-ca1b862e6fdd,01a0dde7-30cc-755a-9b12-6cffc3c695c2,01a0dde7-30cc-7562-bad3-7db6193b12bd}'::uuid[]))
+        Filter: (branch_id = '00000000-0000-7000-8000-0000000000c1'::uuid)
+        Index Searches: 1
+        Buffers: shared hit=3
+Planning:
+  Buffers: shared hit=130
+Planning Time: 0.149 ms
+Execution Time: 0.049 ms
