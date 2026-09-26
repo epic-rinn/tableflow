@@ -4,7 +4,7 @@ Runtime location: `src/pwa/`. Shell implemented in MVP-01; no customer features 
 
 The project has its own `package.json`, pnpm lockfile, TypeScript/Next.js config, `app/`, and Playwright smoke tests (dev port 3000). Add `features/<domain>` for UI behavior, `components/` for shared UI, `lib/api/` for contract-derived transport, and `public/` for static PWA assets only as needed. These paths are relative to `src/pwa/`.
 
-The browser calls same-origin `/api/v1`; Go owns business mutations. Environment variable `API_INTERNAL_URL` is server-only. Implemented screens: entrance join `/join/<branch_id>` (MVP-05), QR entry `/q` with live queue tracking and `/t` with the visit summary (MVP-03/05/06) and member account pages under `/account` (MVP-04); single-use tokens are read from the URL fragment by `lib/useFragmentToken.ts`. Commands: [setup](setup.md) (`make pwa-check`, `make smoke`). `proxy.ts` forwards `/api/v1/*` to `API_INTERNAL_URL` at request time.
+The browser calls same-origin `/api/v1`; Go owns business mutations. Environment variable `API_INTERNAL_URL` is server-only. Implemented screens: entrance join `/join/<branch_id>` (MVP-05), QR entry `/q` with live queue tracking and `/t` with menu, per-phone cart (sessionStorage per visit), shared orders and assistance (MVP-03/05/06/08–10) and member account pages under `/account` (MVP-04); single-use tokens are read from the URL fragment by `lib/useFragmentToken.ts`. Commands: [setup](setup.md) (`make pwa-check`, `make smoke`). `proxy.ts` forwards `/api/v1/*` to `API_INTERNAL_URL` at request time.
 
 This application contains guest queue, dining/order, bill-view, login, and loyalty screens. Staff queue management, kitchen, cashier, and manager functions belong to the separate admin application.
 

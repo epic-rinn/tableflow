@@ -1,6 +1,6 @@
 # Menu, orders, and kitchen
 
-Status: specified, unimplemented. Actors: dining guest, server, kitchen, manager.
+Status: specified; implemented in M2 (MVP-08–10), verification at the M2 gate. Actors: dining guest, server, kitchen, manager.
 
 ## Requirements
 

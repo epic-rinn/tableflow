@@ -1,6 +1,6 @@
 # MVP HTTP contract
 
-Status: design contract; health, identity, guest-session, member and queue/seating routes are implemented and their wire schemas live in [openapi.yaml](openapi.yaml). Base path: `/api/v1`. All routes below are relative to that base. Wire schemas move to OpenAPI per [architecture](../architecture/system.md) before their implementation.
+Status: design contract; health, identity, guest-session, member, queue/seating and menu/ordering/kitchen/assistance routes are implemented and their wire schemas live in [openapi.yaml](openapi.yaml). Base path: `/api/v1`. All routes below are relative to that base. Wire schemas move to OpenAPI per [architecture](../architecture/system.md) before their implementation.
 
 ## Common conventions
 
@@ -69,6 +69,8 @@ Implemented in M1 (MVP-05–07) with these additions: GET/PUT `/branches/{branch
 | POST `/visits/{visit_id}/assistance` | That visit guest/server | `{topic}` → unresolved request, coalescing duplicates; ORD-006 |
 | GET `/branches/{branch_id}/assistance` | Server | `state,limit,cursor` → assistance board |
 | POST `/assistance/{request_id}/transition` | Server | `{expected_version,to_state: acknowledged\|resolved}` → request |
+
+Implemented in M2 (MVP-08–10). `PUT /branches/{id}/menu` takes `expected_revision` and a nested category → item → group → option tree; `PATCH /menu-items/{id}/availability` uses the item version; `GET/POST /visits/{id}/assistance` serve the visit's guests. Wire schemas: [openapi.yaml](openapi.yaml).
 
 Menu responses are capped at the pilot's configured maximum 500 items, with bounded options per item. M0/ordering contract tests must validate a response-byte cap; do not silently truncate a menu. Split by category if the pilot exceeds that bound.
 

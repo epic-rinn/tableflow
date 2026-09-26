@@ -1,9 +1,9 @@
 # Tasks: 008-menu
 
-Status: in-progress (2026-09-26). Verification at the M2 gate (ADR-0004).
+Status: implemented-unverified (2026-09-26); M2 gate pending. Verification at the M2 gate (ADR-0004).
 
 - [x] Plan.
-- [ ] Migration, Go module, routes, OpenAPI.
-- [ ] Admin/PWA screens.
-- [ ] Tests written (compile checks only).
+- [x] Migration, Go module, routes, OpenAPI.
+- [x] Admin/PWA screens.
+- [x] Tests written (compile checks only).
 - [ ] M2 gate.

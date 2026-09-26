@@ -1,14 +1,11 @@
 import { Forbidden } from "@/components/Forbidden";
+import { KitchenBoard } from "@/components/kitchen/KitchenBoard";
 import { getSession } from "@/lib/api/server";
 
-export default async function Workspace() {
+export default async function KitchenPage() {
   const session = await getSession();
   if (session.state !== "authenticated") return null;
-  if (!session.identity.roles.includes("kitchen")) return <Forbidden />;
-  return (
-    <>
-      <h1>Kitchen</h1>
-      <p>This workspace is not available yet.</p>
-    </>
-  );
+  const { roles, branch_id } = session.identity;
+  if (!roles.includes("kitchen") && !roles.includes("manager")) return <Forbidden />;
+  return <KitchenBoard branchId={branch_id} isManager={roles.includes("manager")} />;
 }

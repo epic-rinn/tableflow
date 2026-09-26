@@ -43,6 +43,16 @@ WITH t AS (
 )
 INSERT INTO capabilities (branch_id, kind, resource_id, token_hash)
 SELECT branch_id, 'visit', id, sha256(convert_to(:'tok', 'UTF8')) FROM v;
+
+-- A two-item menu (revision 2).
+INSERT INTO menus (branch_id, revision) SELECT id, 2 FROM branches;
+WITH c AS (
+    INSERT INTO menu_categories (branch_id, name_th, name_en, sort)
+    SELECT id, 'เครื่องดื่ม', 'Drinks', 0 FROM branches RETURNING id, branch_id
+)
+INSERT INTO menu_items (branch_id, category_id, name_th, name_en, price_satang, sort, changed_revision)
+SELECT branch_id, id, 'ชาไทย', 'Thai Tea', 6000, 0, 2 FROM c
+UNION ALL SELECT branch_id, id, 'กาแฟเย็น', 'Iced Coffee', 7000, 1, 2 FROM c;
 SQL
 echo "E2E_VISIT_TOKEN=$visit_token"
 echo "E2E_BRANCH_ID=$(docker compose exec -T postgres psql -U tableflow_owner -d tableflow_e2e -Atc 'SELECT id FROM branches')"

@@ -65,3 +65,10 @@ td {
 .overdue { color: #b00020; }
 .freshness { font-size: 0.9rem; }
 .link-panel input { width: min(100%, 40rem); }
+
+.kitchen { display: grid; grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr)); gap: 0.75rem; list-style: none; padding: 0; }
+.kitchen-line { border: 1px solid currentColor; border-radius: 0.5rem; padding: 0.5rem; }
+.kitchen-line.submitted { border-width: 3px; }
+.note, .allergy-open { font-weight: bold; }
+.not-chargeable { text-decoration: line-through; }
+.menu-category, .menu-item, .menu-group { margin: 0.5rem 0; }

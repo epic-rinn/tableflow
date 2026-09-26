@@ -92,3 +92,28 @@ export type Visit = {
 
 export type SeatResult = { visit: Visit; dining: { token: string } };
 export type JoinResult = { ticket: Ticket; tracking: { token: string } };
+
+export type MenuOption = { id: string; name_th: string; name_en: string; price_delta_satang: number };
+export type MenuGroup = { id: string; name_th: string; name_en: string; min_choices: number; max_choices: number; options: MenuOption[] };
+export type MenuItem = { id: string; name_th: string; name_en: string; price_satang: number; sold_out: boolean; version: number; option_groups: MenuGroup[] };
+export type MenuCategory = { id: string; name_th: string; name_en: string; items: MenuItem[] };
+export type Menu = { branch_id: string; revision: number; currency: "THB"; categories: MenuCategory[] };
+
+export type OptionSnapshot = { group_name_en: string; name_th: string; name_en: string; price_delta_satang: number };
+export type LineState = "submitted" | "accepted" | "preparing" | "ready" | "served" | "rejected" | "cancelled";
+export type OrderLine = {
+  id: string; order_id: string; item_id: string; name_th: string; name_en: string; options: OptionSnapshot[];
+  unit_price_satang: number; quantity: number; line_total_satang: number; note: string | null;
+  state: LineState; chargeable: boolean; reason: string | null; version: number;
+};
+export type Order = { id: string; visit_id: string; actor: "guest" | "staff"; created_at: string; lines: OrderLine[] };
+export type OrdersPage = { items: Order[]; next_cursor: string | null; chargeable_total_satang: number; chargeable_lines: number; server_time: string };
+export type KitchenLine = {
+  id: string; order_id: string; visit_id: string; table_label: string; name_th: string; name_en: string;
+  options: OptionSnapshot[]; quantity: number; note: string | null; state: LineState; version: number; created_at: string;
+};
+export type KitchenPage = { items: KitchenLine[]; next_cursor: string | null; server_time: string };
+export type Assistance = {
+  id: string; visit_id: string; table_label: string; topic: "help" | "allergy" | "checkout"; note: string | null;
+  state: "open" | "acknowledged" | "resolved"; version: number; created_at: string; acknowledged_at: string | null; resolved_at: string | null;
+};

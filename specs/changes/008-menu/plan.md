@@ -1,6 +1,6 @@
 # Change: 008-menu — Menu management and browsing
 
-Status: in-progress. Date: 2026-09-26. Scope owner: Claude. Task: MVP-08. Verification: M2 gate ([ADR-0004](../../decisions/0004-milestone-verification.md)).
+Status: implemented-unverified. Date: 2026-09-26. Scope owner: Claude. Task: MVP-08. Verification: M2 gate ([ADR-0004](../../decisions/0004-milestone-verification.md)).
 
 ## Problem and behavior
 

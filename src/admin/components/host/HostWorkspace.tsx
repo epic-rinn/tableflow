@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { Freshness } from "@/components/Freshness";
 import { api, type ApiResult } from "@/lib/api/client";
 import {
+  type Assistance,
   NEED_LABELS,
   NEEDS,
   type JoinResult,
@@ -130,6 +131,8 @@ export function HostWorkspace({ branchId, isManager }: { branchId: string; isMan
           </button>
         </div>
       )}
+
+      <AssistanceBoard branchId={branchId} disabled={offline} />
 
       <AssistedJoin branchId={branchId} disabled={offline} onJoined={(r) => setLink({ label: `Ticket ${r.ticket.display_number} tracking link`, url: trackingLink(r.tracking.token) })} act={act} />
 
@@ -298,6 +301,9 @@ function TableCard({ table: t, tables, disabled, onSeatWalkIn, onReady, onMove, 
       )}
       {t.state === "occupied" && t.claim?.visit_id && (
         <div>
+          <p>
+            <a href={`/visits/${t.claim.visit_id}`}>Orders for {t.label}</a>
+          </p>
           <label>
             <span className="sr-only">Move table {t.label} to</span>
             <select value={moveTo} onChange={(e) => setDest(e.target.value)} disabled={disabled || free.length === 0}>
@@ -358,5 +364,41 @@ function OverrideForm({ description, onSubmit, onCancel }: { description: string
         Keep queue order
       </button>
     </form>
+  );
+}
+
+const TOPICS: Record<Assistance["topic"], string> = { help: "Help", allergy: "Allergy", checkout: "Bill please" };
+
+function AssistanceBoard({ branchId, disabled }: { branchId: string; disabled: boolean }) {
+  const run = useIdempotent();
+  const [notice, setNotice] = useState("");
+  const board = usePolling(
+    useCallback((signal: AbortSignal) => api<{ items: Assistance[] }>(`/branches/${branchId}/assistance`, { signal }), [branchId]),
+    POLL_MS,
+  );
+  async function move(a: Assistance, to: "acknowledged" | "resolved") {
+    const res = await run(`assist:${a.id}:${a.version}:${to}`, (key) =>
+      api(`/assistance/${a.id}/transition`, { method: "POST", key, body: { expected_version: a.version, to_state: to } }));
+    setNotice(res.ok ? "" : res.error.message);
+    board.refresh();
+  }
+  const items = board.data?.items ?? [];
+  return (
+    <section aria-labelledby="assist-board-title">
+      <h2 id="assist-board-title">Requests ({items.length})</h2>
+      {notice && <p role="alert">{notice}</p>}
+      <ul>
+        {items.map((a) => (
+          <li key={`${a.id}:${a.version}`} className={a.topic === "allergy" && a.state === "open" ? "allergy-open" : ""}>
+            <strong>{TOPICS[a.topic]}</strong> · table {a.table_label} · {a.state}
+            {a.note && ` · “${a.note}”`}{" "}
+            {a.state === "open" && (
+              <button type="button" disabled={disabled} onClick={() => void move(a, "acknowledged")}>Acknowledge</button>
+            )}{" "}
+            <button type="button" disabled={disabled} onClick={() => void move(a, "resolved")}>Resolve</button>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

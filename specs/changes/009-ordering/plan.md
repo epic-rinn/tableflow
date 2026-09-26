@@ -1,6 +1,6 @@
 # Change: 009-ordering — Shared-visit ordering
 
-Status: in-progress. Date: 2026-09-26. Scope owner: Claude. Task: MVP-09. Verification: M2 gate (ADR-0004).
+Status: implemented-unverified. Date: 2026-09-26. Scope owner: Claude. Task: MVP-09. Verification: M2 gate (ADR-0004).
 
 ## Problem and behavior
 

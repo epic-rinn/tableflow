@@ -34,8 +34,20 @@ export type Ticket = {
 
 export type Visit = {
   id: string;
+  branch_id: string;
   state: "open" | "paid" | "departed" | "closed";
   party_size: number;
   table: { id: string; label: string };
   version: number;
 };
+
+export type MenuOption = { id: string; name_th: string; name_en: string; price_delta_satang: number };
+export type MenuGroup = { id: string; name_th: string; name_en: string; min_choices: number; max_choices: number; options: MenuOption[] };
+export type MenuItem = { id: string; name_th: string; name_en: string; price_satang: number; sold_out: boolean; option_groups: MenuGroup[] };
+export type Menu = { branch_id: string; revision: number; categories: { id: string; name_th: string; name_en: string; items: MenuItem[] }[] };
+export type OrderLine = {
+  id: string; name_th: string; name_en: string; options: { name_th: string; name_en: string }[]; quantity: number;
+  line_total_satang: number; state: string; chargeable: boolean; reason: string | null;
+};
+export type OrdersPage = { items: { id: string; created_at: string; lines: OrderLine[] }[]; chargeable_total_satang: number };
+export type Assistance = { id: string; topic: "help" | "allergy" | "checkout"; state: "open" | "acknowledged" | "resolved"; note: string | null };

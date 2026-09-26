@@ -8,3 +8,8 @@ body {
   padding: 1.5rem 1rem;
   line-height: 1.5;
 }
+
+.not-chargeable { text-decoration: line-through; }
+.changed, .sold-out { opacity: 0.8; font-style: italic; }
+.small { font-size: 0.85rem; }
+fieldset { margin: 0.25rem 0; }
