@@ -1,6 +1,16 @@
 "use client";
 
+import { Info, Save } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { FieldError } from "@/components/common/AuthShell";
+import { Notice } from "@/components/common/Notice";
+import { PageHeader } from "@/components/common/PageHeader";
+import { StateBadge } from "@/components/common/StateBadge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { api } from "@/lib/api/client";
 import type { ChargePolicy } from "@/lib/api/types";
 import { bpToPercent, percentToBP } from "@/lib/money";
@@ -60,44 +70,62 @@ export function ChargePolicyEditor({ branchId }: { branchId: string }) {
 
   return (
     <>
-      <h1>Charges &amp; tax</h1>
-      <p>
-        Confirm every rate and the tax mode with the restaurant operator and their accountant before live use. TableFlow does not supply
-        statutory rates.
-      </p>
-      {notice && <p role={notice.role}>{notice.text}</p>}
-      {current && (
-        <p>{current.configured ? `Current version ${current.version}.` : "Not configured yet: bills carry no service charge or tax."}</p>
-      )}
-      <form onSubmit={(e) => void save(e)} noValidate>
-        <fieldset>
-          <legend>Menu prices are</legend>
-          <label>
-            <input type="radio" name="mode" checked={mode === "exclusive"} onChange={() => setMode("exclusive")} /> Before tax (tax added)
-          </label>
-          <label>
-            <input type="radio" name="mode" checked={mode === "inclusive"} onChange={() => setMode("inclusive")} /> Tax included
-          </label>
-        </fieldset>
+      <PageHeader title="Charges & tax" description="Versioned service charge and tax rates. Paid receipts never change."
+        actions={current && <StateBadge tone={current.configured ? "success" : "warning"} label={current.configured ? `Version ${current.version}` : "Not configured"} />} />
+      <div className="mb-4 flex gap-3 rounded-lg border border-info/30 bg-info-soft p-3 text-sm text-info">
+        <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
         <p>
-          <label>
-            Service charge (%){" "}
-            <input inputMode="decimal" value={service} aria-invalid={!!fields.service} aria-describedby="service-error"
-              onChange={(e) => setService(e.target.value)} />
-          </label>{" "}
-          {fields.service && <span id="service-error">{fields.service}</span>}
+          Confirm every rate and the tax mode with the restaurant operator and their accountant before live use. TableFlow does not supply
+          statutory rates.
         </p>
-        <p>
-          <label>
-            Tax (%){" "}
-            <input inputMode="decimal" value={tax} aria-invalid={!!fields.tax} aria-describedby="tax-error" onChange={(e) => setTax(e.target.value)} />
-          </label>{" "}
-          {fields.tax && <span id="tax-error">{fields.tax}</span>}
-        </p>
-        <button type="submit" disabled={!current}>
-          Save new version
-        </button>
-      </form>
+      </div>
+      <Notice notice={notice} className="mb-4" />
+      <Card className="max-w-xl">
+        <form onSubmit={(e) => void save(e)} noValidate className="grid gap-6">
+          <CardHeader>
+            <CardTitle>
+              <h2>Charge policy</h2>
+            </CardTitle>
+            {current && (
+              <CardDescription>
+                {current.configured ? `Current version ${current.version}.` : "Not configured yet: bills carry no service charge or tax."}
+              </CardDescription>
+            )}
+          </CardHeader>
+          <CardContent className="grid gap-6">
+            <fieldset className="grid gap-2">
+              <legend className="mb-2 text-sm font-medium">Menu prices are</legend>
+              <RadioGroup value={mode} onValueChange={(v) => setMode(v as "exclusive" | "inclusive")} className="grid gap-2 sm:grid-cols-2">
+                <Label className="flex cursor-pointer items-center gap-2 rounded-lg border p-3 font-normal has-data-[state=checked]:border-primary has-data-[state=checked]:bg-accent">
+                  <RadioGroupItem value="exclusive" /> Before tax (tax added)
+                </Label>
+                <Label className="flex cursor-pointer items-center gap-2 rounded-lg border p-3 font-normal has-data-[state=checked]:border-primary has-data-[state=checked]:bg-accent">
+                  <RadioGroupItem value="inclusive" /> Tax included
+                </Label>
+              </RadioGroup>
+            </fieldset>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-2">
+                <Label htmlFor="service-rate">Service charge (%)</Label>
+                <Input id="service-rate" inputMode="decimal" value={service} aria-invalid={!!fields.service}
+                  aria-describedby={fields.service ? "service-error" : undefined} onChange={(e) => setService(e.target.value)} />
+                <FieldError id="service-error" message={fields.service} />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="tax-rate">Tax (%)</Label>
+                <Input id="tax-rate" inputMode="decimal" value={tax} aria-invalid={!!fields.tax}
+                  aria-describedby={fields.tax ? "tax-error" : undefined} onChange={(e) => setTax(e.target.value)} />
+                <FieldError id="tax-error" message={fields.tax} />
+              </div>
+            </div>
+          </CardContent>
+          <CardFooter className="justify-end">
+            <Button type="submit" disabled={!current}>
+              <Save aria-hidden /> Save new version
+            </Button>
+          </CardFooter>
+        </form>
+      </Card>
     </>
   );
 }

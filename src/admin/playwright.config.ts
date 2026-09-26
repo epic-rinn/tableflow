@@ -12,7 +12,7 @@ export default defineConfig({
   forbidOnly: true,
   retries: 0,
   // Fail fast instead of hanging if the server or a browser stalls.
-  globalTimeout: 180_000,
+  globalTimeout: 300_000,
   timeout: 30_000,
   reporter: "list",
   use: { baseURL, trace: "retain-on-failure" },

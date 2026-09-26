@@ -1,5 +1,9 @@
 import type { Metadata, Viewport } from "next";
+import "@fontsource-variable/inter";
+import "@fontsource-variable/noto-sans-thai";
 import "./globals.css";
+import { ThemeProvider } from "@/components/ThemeProvider";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 export const metadata: Metadata = {
   title: "TableFlow Admin",
@@ -14,8 +18,12 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang="en" suppressHydrationWarning>
+      <body className="min-h-dvh font-sans">
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
+          <TooltipProvider>{children}</TooltipProvider>
+        </ThemeProvider>
+      </body>
     </html>
   );
 }

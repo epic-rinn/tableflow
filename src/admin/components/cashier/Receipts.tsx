@@ -1,7 +1,27 @@
 "use client";
 
+import { Search } from "lucide-react";
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { BillView, methodLabel } from "@/components/cashier/BillView";
+import { Notice, type NoticeValue } from "@/components/common/Notice";
+import { PageHeader } from "@/components/common/PageHeader";
+import { StateBadge } from "@/components/common/StateBadge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { api } from "@/lib/api/client";
 import type { Receipt, ReceiptPage, ReceiptSummary } from "@/lib/api/types";
 import { formatTHB } from "@/lib/money";
@@ -40,52 +60,64 @@ export function ReceiptList({ branchId }: { branchId: string }) {
 
   return (
     <>
-      <h1>Receipts</h1>
-      <form
-        role="search"
-        onSubmit={(e) => {
-          e.preventDefault();
-          void load(null, query.trim().toUpperCase());
-        }}
-      >
-        <label>
-          Receipt reference <input value={query} placeholder="R-XXXXXXXXXX" onChange={(e) => setQuery(e.target.value)} />
-        </label>{" "}
-        <button type="submit">Search</button>
-      </form>
-      {error && <p role="alert">{error}</p>}
-      <table>
-        <thead>
-          <tr>
-            <th scope="col">Receipt</th>
-            <th scope="col">Paid</th>
-            <th scope="col">Table</th>
-            <th scope="col">Method</th>
-            <th scope="col">Amount</th>
-            <th scope="col">Refund</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((r) => (
-            <tr key={r.id}>
-              <td>
-                <a href={`/receipts/${r.id}`}>{r.receipt_reference}</a>
-              </td>
-              <td>{dateTime.format(new Date(r.paid_at))}</td>
-              <td>{r.table_label}</td>
-              <td>{methodLabel(r.method)}</td>
-              <td>{formatTHB(r.amount_satang)}</td>
-              <td>{r.refunded ? "Refunded" : ""}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {items.length === 0 && !error && <p>No receipts found.</p>}
-      {cursor && (
-        <button type="button" onClick={() => void load(cursor, query.trim().toUpperCase())}>
-          Load older receipts
-        </button>
-      )}
+      <PageHeader title="Receipts" description="Paid bills, newest first. Receipts never change after payment." />
+      <Card>
+        <CardHeader>
+          <form
+            role="search"
+            className="flex flex-wrap items-end gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void load(null, query.trim().toUpperCase());
+            }}
+          >
+            <div className="grid gap-2">
+              <Label htmlFor="receipt-search">Receipt reference</Label>
+              <Input id="receipt-search" value={query} placeholder="R-XXXXXXXXXX" onChange={(e) => setQuery(e.target.value)} className="w-56 font-mono" />
+            </div>
+            <Button type="submit" variant="outline">
+              <Search aria-hidden /> Search
+            </Button>
+          </form>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <Notice notice={error ? { role: "alert", text: error } : null} />
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead scope="col">Receipt</TableHead>
+                <TableHead scope="col">Paid</TableHead>
+                <TableHead scope="col">Table</TableHead>
+                <TableHead scope="col">Method</TableHead>
+                <TableHead scope="col" className="text-right">Amount</TableHead>
+                <TableHead scope="col">Refund</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {items.map((r) => (
+                <TableRow key={r.id}>
+                  <TableCell>
+                    <Link href={`/receipts/${r.id}`} className="font-mono font-medium text-primary underline-offset-4 hover:underline">
+                      {r.receipt_reference}
+                    </Link>
+                  </TableCell>
+                  <TableCell>{dateTime.format(new Date(r.paid_at))}</TableCell>
+                  <TableCell>{r.table_label}</TableCell>
+                  <TableCell>{methodLabel(r.method)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{formatTHB(r.amount_satang)}</TableCell>
+                  <TableCell>{r.refunded ? <StateBadge state="refunded" label="Refunded" /> : ""}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          {items.length === 0 && !error && <p className="py-6 text-center text-sm text-muted-foreground">No receipts found.</p>}
+          {cursor && (
+            <Button type="button" variant="outline" className="justify-self-center" onClick={() => void load(cursor, query.trim().toUpperCase())}>
+              Load older receipts
+            </Button>
+          )}
+        </CardContent>
+      </Card>
     </>
   );
 }
@@ -94,9 +126,10 @@ export function ReceiptList({ branchId }: { branchId: string }) {
 export function ReceiptDetail({ id, isManager }: { id: string; isManager: boolean }) {
   const run = useIdempotent();
   const [receipt, setReceipt] = useState<Receipt | null>(null);
-  const [notice, setNotice] = useState<{ role: "alert" | "status"; text: string } | null>(null);
+  const [notice, setNotice] = useState<NoticeValue>(null);
   const [reason, setReason] = useState("");
   const [reference, setReference] = useState("");
+  const [confirming, setConfirming] = useState(false);
 
   const load = useCallback(async () => {
     const res = await api<Receipt>(`/settlements/${id}`);
@@ -109,8 +142,7 @@ export function ReceiptDetail({ id, isManager }: { id: string; isManager: boolea
     void load();
   }, [load]);
 
-  async function refund(e: React.FormEvent) {
-    e.preventDefault();
+  async function refund() {
     const body = { reason: reason.trim(), external_reference: reference.trim() };
     const res = await run(`refund:${id}`, (key) => api<Receipt>(`/settlements/${id}/refund`, { method: "POST", key, body }));
     if (res.ok) {
@@ -127,57 +159,92 @@ export function ReceiptDetail({ id, isManager }: { id: string; isManager: boolea
     }
   }
 
-  if (!receipt) return notice ? <p role={notice.role}>{notice.text}</p> : <p>Loading receipt…</p>;
+  if (!receipt) return notice ? <Notice notice={notice} /> : <p role="status" className="text-sm text-muted-foreground">Loading receipt…</p>;
+  const facts: [string, React.ReactNode][] = [
+    ["Table", receipt.table_label],
+    ["Paid", dateTime.format(new Date(receipt.paid_at))],
+    ["Method", methodLabel(receipt.method)],
+    ["Amount recorded", formatTHB(receipt.amount_satang)],
+    ["Confirmed by", receipt.confirmed_by],
+    ["Verification", receipt.verification_note],
+    ...(receipt.external_reference ? ([["External reference", receipt.external_reference]] as [string, React.ReactNode][]) : []),
+  ];
   return (
     <>
-      <h1>Receipt {receipt.receipt_reference}</h1>
-      {notice && <p role={notice.role}>{notice.text}</p>}
-      <dl className="totals">
-        <dt>Table</dt>
-        <dd>{receipt.table_label}</dd>
-        <dt>Paid</dt>
-        <dd>{dateTime.format(new Date(receipt.paid_at))}</dd>
-        <dt>Method</dt>
-        <dd>{methodLabel(receipt.method)}</dd>
-        <dt>Amount recorded</dt>
-        <dd>{formatTHB(receipt.amount_satang)}</dd>
-        <dt>Confirmed by</dt>
-        <dd>{receipt.confirmed_by}</dd>
-        <dt>Verification</dt>
-        <dd>{receipt.verification_note}</dd>
-        {receipt.external_reference && (
-          <>
-            <dt>External reference</dt>
-            <dd>{receipt.external_reference}</dd>
-          </>
-        )}
-      </dl>
-      <h2>Bill at payment</h2>
-      <BillView lines={receipt.lines} policy={receipt.policy} totals={receipt} />
-      <h2>Refund</h2>
-      {receipt.refund ? (
-        <p>
-          Full refund of {formatTHB(receipt.refund.amount_satang)} recorded by {receipt.refund.recorded_by} on{" "}
-          {dateTime.format(new Date(receipt.refund.created_at))}. Reason: {receipt.refund.reason}. Reference: {receipt.refund.external_reference}.
-        </p>
-      ) : isManager ? (
-        <form onSubmit={(e) => void refund(e)}>
-          <p>Record a refund only after the full amount has been returned outside TableFlow. Partial refunds are not supported.</p>
-          <p>
-            <label>
-              Reason <input value={reason} maxLength={500} required onChange={(e) => setReason(e.target.value)} />
-            </label>
-          </p>
-          <p>
-            <label>
-              Refund reference <input value={reference} maxLength={200} required onChange={(e) => setReference(e.target.value)} />
-            </label>
-          </p>
-          <button type="submit">Record full refund of {formatTHB(receipt.amount_satang)}</button>
-        </form>
-      ) : (
-        <p>No refund. Only a manager can record one.</p>
-      )}
+      <PageHeader title={`Receipt ${receipt.receipt_reference}`}
+        description={<Link href="/receipts" className="underline-offset-4 hover:underline">← All receipts</Link>}
+        actions={receipt.refund ? <StateBadge state="refunded" label="Refunded" /> : <StateBadge state="paid" />} />
+      <Notice notice={notice} className="mb-4" />
+      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+        <Card role="region" aria-labelledby="bill-at-payment">
+          <CardHeader>
+            <CardTitle>
+              <h2 id="bill-at-payment">Bill at payment</h2>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <BillView lines={receipt.lines} policy={receipt.policy} totals={receipt} />
+          </CardContent>
+        </Card>
+        <div className="grid content-start gap-6">
+          <Card>
+            <CardContent>
+              <dl className="grid gap-3 text-sm">
+                {facts.map(([k, v]) => (
+                  <div key={k} className="grid gap-0.5">
+                    <dt className="text-xs text-muted-foreground">{k}</dt>
+                    <dd className="font-medium">{v}</dd>
+                  </div>
+                ))}
+              </dl>
+            </CardContent>
+          </Card>
+          <Card role="region" aria-labelledby="refund-title">
+            <CardHeader>
+              <CardTitle>
+                <h2 id="refund-title">Refund</h2>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm">
+              {receipt.refund ? (
+                <p>
+                  Full refund of {formatTHB(receipt.refund.amount_satang)} recorded by {receipt.refund.recorded_by} on{" "}
+                  {dateTime.format(new Date(receipt.refund.created_at))}. Reason: {receipt.refund.reason}. Reference: {receipt.refund.external_reference}.
+                </p>
+              ) : isManager ? (
+                <form className="grid gap-3" onSubmit={(e) => { e.preventDefault(); setConfirming(true); }}>
+                  <p className="text-muted-foreground">Record a refund only after the full amount has been returned outside TableFlow. Partial refunds are not supported.</p>
+                  <div className="grid gap-2">
+                    <Label htmlFor="refund-reason">Reason</Label>
+                    <Input id="refund-reason" value={reason} maxLength={500} required onChange={(e) => setReason(e.target.value)} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="refund-reference">Refund reference</Label>
+                    <Input id="refund-reference" value={reference} maxLength={200} required onChange={(e) => setReference(e.target.value)} />
+                  </div>
+                  <Button type="submit" variant="destructive" disabled={!reason.trim() || !reference.trim()}>
+                    Record full refund of {formatTHB(receipt.amount_satang)}
+                  </Button>
+                </form>
+              ) : (
+                <p className="text-muted-foreground">No refund. Only a manager can record one.</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+      <AlertDialog open={confirming} onOpenChange={setConfirming}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Record a full refund of {formatTHB(receipt.amount_satang)}?</AlertDialogTitle>
+            <AlertDialogDescription>Only one refund can ever be recorded for this receipt. The original receipt stays unchanged.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Back</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={() => void refund()}>Record refund</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

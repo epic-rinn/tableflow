@@ -32,7 +32,7 @@ All implementation tasks are owned by Claude. MVP-22 additionally requires the r
 | MVP-11 Bill calculation and policies | M3 | `011-bill-calculation` | MVP-10 | done |
 | MVP-12 Cashier settlement | M3 | `012-settlement` | MVP-11 | done |
 | MVP-13 Receipts and full refunds | M3 | `013-refunds` | MVP-12 | done |
-| UI-01 Admin design system and redesign | MU | `ui-01-admin-design` | MVP-13 | planned |
+| UI-01 Admin design system and redesign | MU | `ui-01-admin-design` | MVP-13 | implemented-unverified |
 | UI-02 PWA design system and redesign | MU | `ui-02-pwa-design` | UI-01 | planned |
 | MVP-14 Member visit claim and tier snapshot | M4 | `014-member-claim` | MVP-04, MVP-13, UI-02 | planned |
 | MVP-15 Atomic loyalty and member history | M4 | `015-loyalty-ledger` | MVP-14 | planned |

@@ -1,6 +1,6 @@
 # Admin panel development
 
-Runtime location: `src/admin/`. Staff workspaces implemented through M3 (functional styling); the modern admin-panel redesign is UI-01. This is a separate Next.js App Router/TypeScript application for restaurant staff and managers, sharing the Go API with the customer PWA.
+Runtime location: `src/admin/`. Staff workspaces implemented through M3 and redesigned in UI-01 (Tailwind CSS v4 + shadcn/ui, sidebar app shell). This is a separate Next.js App Router/TypeScript application for restaurant staff and managers, sharing the Go API with the customer PWA.
 
 Provide staff login and role-specific workspaces: host queue/table board, server orders/assistance, kitchen preparation board, cashier settlement/receipts, manager menu/configuration/staff/reports/audit. Hiding a screen is not authorization; Go checks every action and resource.
 

@@ -1,6 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Plus, Save, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useId, useState } from "react";
+import { Notice } from "@/components/common/Notice";
+import { PageHeader } from "@/components/common/PageHeader";
+import { StateBadge } from "@/components/common/StateBadge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api/client";
 import { NEED_LABELS, NEEDS, type Group, type Need, type Table } from "@/lib/api/types";
 
@@ -37,27 +46,43 @@ export function FloorConfig({ branchId }: { branchId: string }) {
 
   return (
     <>
-      <h1>Tables &amp; seating groups</h1>
-      {message?.text && <p role={message.kind}>{message.text}</p>}
+      <PageHeader title="Tables & seating groups" description="Configure the floor the host board and queue use." />
+      <Notice notice={message?.text ? { role: message.kind, text: message.text } : null} className="mb-4" />
+      <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
+        <Card role="region" aria-labelledby="tables-title">
+          <CardHeader>
+            <CardTitle>
+              <h2 id="tables-title">Tables</h2>
+            </CardTitle>
+            <CardDescription>Label, seats and supported needs. Inactive tables are never offered for seating.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <div className="rounded-lg border border-dashed p-3">
+              <TableForm submitLabel="Add table" onSubmit={(v) => save(api(`/branches/${branchId}/tables`, { method: "POST", body: v }), `Table ${v.label} added.`)} />
+            </div>
+            <ul className="grid gap-2">
+              {tables.map((t) => (
+                <li key={`${t.id}:${t.version}`} className="rounded-lg border p-3">
+                  <TableForm table={t} submitLabel={`Save ${t.label}`}
+                    onSubmit={(v) => save(api(`/tables/${t.id}`, { method: "PATCH", body: { ...v, expected_version: t.version } }), `Table ${v.label} saved.`)} />
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
 
-      <section aria-labelledby="groups-title">
-        <h2 id="groups-title">Seating groups</h2>
-        <p>Party-size bands used for queue positions. They can change only while nobody is waiting or called.</p>
-        <GroupsEditor groups={groups} onSave={(g) => save(api(`/branches/${branchId}/seating-groups`, { method: "PUT", body: { groups: g } }), "Seating groups saved.")} />
-      </section>
-
-      <section aria-labelledby="tables-title">
-        <h2 id="tables-title">Tables</h2>
-        <TableForm submitLabel="Add table" onSubmit={(v) => save(api(`/branches/${branchId}/tables`, { method: "POST", body: v }), `Table ${v.label} added.`)} />
-        <ul>
-          {tables.map((t) => (
-            <li key={`${t.id}:${t.version}`}>
-              <TableForm table={t} submitLabel={`Save ${t.label}`}
-                onSubmit={(v) => save(api(`/tables/${t.id}`, { method: "PATCH", body: { ...v, expected_version: t.version } }), `Table ${v.label} saved.`)} />
-            </li>
-          ))}
-        </ul>
-      </section>
+        <Card role="region" aria-labelledby="groups-title" className="self-start">
+          <CardHeader>
+            <CardTitle>
+              <h2 id="groups-title">Seating groups</h2>
+            </CardTitle>
+            <CardDescription>Party-size bands used for queue positions. They can change only while nobody is waiting or called.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <GroupsEditor groups={groups} onSave={(g) => save(api(`/branches/${branchId}/seating-groups`, { method: "PUT", body: { groups: g } }), "Seating groups saved.")} />
+          </CardContent>
+        </Card>
+      </div>
     </>
   );
 }
@@ -71,32 +96,42 @@ function TableForm({ table, submitLabel, onSubmit }: { table?: Table; submitLabe
     needs: table?.needs ?? [],
     active: table?.active ?? true,
   });
-  const id = table?.id ?? "new";
+  const uid = useId();
   return (
     <form
+      className="flex flex-wrap items-end gap-3"
       onSubmit={(e) => {
         e.preventDefault();
         // Creation takes no "active" field; new tables start active.
         onSubmit(table ? v : ({ label: v.label, capacity: v.capacity, needs: v.needs } as TableValues));
       }}>
-      <label>
-        Label <input id={`label-${id}`} value={v.label} maxLength={20} required onChange={(e) => setV({ ...v, label: e.target.value })} />
-      </label>{" "}
-      <label>
-        Seats <input type="number" min={1} max={50} value={v.capacity} onChange={(e) => setV({ ...v, capacity: Number(e.target.value) })} />
-      </label>{" "}
-      {NEEDS.map((n) => (
-        <label key={n}>
-          <input type="checkbox" checked={v.needs.includes(n)} onChange={(e) => setV({ ...v, needs: e.target.checked ? [...v.needs, n] : v.needs.filter((x) => x !== n) })} />{" "}
-          {NEED_LABELS[n]}
-        </label>
-      ))}{" "}
-      {table && (
-        <label>
-          <input type="checkbox" checked={v.active} onChange={(e) => setV({ ...v, active: e.target.checked })} /> Active
-        </label>
-      )}{" "}
-      {table && <small>({table.state})</small>} <button type="submit">{submitLabel}</button>
+      <div className="grid gap-1.5">
+        <Label htmlFor={`${uid}-label`} className="text-xs text-muted-foreground">Label</Label>
+        <Input id={`${uid}-label`} value={v.label} maxLength={20} required onChange={(e) => setV({ ...v, label: e.target.value })} className="w-28" />
+      </div>
+      <div className="grid gap-1.5">
+        <Label htmlFor={`${uid}-seats`} className="text-xs text-muted-foreground">Seats</Label>
+        <Input id={`${uid}-seats`} type="number" min={1} max={50} value={v.capacity} onChange={(e) => setV({ ...v, capacity: Number(e.target.value) })} className="w-20" />
+      </div>
+      <div className="flex flex-wrap items-center gap-3 pb-1.5">
+        {NEEDS.map((n) => (
+          <Label key={n} className="font-normal">
+            <Checkbox checked={v.needs.includes(n)} onCheckedChange={(c) => setV({ ...v, needs: c === true ? [...v.needs, n] : v.needs.filter((x) => x !== n) })} />
+            {NEED_LABELS[n]}
+          </Label>
+        ))}
+        {table && (
+          <Label className="font-normal">
+            <Checkbox checked={v.active} onCheckedChange={(c) => setV({ ...v, active: c === true })} /> Active
+          </Label>
+        )}
+      </div>
+      <div className="ml-auto flex items-center gap-2">
+        {table && <StateBadge state={table.state} />}
+        <Button type="submit" variant={table ? "outline" : "default"} size="sm">
+          {table ? <Save aria-hidden /> : <Plus aria-hidden />} {submitLabel}
+        </Button>
+      </div>
     </form>
   );
 }
@@ -107,35 +142,43 @@ function GroupsEditor({ groups, onSave }: { groups: Group[]; onSave: (g: Group[]
   const update = (i: number, patch: Partial<Group>) => setRows(current.map((g, j) => (i === j ? { ...g, ...patch } : g)));
   return (
     <form
+      className="grid gap-3"
       onSubmit={(e) => {
         e.preventDefault();
         onSave(current);
         setRows(null);
       }}>
       {current.map((g, i) => (
-        <p key={i}>
-          <label>
-            Label <input value={g.label} maxLength={40} onChange={(e) => update(i, { label: e.target.value })} />
-          </label>{" "}
-          <label>
-            From <input type="number" min={1} max={50} value={g.min_party} onChange={(e) => update(i, { min_party: Number(e.target.value) })} />
-          </label>{" "}
-          <label>
-            To <input type="number" min={1} max={50} value={g.max_party} onChange={(e) => update(i, { max_party: Number(e.target.value) })} />
-          </label>{" "}
-          <button type="button" onClick={() => setRows(current.filter((_, j) => j !== i))}>
-            Remove
-          </button>
-        </p>
+        <div key={i} className="grid grid-cols-[1fr_64px_64px_auto] items-end gap-2">
+          <label className="grid gap-1.5">
+            <span className="text-xs text-muted-foreground">Label</span>
+            <Input value={g.label} maxLength={40} onChange={(e) => update(i, { label: e.target.value })} />
+          </label>
+          <label className="grid gap-1.5">
+            <span className="text-xs text-muted-foreground">From</span>
+            <Input type="number" min={1} max={50} value={g.min_party} onChange={(e) => update(i, { min_party: Number(e.target.value) })} />
+          </label>
+          <label className="grid gap-1.5">
+            <span className="text-xs text-muted-foreground">To</span>
+            <Input type="number" min={1} max={50} value={g.max_party} onChange={(e) => update(i, { max_party: Number(e.target.value) })} />
+          </label>
+          <Button type="button" variant="ghost" size="icon" aria-label={`Remove group ${g.label}`} onClick={() => setRows(current.filter((_, j) => j !== i))}>
+            <Trash2 aria-hidden />
+          </Button>
+        </div>
       ))}
-      <button type="button" onClick={() => {
-        const last = current.at(-1);
-        const from = (last?.max_party ?? 0) + 1;
-        setRows([...current, { label: `${from}–${from + 1}`, min_party: from, max_party: from + 1 }]);
-      }}>
-        Add group
-      </button>{" "}
-      <button type="submit">Save groups</button>
+      <div className="flex flex-wrap gap-2">
+        <Button type="button" variant="outline" size="sm" onClick={() => {
+          const last = current.at(-1);
+          const from = (last?.max_party ?? 0) + 1;
+          setRows([...current, { label: `${from}–${from + 1}`, min_party: from, max_party: from + 1 }]);
+        }}>
+          <Plus aria-hidden /> Add group
+        </Button>
+        <Button type="submit" size="sm">
+          <Save aria-hidden /> Save groups
+        </Button>
+      </div>
     </form>
   );
 }

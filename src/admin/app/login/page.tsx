@@ -2,6 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { AuthShell } from "@/components/common/AuthShell";
+import { Notice } from "@/components/common/Notice";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api/client";
 import type { StaffIdentity } from "@/lib/api/types";
 
@@ -29,22 +34,21 @@ export default function LoginPage() {
   }
 
   return (
-    <main>
-      <h1>Staff sign in</h1>
-      <form onSubmit={onSubmit} noValidate>
-        <p>
-          <label htmlFor="email">Email</label>
-          <input id="email" name="email" type="email" autoComplete="username" required />
-        </p>
-        <p>
-          <label htmlFor="password">Password</label>
-          <input id="password" name="password" type="password" autoComplete="current-password" required />
-        </p>
-        {error && <p role="alert">{error}</p>}
-        <button type="submit" disabled={busy}>
+    <AuthShell title="Staff sign in" description="Use the email your manager invited.">
+      <form onSubmit={onSubmit} noValidate className="grid gap-4">
+        <div className="grid gap-2">
+          <Label htmlFor="email">Email</Label>
+          <Input id="email" name="email" type="email" autoComplete="username" required />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="password">Password</Label>
+          <Input id="password" name="password" type="password" autoComplete="current-password" required />
+        </div>
+        <Notice notice={error ? { role: "alert", text: error } : null} />
+        <Button type="submit" size="lg" disabled={busy}>
           {busy ? "Signing in…" : "Sign in"}
-        </button>
+        </Button>
       </form>
-    </main>
+    </AuthShell>
   );
 }

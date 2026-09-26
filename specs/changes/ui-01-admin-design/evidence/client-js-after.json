@@ -1,0 +1,56 @@
+{
+ "/login": {
+  "scripts": 10,
+  "js_gzip_kib": 203.1,
+  "js_raw_kib": 651.8,
+  "css_gzip_kib": 16.2
+ },
+ "/host": {
+  "scripts": 12,
+  "js_gzip_kib": 229.5,
+  "js_raw_kib": 736.3,
+  "css_gzip_kib": 16.2
+ },
+ "/kitchen": {
+  "scripts": 12,
+  "js_gzip_kib": 224.5,
+  "js_raw_kib": 719.0,
+  "css_gzip_kib": 16.2
+ },
+ "/cashier": {
+  "scripts": 12,
+  "js_gzip_kib": 233.9,
+  "js_raw_kib": 752.4,
+  "css_gzip_kib": 16.2
+ },
+ "/receipts": {
+  "scripts": 12,
+  "js_gzip_kib": 225.1,
+  "js_raw_kib": 723.7,
+  "css_gzip_kib": 16.2
+ },
+ "/menu": {
+  "scripts": 12,
+  "js_gzip_kib": 222.6,
+  "js_raw_kib": 714.1,
+  "css_gzip_kib": 16.2
+ },
+ "/configuration": {
+  "scripts": 12,
+  "js_gzip_kib": 224.2,
+  "js_raw_kib": 718.2,
+  "css_gzip_kib": 16.2
+ },
+ "/staff": {
+  "scripts": 12,
+  "js_gzip_kib": 223.2,
+  "js_raw_kib": 715.1,
+  "css_gzip_kib": 16.2
+ },
+ "/charges": {
+  "scripts": 12,
+  "js_gzip_kib": 228.4,
+  "js_raw_kib": 731.0,
+  "css_gzip_kib": 16.2
+ }
+}

@@ -41,6 +41,9 @@ test.describe.serial("cashier", () => {
     await expect(page.getByText("Change:")).toContainText("58.76");
     await page.getByLabel("Verification note").fill("counted at till");
     await page.getByRole("button", { name: /^Confirm .*141\.24 received$/ }).click();
+    // UI-002: payment is confirmed once more in a dialog repeating the amount.
+    const pay = page.getByRole("alertdialog", { name: /Record payment of .*141\.24/ });
+    await pay.getByRole("button", { name: "Record payment" }).click();
     await expect(status(page, /Payment recorded\. Receipt R-[A-Z2-7]{10}/)).toBeVisible();
     await expect(page.getByRole("heading", { name: "Table E2E-2 — paid" })).toBeVisible();
 
@@ -50,6 +53,7 @@ test.describe.serial("cashier", () => {
     await page.getByLabel("Reason").fill("guest complaint");
     await page.getByLabel("Refund reference").fill("BANK-123");
     await page.getByRole("button", { name: /Record full refund/ }).click();
+    await page.getByRole("alertdialog").getByRole("button", { name: "Record refund" }).click();
     await expect(status(page, "Full refund recorded")).toBeVisible();
     await expect(page.getByRole("main")).toContainText("Reason: guest complaint");
     await page.goto("/receipts");

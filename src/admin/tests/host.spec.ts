@@ -71,8 +71,11 @@ test.describe.serial("host workspace", () => {
     await h4.getByRole("button", { name: "Depart (paid)" }).click();
     await expect(page.getByRole("main").getByRole("alert")).toContainText("can no longer do that");
 
-    await h4.getByLabel("Reason for table H4").fill("left before ordering");
+    // UI-002: close-empty is confirmed in a dialog that asks for the reason.
     await h4.getByRole("button", { name: "Close empty" }).click();
+    const dialog = page.getByRole("dialog", { name: "Close table H4 as empty" });
+    await dialog.getByLabel("Reason for table H4").fill("left before ordering");
+    await dialog.getByRole("button", { name: "Close visit" }).click();
     await expect(page.getByRole("article", { name: "Table H4" })).toContainText("cleaning");
     for (const label of ["H2", "H4"]) {
       await page.getByRole("article", { name: `Table ${label}` }).getByRole("button", { name: "Mark ready" }).click();
