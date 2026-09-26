@@ -2,6 +2,7 @@
 .github
 .agents
 .codex
+.local-only
 specs
 docs
 tooling
@@ -15,3 +16,10 @@ Makefile
 **/.next
 **/__pycache__
 **/.DS_Store
+tmp
+compose.yaml
+**/.env
+**/.env.*
+!**/.env.example
+**/test-results
+**/playwright-report
