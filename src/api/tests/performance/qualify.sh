@@ -20,7 +20,7 @@ step() { printf '\n==> %s\n' "$*"; }
 cleanup() {
   [[ -n "${STATS_PID:-}" ]] && kill "$STATS_PID" 2>/dev/null || true
   [[ -n "${LOCKS_PID:-}" ]] && kill "$LOCKS_PID" 2>/dev/null || true
-  docker rm -f "$API" "$DB" >/dev/null 2>&1 || true
+  docker rm -fv "$API" "$DB" >/dev/null 2>&1 || true  # -v: drop the anonymous data volumes too
   docker network rm "$NET" >/dev/null 2>&1 || true
   [[ -n "$TMPD" ]] && rm -rf "$TMPD"
   return 0

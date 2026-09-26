@@ -13,7 +13,8 @@ tableflow/
 ├── docs/development/          Setup and engineering guides
 ├── .agents/skills/            AI delivery/review procedures
 ├── tooling/specs/             Documentation/skill validation
-├── tooling/runtime/           Built-artifact boundary check
+├── tooling/runtime/           Built-artifact boundary check, verify and restore drill
+├── deploy/                    Container images and the staging stack (MVP-21); not runtime source
 ├── compose.yaml               Local development services only
 ├── .github/                   PR template (no hosted CI; ADR-0003)
 ├── AGENTS.md                  Repository-level AI instructions

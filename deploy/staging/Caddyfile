@@ -1,0 +1,17 @@
+# HTTPS on two separate origins (admin and PWA). Each Next.js server proxies
+# /api/v1 to the Go API itself, so browsers stay same-origin. For a local
+# rehearsal set CADDY_TLS=internal (Caddy's local CA); leave it empty for
+# automatic public certificates on real hostnames.
+{$ADMIN_HOST} {
+	tls {$CADDY_TLS}
+	encode zstd gzip
+	header Strict-Transport-Security "max-age=31536000"
+	reverse_proxy admin:3000
+}
+
+{$PWA_HOST} {
+	tls {$CADDY_TLS}
+	encode zstd gzip
+	header Strict-Transport-Security "max-age=31536000"
+	reverse_proxy pwa:3000
+}

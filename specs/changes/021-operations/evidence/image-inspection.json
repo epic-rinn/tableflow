@@ -1,0 +1,16 @@
+{
+ "images": {
+  "tableflow-api:staging": {
+   "files": 1463,
+   "forbidden_matches": []
+  },
+  "tableflow-staging-admin:latest": {
+   "files": 9015,
+   "forbidden_matches": []
+  },
+  "tableflow-staging-pwa:latest": {
+   "files": 8988,
+   "forbidden_matches": []
+  }
+ }
+}

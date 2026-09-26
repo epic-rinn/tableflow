@@ -17,21 +17,21 @@ import (
 // Config holds process-level settings. Secrets such as DATABASE_URL are never
 // logged or returned by String methods.
 type Config struct {
-	HTTPAddr          string
-	DatabaseURL       string
-	DBMaxConns        int32
+	HTTPAddr    string
+	DatabaseURL string
+	DBMaxConns  int32
 	// DBPoolStatsInterval logs connection-pool statistics (acquire waits,
 	// saturation) at this interval; 0 disables. For load tests and ops.
 	DBPoolStatsInterval time.Duration
-	ReadinessTimeout  time.Duration
-	ShutdownTimeout   time.Duration
-	StatementTimeout  time.Duration
-	LockTimeout       time.Duration
-	IdleInTxTimeout   time.Duration
-	ReadHeaderTimeout time.Duration
-	ReadTimeout       time.Duration
-	WriteTimeout      time.Duration
-	IdleTimeout       time.Duration
+	ReadinessTimeout    time.Duration
+	ShutdownTimeout     time.Duration
+	StatementTimeout    time.Duration
+	LockTimeout         time.Duration
+	IdleInTxTimeout     time.Duration
+	ReadHeaderTimeout   time.Duration
+	ReadTimeout         time.Duration
+	WriteTimeout        time.Duration
+	IdleTimeout         time.Duration
 
 	// AdminOrigins are the exact browser origins allowed to send
 	// cookie-authenticated staff mutations (CSRF defence).

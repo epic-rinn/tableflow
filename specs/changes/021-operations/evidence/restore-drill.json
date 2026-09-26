@@ -1,0 +1,39 @@
+{
+ "ok": true,
+ "source": {
+  "settlements": 2,
+  "settled_satang": 29425,
+  "snapshot_totals": 29425,
+  "refunds": 1,
+  "refunded_satang": 14124,
+  "claimed_visits": 2,
+  "ledger_rows": 1,
+  "ledger_points": 1,
+  "profiles_match_ledger": true,
+  "order_lines": 7,
+  "audit_events": 18,
+  "staff_accounts": 2,
+  "members": 4,
+  "migration_version": 20260927120000
+ },
+ "restored": {
+  "settlements": 2,
+  "settled_satang": 29425,
+  "snapshot_totals": 29425,
+  "refunds": 1,
+  "refunded_satang": 14124,
+  "claimed_visits": 2,
+  "ledger_rows": 1,
+  "ledger_points": 1,
+  "profiles_match_ledger": true,
+  "order_lines": 7,
+  "audit_events": 18,
+  "staff_accounts": 2,
+  "members": 4,
+  "migration_version": 20260927120000
+ },
+ "app_role_can_read": true,
+ "migrations_current": true,
+ "dump_bytes": 162048,
+ "dump_and_restore_seconds": 0
+}

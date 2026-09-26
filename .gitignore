@@ -14,3 +14,6 @@ tmp/
 .local-only/
 next-env.d.ts
 *.tsbuildinfo
+
+# Staging secrets (MVP-21); only staging.env.example is versioned.
+deploy/staging/staging.env
