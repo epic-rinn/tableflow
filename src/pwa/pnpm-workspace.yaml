@@ -1,0 +1,4 @@
+# Single-project workspace settings for this independent app.
+allowBuilds:
+  # Prebuilt native bindings ship as optional dependencies; no install script needed.
+  unrs-resolver: false
