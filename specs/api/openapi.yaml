@@ -22,6 +22,8 @@ tags:
     description: Anonymous bootstrap and QR capability sessions (PWA origin only)
   - name: seating
     description: Tables, seating groups, queue, holds, visits and table lifecycle
+  - name: ordering
+    description: Menu, orders, kitchen lines and assistance
   - name: member
     description: Member accounts and sessions (PWA origin only); responses never reveal whether an email is registered
 paths:
@@ -1207,6 +1209,352 @@ paths:
         '409': {$ref: '#/components/responses/Error'}
         '415': {$ref: '#/components/responses/Error'}
         '422': {$ref: '#/components/responses/Error'}
+  /api/v1/branches/{branch_id}/menu:
+    parameters:
+      - {name: branch_id, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      operationId: getMenu
+      tags: [ordering]
+      summary: 'Public active menu (Thai and English names, satang prices, availability)'
+      description: >-
+        No authentication. Returned with no-store in MVP. Four database reads regardless of size; capped at 500 items.
+      security: []
+      responses:
+        '200':
+          description: Menu
+          headers:
+            Cache-Control: {$ref: '#/components/headers/NoStore'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Menu'}
+        '404': {$ref: '#/components/responses/Error'}
+    put:
+      operationId: replaceMenu
+      tags: [ordering]
+      summary: 'Replace the menu atomically (manager); omitted entries retire'
+      security: [{staffSession: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: 
+              type: object
+              additionalProperties: false
+              required: [expected_revision, categories]
+              properties:
+                expected_revision: {type: integer, minimum: 1}
+                categories: {type: array, maxItems: 50, items: {$ref: '#/components/schemas/CategoryInput'}}
+      responses:
+        '200':
+          description: New menu
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Menu'}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '413': {$ref: '#/components/responses/Error'}
+        '415': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+  /api/v1/menu-items/{item_id}/availability:
+    parameters:
+      - {name: item_id, in: path, required: true, schema: {type: string, format: uuid}}
+    patch:
+      operationId: setMenuItemAvailability
+      tags: [ordering]
+      summary: 'Toggle sold out (manager or kitchen)'
+      security: [{staffSession: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: 
+              type: object
+              additionalProperties: false
+              required: [expected_version, sold_out]
+              properties:
+                expected_version: {type: integer, minimum: 1}
+                sold_out: {type: boolean}
+      responses:
+        '200':
+          description: Updated item
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/MenuItemSummary'}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '415': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+  /api/v1/visits/{visit_id}/orders:
+    parameters:
+      - {name: visit_id, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      operationId: listVisitOrders
+      tags: [ordering]
+      summary: 'Shared confirmed orders of a visit (its guests or branch staff)'
+      security: [{staffSession: []}, {guestSession: []}]
+      parameters:
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100}}
+        - {name: cursor, in: query, schema: {type: string, maxLength: 512}}
+      responses:
+        '200':
+          description: Orders page with totals
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/OrdersPage'}
+        '401': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+    post:
+      operationId: submitOrder
+      tags: [ordering]
+      summary: 'Submit an order (visit guest on the PWA origin, or host/manager as assisted order)'
+      description: >-
+        All-or-nothing. Items changed, sold out or retired after menu_revision return 409 MENU_CHANGED (fields list the item IDs). Body ≤64 KiB, 1–50 lines, quantity 1–20.
+      security: [{staffSession: []}, {guestSession: []}]
+      parameters:
+        - {$ref: '#/components/parameters/IdempotencyKey'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: 
+              type: object
+              additionalProperties: false
+              required: [menu_revision, lines]
+              properties:
+                menu_revision: {type: integer, minimum: 1}
+                lines:
+                  type: array
+                  minItems: 1
+                  maxItems: 50
+                  items:
+                    type: object
+                    additionalProperties: false
+                    required: [item_id, quantity, option_ids]
+                    properties:
+                      item_id: {type: string, format: uuid}
+                      quantity: {type: integer, minimum: 1, maximum: 20}
+                      option_ids: {type: array, items: {type: string, format: uuid}}
+                      note: {type: [string, 'null'], maxLength: 500}
+      responses:
+        '201':
+          description: Order with snapshotted lines
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+            Idempotency-Replayed:
+              description: Present when a committed result is replayed
+              schema: {type: string, const: 'true'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Order'}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '413': {$ref: '#/components/responses/Error'}
+        '415': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+  /api/v1/branches/{branch_id}/kitchen-lines:
+    parameters:
+      - {name: branch_id, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      operationId: listKitchenLines
+      tags: [ordering]
+      summary: 'Active lines, oldest first (kitchen, host, manager)'
+      security: [{staffSession: []}]
+      parameters:
+        - {name: state, in: query, schema: {type: string, enum: [submitted, accepted, preparing, ready]}}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100}}
+        - {name: cursor, in: query, schema: {type: string, maxLength: 512}}
+      responses:
+        '200':
+          description: Kitchen page
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/KitchenPage'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+  /api/v1/order-lines/{line_id}/transition:
+    parameters:
+      - {name: line_id, in: path, required: true, schema: {type: string, format: uuid}}
+    post:
+      operationId: transitionOrderLine
+      tags: [ordering]
+      summary: 'Move a line through the kitchen workflow (role/state matrix)'
+      description: >-
+        submitted→accepted|rejected (kitchen/manager), accepted→preparing, preparing→ready (kitchen/manager), ready→served (kitchen/host/manager); cancel submitted/accepted (host/manager), preparing/ready/served (manager, audited). Rejection/cancellation needs a reason and is refused unless the visit is open.
+      security: [{staffSession: []}]
+      parameters:
+        - {$ref: '#/components/parameters/IdempotencyKey'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: 
+              type: object
+              additionalProperties: false
+              required: [expected_version, to_state]
+              properties:
+                expected_version: {type: integer, minimum: 1}
+                to_state: {type: string, enum: [accepted, rejected, preparing, ready, served, cancelled]}
+                reason: {type: [string, 'null'], maxLength: 500}
+      responses:
+        '200':
+          description: Updated line
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+            Idempotency-Replayed:
+              description: Present when a committed result is replayed
+              schema: {type: string, const: 'true'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/OrderLine'}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '415': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+  /api/v1/visits/{visit_id}/assistance:
+    parameters:
+      - {name: visit_id, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      operationId: listVisitAssistance
+      tags: [ordering]
+      summary: 'A visit''s recent assistance requests (its guests or branch staff)'
+      security: [{staffSession: []}, {guestSession: []}]
+      responses:
+        '200':
+          description: Requests
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AssistanceList'}
+        '401': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+    post:
+      operationId: raiseAssistance
+      tags: [ordering]
+      summary: 'Ask for help, report an allergy, or ask for the bill (coalesces duplicates)'
+      security: [{staffSession: []}, {guestSession: []}]
+      parameters:
+        - {$ref: '#/components/parameters/IdempotencyKey'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: 
+              type: object
+              additionalProperties: false
+              required: [topic]
+              properties:
+                topic: {type: string, enum: [help, allergy, checkout]}
+                note: {type: [string, 'null'], maxLength: 500}
+      responses:
+        '201':
+          description: New request
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+            Idempotency-Replayed:
+              description: Present when a committed result is replayed
+              schema: {type: string, const: 'true'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Assistance'}
+        '200':
+          description: Existing outstanding request for this topic
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+            Idempotency-Replayed:
+              description: Present when a committed result is replayed
+              schema: {type: string, const: 'true'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Assistance'}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '415': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+  /api/v1/branches/{branch_id}/assistance:
+    parameters:
+      - {name: branch_id, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      operationId: listAssistance
+      tags: [ordering]
+      summary: 'Outstanding assistance requests (host, manager)'
+      security: [{staffSession: []}]
+      responses:
+        '200':
+          description: Requests
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AssistanceList'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+  /api/v1/assistance/{request_id}/transition:
+    parameters:
+      - {name: request_id, in: path, required: true, schema: {type: string, format: uuid}}
+    post:
+      operationId: transitionAssistance
+      tags: [ordering]
+      summary: 'Acknowledge or resolve a request (host, manager)'
+      security: [{staffSession: []}]
+      parameters:
+        - {$ref: '#/components/parameters/IdempotencyKey'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: 
+              type: object
+              additionalProperties: false
+              required: [expected_version, to_state]
+              properties:
+                expected_version: {type: integer, minimum: 1}
+                to_state: {type: string, enum: [acknowledged, resolved]}
+      responses:
+        '200':
+          description: Updated request
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+            Idempotency-Replayed:
+              description: Present when a committed result is replayed
+              schema: {type: string, const: 'true'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Assistance'}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '415': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
 components:
   parameters:
     IdempotencyKey:
@@ -1536,3 +1884,203 @@ components:
           required: [token]
           properties:
             token: {type: string, description: 'Dining capability for the /t#<token> QR; shown once'}
+    OptionOut:
+      type: object
+      additionalProperties: false
+      required: [id, name_th, name_en, price_delta_satang]
+      properties:
+        id: {type: string, format: uuid}
+        name_th: {type: string}
+        name_en: {type: string}
+        price_delta_satang: {type: integer, minimum: 0}
+    OptionGroupOut:
+      type: object
+      additionalProperties: false
+      required: [id, name_th, name_en, min_choices, max_choices, options]
+      properties:
+        id: {type: string, format: uuid}
+        name_th: {type: string}
+        name_en: {type: string}
+        min_choices: {type: integer, minimum: 0}
+        max_choices: {type: integer, minimum: 1}
+        options: {type: array, items: {$ref: '#/components/schemas/OptionOut'}}
+    MenuItem:
+      type: object
+      additionalProperties: false
+      required: [id, name_th, name_en, price_satang, sold_out, version, option_groups]
+      properties:
+        id: {type: string, format: uuid}
+        name_th: {type: string}
+        name_en: {type: string}
+        price_satang: {type: integer, minimum: 0}
+        sold_out: {type: boolean}
+        version: {type: integer}
+        option_groups: {type: array, items: {$ref: '#/components/schemas/OptionGroupOut'}}
+    MenuItemSummary:
+      type: object
+      additionalProperties: false
+      required: [id, name_th, name_en, price_satang, sold_out, version, option_groups]
+      properties:
+        id: {type: string, format: uuid}
+        name_th: {type: string}
+        name_en: {type: string}
+        price_satang: {type: integer}
+        sold_out: {type: boolean}
+        version: {type: integer}
+        option_groups: {type: array, maxItems: 0}
+    Menu:
+      type: object
+      additionalProperties: false
+      required: [branch_id, revision, currency, categories, server_time]
+      properties:
+        branch_id: {type: string, format: uuid}
+        revision: {type: integer, minimum: 1}
+        currency: {type: string, const: THB}
+        categories:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [id, name_th, name_en, items]
+            properties:
+              id: {type: string, format: uuid}
+              name_th: {type: string}
+              name_en: {type: string}
+              items: {type: array, items: {$ref: '#/components/schemas/MenuItem'}}
+        server_time: {type: string, format: date-time}
+    OptionInput:
+      type: object
+      additionalProperties: false
+      required: [name_th, name_en, price_delta_satang]
+      properties:
+        id: {type: string, description: 'Existing option ID; empty or absent creates'}
+        name_th: {type: string, minLength: 1, maxLength: 80}
+        name_en: {type: string, minLength: 1, maxLength: 80}
+        price_delta_satang: {type: integer, minimum: 0, maximum: 10000000}
+    GroupInputMenu:
+      type: object
+      additionalProperties: false
+      required: [name_th, name_en, min_choices, max_choices, options]
+      properties:
+        id: {type: string}
+        name_th: {type: string, minLength: 1, maxLength: 80}
+        name_en: {type: string, minLength: 1, maxLength: 80}
+        min_choices: {type: integer, minimum: 0}
+        max_choices: {type: integer, minimum: 1, maximum: 20}
+        options: {type: array, minItems: 1, maxItems: 20, items: {$ref: '#/components/schemas/OptionInput'}}
+    ItemInput:
+      type: object
+      additionalProperties: false
+      required: [name_th, name_en, price_satang, option_groups]
+      properties:
+        id: {type: string}
+        name_th: {type: string, minLength: 1, maxLength: 80}
+        name_en: {type: string, minLength: 1, maxLength: 80}
+        price_satang: {type: integer, minimum: 0, maximum: 10000000}
+        option_groups: {type: array, maxItems: 10, items: {$ref: '#/components/schemas/GroupInputMenu'}}
+    CategoryInput:
+      type: object
+      additionalProperties: false
+      required: [name_th, name_en, items]
+      properties:
+        id: {type: string}
+        name_th: {type: string, minLength: 1, maxLength: 80}
+        name_en: {type: string, minLength: 1, maxLength: 80}
+        items: {type: array, items: {$ref: '#/components/schemas/ItemInput'}}
+    OptionSnapshot:
+      type: object
+      additionalProperties: false
+      required: [group_name_th, group_name_en, option_id, name_th, name_en, price_delta_satang]
+      properties:
+        group_name_th: {type: string}
+        group_name_en: {type: string}
+        option_id: {type: string, format: uuid}
+        name_th: {type: string}
+        name_en: {type: string}
+        price_delta_satang: {type: integer}
+    OrderLine:
+      type: object
+      additionalProperties: false
+      required: [id, order_id, item_id, name_th, name_en, options, unit_price_satang, quantity, line_total_satang, note, state, chargeable, reason, version]
+      properties:
+        id: {type: string, format: uuid}
+        order_id: {type: string, format: uuid}
+        item_id: {type: string, format: uuid}
+        name_th: {type: string}
+        name_en: {type: string}
+        options: {type: array, items: {$ref: '#/components/schemas/OptionSnapshot'}}
+        unit_price_satang: {type: integer}
+        quantity: {type: integer, minimum: 1, maximum: 20}
+        line_total_satang: {type: integer}
+        note: {type: [string, 'null']}
+        state: {type: string, enum: [submitted, accepted, preparing, ready, served, rejected, cancelled]}
+        chargeable: {type: boolean}
+        reason: {type: [string, 'null']}
+        version: {type: integer}
+    Order:
+      type: object
+      additionalProperties: false
+      required: [id, visit_id, actor, created_at, lines]
+      properties:
+        id: {type: string, format: uuid}
+        visit_id: {type: string, format: uuid}
+        actor: {type: string, enum: [guest, staff]}
+        created_at: {type: string, format: date-time}
+        lines: {type: array, items: {$ref: '#/components/schemas/OrderLine'}}
+    OrdersPage:
+      type: object
+      additionalProperties: false
+      required: [items, next_cursor, chargeable_total_satang, chargeable_lines, server_time]
+      properties:
+        items: {type: array, maxItems: 100, items: {$ref: '#/components/schemas/Order'}}
+        next_cursor: {type: [string, 'null']}
+        chargeable_total_satang: {type: integer, minimum: 0}
+        chargeable_lines: {type: integer, minimum: 0}
+        server_time: {type: string, format: date-time}
+    KitchenLine:
+      type: object
+      additionalProperties: false
+      required: [id, order_id, visit_id, table_label, name_th, name_en, options, quantity, note, state, version, created_at]
+      properties:
+        id: {type: string, format: uuid}
+        order_id: {type: string, format: uuid}
+        visit_id: {type: string, format: uuid}
+        table_label: {type: string}
+        name_th: {type: string}
+        name_en: {type: string}
+        options: {type: array, items: {$ref: '#/components/schemas/OptionSnapshot'}}
+        quantity: {type: integer}
+        note: {type: [string, 'null']}
+        state: {type: string, enum: [submitted, accepted, preparing, ready]}
+        version: {type: integer}
+        created_at: {type: string, format: date-time}
+    KitchenPage:
+      type: object
+      additionalProperties: false
+      required: [items, next_cursor, server_time]
+      properties:
+        items: {type: array, maxItems: 100, items: {$ref: '#/components/schemas/KitchenLine'}}
+        next_cursor: {type: [string, 'null']}
+        server_time: {type: string, format: date-time}
+    Assistance:
+      type: object
+      additionalProperties: false
+      required: [id, visit_id, table_label, topic, note, state, version, created_at, acknowledged_at, resolved_at]
+      properties:
+        id: {type: string, format: uuid}
+        visit_id: {type: string, format: uuid}
+        table_label: {type: string}
+        topic: {type: string, enum: [help, allergy, checkout]}
+        note: {type: [string, 'null']}
+        state: {type: string, enum: [open, acknowledged, resolved]}
+        version: {type: integer}
+        created_at: {type: string, format: date-time}
+        acknowledged_at: {type: [string, 'null'], format: date-time}
+        resolved_at: {type: [string, 'null'], format: date-time}
+    AssistanceList:
+      type: object
+      additionalProperties: false
+      required: [items, server_time]
+      properties:
+        items: {type: array, items: {$ref: '#/components/schemas/Assistance'}}
+        server_time: {type: string, format: date-time}
