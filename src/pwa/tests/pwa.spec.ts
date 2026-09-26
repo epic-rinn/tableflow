@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-// MVP-17: PWA-001 installable; PWA-A1 offline never restores private data and
+// MVP-17: PWA-001 installable; PWA-A1 offline never restores private data and Covers PWA-002.
 // caches hold only public static assets; PWA-A3 updates keep the cart.
 const token = process.env.E2E_VISIT_TOKEN ?? "";
 

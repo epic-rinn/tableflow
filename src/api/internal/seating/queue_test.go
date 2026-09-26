@@ -55,7 +55,7 @@ func TestQueueJoinIdempotent(t *testing.T) {
 	}
 }
 
-// TestGroupPositionIndependentOfOtherGroups (QUE-A2).
+// TestGroupPositionIndependentOfOtherGroups (QUE-A2). [QUE-002]
 func TestGroupPositionIndependentOfOtherGroups(t *testing.T) {
 	e := newEnv(t)
 	two := e.table("T2", 2)
@@ -125,7 +125,7 @@ func TestJoinOrderSurvivesDailyRenumbering(t *testing.T) {
 	}
 }
 
-// TestTrackingShowsOnlyOwnTicket: a guest reads only its own ticket.
+// TestTrackingShowsOnlyOwnTicket: a guest reads only its own ticket. [QUE-002]
 func TestTrackingShowsOnlyOwnTicket(t *testing.T) {
 	e := newEnv(t)
 	mine, tok := e.joinTicket(2, "high_chair")

@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-// MVP-11/12/13: charge policy → bill → begin → confirm cash → receipt →
+// MVP-11/12/13: charge policy → bill → begin → confirm cash → receipt → Covers ADM-004, ADM-005.
 // full refund → depart → clean (BIL-001..008, SEA-004).
 const enabled = !!process.env.E2E_MANAGER_TOKEN;
 

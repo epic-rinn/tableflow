@@ -34,7 +34,7 @@ Use independent database connections and synchronization barriers; a sequential 
 
 ## Verification gate
 
-There is no hosted CI ([ADR-0003](../decisions/0003-local-verification.md)). `make verify` runs specs-check, Go formatting/vet/race tests, PostgreSQL-backed migration/integration tests, pinned frontend lint/typecheck/build, OpenAPI contract validation, browser smoke tests and the artifact boundary check locally. Extend it as new check types are introduced. Each task's review records the actual `make verify` run and its environment. Run targeted checks while developing; run representative performance measurements for data-path changes, not blindly on every prose edit.
+There is no hosted CI ([ADR-0003](../decisions/0003-local-verification.md)). `make verify` runs the cross-app visit journey (`make journey`, MVP-19) after the per-app browser suites. It also runs specs-check, Go formatting/vet/race tests, PostgreSQL-backed migration/integration tests, pinned frontend lint/typecheck/build, OpenAPI contract validation, browser smoke tests and the artifact boundary check locally. Extend it as new check types are introduced. Each task's review records the actual `make verify` run and its environment. Run targeted checks while developing; run representative performance measurements for data-path changes, not blindly on every prose edit.
 
 ## UI checks (UI-01/UI-02 onwards)
 

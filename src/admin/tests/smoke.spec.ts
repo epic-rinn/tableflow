@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+// Covers ADM-A2: the admin origin never registers a service worker, so a PWA worker can never serve admin pages or staff sessions.
+
 // AdminAndPwaBrowserSmoke (admin): the production build renders, sends baseline
 // security headers, and routes same-origin /api/v1 to the Go API.
 

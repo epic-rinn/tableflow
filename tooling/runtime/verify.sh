@@ -63,6 +63,9 @@ done
 curl -sf "http://$API_ADDR/api/v1/health/ready" >/dev/null || { cat "$LOG_DIR/api.log"; exit 1; }
 make smoke API_INTERNAL_URL="http://$API_ADDR"
 
+step "Cross-app visit journey (admin + PWA, MVP-19)"
+make journey API_INTERNAL_URL="http://$API_ADDR"
+
 step "Artifact boundary"
 make artifact-check
 

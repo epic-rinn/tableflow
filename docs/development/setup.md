@@ -59,7 +59,7 @@ Health: `GET /api/v1/health/live` never touches PostgreSQL; `GET /api/v1/health/
 | `make api-check` | `gofmt`, `go vet`, `go test -race` (PostgreSQL tests skip without `TEST_DATABASE_URL`) |
 | `make api-test-db` | All Go tests against the compose PostgreSQL; creates and drops `tableflow_test_*` databases; fails instead of skipping |
 | `make admin-check`, `make pwa-check` | Frozen install, ESLint, route typegen + `tsc`, production build, each app independently |
-| `make smoke` | Playwright browser tests for both built apps; requires a running API. The admin staff-access tests also need `E2E_MANAGER_TOKEN` from `tooling/runtime/e2e-db.sh` (a fresh `tableflow_e2e` database), which `make verify` provides; otherwise they are skipped. Set `PLAYWRIGHT_CHANNEL=chrome` to use an installed Chrome if the bundled Chromium cannot be downloaded |
+| `make smoke` (per-app browser suites), `make journey` (cross-app visit journey) | Playwright browser tests for both built apps; requires a running API. The admin staff-access tests also need `E2E_MANAGER_TOKEN` from `tooling/runtime/e2e-db.sh` (a fresh `tableflow_e2e` database), which `make verify` provides; otherwise they are skipped. Set `PLAYWRIGHT_CHANNEL=chrome` to use an installed Chrome if the bundled Chromium cannot be downloaded |
 | `make artifact-check` | Builds the API binary and scans it plus both Next.js standalone/static outputs for docs/specs/AI content |
 
 `make verify` runs all of the above in order, starting the built API for the smoke tests and stopping it afterwards. It is the required gate; there is no hosted CI ([ADR-0003](../../specs/decisions/0003-local-verification.md)). It requires Node.js 24 on `PATH`.

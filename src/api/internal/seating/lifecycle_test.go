@@ -19,7 +19,7 @@ func (e *env) tableState(id string) string {
 	return s
 }
 
-// TestMoveKeepsAccessAndCleansOldTable (SEA-A2).
+// TestMoveKeepsAccessAndCleansOldTable (SEA-A2). [SEA-003]
 func TestMoveKeepsAccessAndCleansOldTable(t *testing.T) {
 	e := newEnv(t)
 	x := e.table("X", 4)
@@ -78,7 +78,7 @@ func TestRotateAccessInvalidatesOldQR(t *testing.T) {
 }
 
 // TestMoveVersusDepartOneWinner: concurrent move and departure of a paid
-// visit; exactly one commits and the claim invariants hold.
+// visit; exactly one commits and the claim invariants hold. [SEA-003]
 func TestMoveVersusDepartOneWinner(t *testing.T) {
 	for round := range 5 {
 		e := newEnv(t)

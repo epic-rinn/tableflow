@@ -2,7 +2,7 @@ package billing
 
 import "testing"
 
-// TestCalculateFixtures (BIL-A2): hand-computed examples, integer only.
+// TestCalculateFixtures (BIL-A2): hand-computed examples, integer only. [BIL-003, BIL-004]
 func TestCalculateFixtures(t *testing.T) {
 	excl := Policy{TaxMode: TaxExclusive, TaxBP: 700, ServiceBP: 1000}
 	incl := Policy{TaxMode: TaxInclusive, TaxBP: 700, ServiceBP: 1000}

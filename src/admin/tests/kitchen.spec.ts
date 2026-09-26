@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-// ADM-002/003: assisted order → kitchen workflow → sold-out toggle → menu editor.
+// ADM-002/003: assisted order → kitchen workflow → sold-out toggle → menu editor. Covers ADM-003.
 const enabled = !!process.env.E2E_MANAGER_TOKEN;
 
 async function signIn(page: Page) {

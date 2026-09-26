@@ -310,7 +310,7 @@ func TestSettlementVersusOrderSubmission(t *testing.T) {
 	}
 }
 
-// TestReopenInvalidatesConfirmation (BIL-A5).
+// TestReopenInvalidatesConfirmation (BIL-A5). [BIL-007]
 func TestReopenInvalidatesConfirmation(t *testing.T) {
 	f := setup(t)
 	id, v := f.order(f.tea, 1)
@@ -348,7 +348,7 @@ func TestReopenInvalidatesConfirmation(t *testing.T) {
 }
 
 // TestConcurrentConfirmOneSettlement (BIL-A3): two cashiers and a
-// response-loss retry leave one settlement; the loser sees ALREADY_PAID.
+// response-loss retry leave one settlement; the loser sees ALREADY_PAID. [BIL-005, BIL-006]
 func TestConcurrentConfirmOneSettlement(t *testing.T) {
 	f := setup(t)
 	id, v := f.order(f.tea, 1)
@@ -421,7 +421,7 @@ func TestGuestCannotSettle(t *testing.T) {
 }
 
 // TestConfirmEffects: exact amount, validation, access revoked, table kept
-// until departure, then paid → depart → cleaning → ready (SEA-004).
+// until departure, then paid → depart → cleaning → ready (SEA-004). [BIL-005, BIL-006]
 func TestConfirmEffects(t *testing.T) {
 	f := setup(t)
 	id, v := f.order(f.tea, 1)
@@ -484,5 +484,45 @@ func TestBillStatementsConstant(t *testing.T) {
 	many := f.e.Statements(func() { f.bill(f.e.Cashier) })
 	if one != many || many > 6 {
 		t.Fatalf("bill statements: %d for 1 line, %d for 30", one, many)
+	}
+}
+
+// TestCancellationVersusBegin (testing concurrency group 4, ORD-A4): a late
+// line cancellation racing begin-settlement either lands first (begin sees a
+// stale version) or is refused because settlement began. Never both.
+func TestCancellationVersusBegin(t *testing.T) {
+	for round := range 5 {
+		f := setup(t)
+		keep, kv := f.order(f.tea, 1)
+		f.serve(keep, kv)
+		cancel, cv := f.order(f.rice, 1)
+		f.serve(cancel, cv)
+		served := testenv.Scalar[int](f.e, "SELECT version FROM order_lines WHERE id = $1", cancel)
+		bv := f.bill(f.e.Cashier).Num("bill_version")
+		var wg sync.WaitGroup
+		start := make(chan struct{})
+		var begin, cancelled testenv.Resp
+		wg.Add(2)
+		go func() { defer wg.Done(); <-start; begin = f.begin(f.e.Cashier, bv) }()
+		go func() {
+			defer wg.Done()
+			<-start
+			cancelled = f.e.StaffSend("POST", f.e.Manager, "/api/v1/order-lines/"+cancel+"/transition",
+				map[string]any{"expected_version": served, "to_state": "cancelled", "reason": "race"})
+		}()
+		close(start)
+		wg.Wait()
+		switch {
+		case begin.Status == 200 && cancelled.Code() == "VISIT_STATE_CONFLICT":
+			if begin.Num("gross_satang") != 10550 {
+				t.Fatalf("round %d: snapshot misses the line: %s", round, begin.Raw)
+			}
+		case cancelled.Status == 200 && begin.Code() == "BILL_VERSION_CONFLICT":
+			if begin.Num("bill", "gross_satang") != 6000 {
+				t.Fatalf("round %d: fresh bill still charges the cancelled line: %s", round, begin.Raw)
+			}
+		default:
+			t.Fatalf("round %d: begin %d %s / cancel %d %s", round, begin.Status, begin.Raw, cancelled.Status, cancelled.Raw)
+		}
 	}
 }

@@ -148,7 +148,7 @@ func TestClaimConflictsAndDetach(t *testing.T) {
 
 // TestTierSnapshotAtBegin (LOY-A3): the bill that crosses a threshold uses
 // the previous tier; the next visit gets the new tier; a tier change after
-// begin does not alter the frozen bill.
+// begin does not alter the frozen bill. [LOY-003]
 func TestTierSnapshotAtBegin(t *testing.T) {
 	f := setup(t)
 	memberID, ann := f.member("ann@example.com")
@@ -187,7 +187,7 @@ func TestTierSnapshotAtBegin(t *testing.T) {
 }
 
 // TestConcurrentMemberSettlements (LOY-A2): two paid visits for one member
-// both earn once; the balance equals the ledger sum.
+// both earn once; the balance equals the ledger sum. [LOY-005]
 func TestConcurrentMemberSettlements(t *testing.T) {
 	f := setup(t)
 	memberID, _ := f.e.Member("ann@example.com")
@@ -235,7 +235,7 @@ func TestConcurrentMemberSettlements(t *testing.T) {
 }
 
 // TestMemberRefundReversesOnce (LOY-A4, BIL-A6): refunds reverse the
-// original award exactly once even after the rates change.
+// original award exactly once even after the rates change. [LOY-006]
 func TestMemberRefundReversesOnce(t *testing.T) {
 	f := setup(t)
 	memberID, ann := f.member("ann@example.com")

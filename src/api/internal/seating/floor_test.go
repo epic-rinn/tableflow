@@ -41,7 +41,7 @@ func oneWinner(t *testing.T, rs []resp, okStatus int) int {
 }
 
 // TestConcurrentCallsOneClaim (SEA-A1): two hosts call different parties to
-// the same table at the same moment; exactly one hold exists.
+// the same table at the same moment; exactly one hold exists. [SEA-002]
 func TestConcurrentCallsOneClaim(t *testing.T) {
 	for round := range 5 {
 		e := newEnv(t)
@@ -62,7 +62,7 @@ func TestConcurrentCallsOneClaim(t *testing.T) {
 	}
 }
 
-// TestConcurrentSeatsOneVisit (SEA-A1): two hosts seat walk-ins at one table.
+// TestConcurrentSeatsOneVisit (SEA-A1): two hosts seat walk-ins at one table. [SEA-002]
 func TestConcurrentSeatsOneVisit(t *testing.T) {
 	for round := range 5 {
 		e := newEnv(t)

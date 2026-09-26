@@ -12,7 +12,7 @@ FRONTENDS := admin pwa
 
 .PHONY: specs-check services-up services-down services-reset \
 	migrate-up migrate-down migrate-status api-run api-check api-test-db api-build \
-	admin-check pwa-check frontends-check smoke artifact-check check verify print-data-key
+	admin-check pwa-check frontends-check smoke journey artifact-check check verify print-data-key
 
 specs-check:
 	python3 tooling/specs/check.py
@@ -57,6 +57,10 @@ frontends-check: admin-check pwa-check
 smoke:
 	cd src/admin && API_INTERNAL_URL='$(API_INTERNAL_URL)' $(PNPM) test:smoke
 	cd src/pwa && API_INTERNAL_URL='$(API_INTERNAL_URL)' $(PNPM) test:smoke
+
+# Cross-app visit journey (MVP-19); needs both builds and the E2E API.
+journey:
+	cd src/pwa && API_INTERNAL_URL='$(API_INTERNAL_URL)' $(PNPM) test:journey
 
 artifact-check: api-build
 	python3 tooling/runtime/check_artifacts.py \

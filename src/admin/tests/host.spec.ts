@@ -91,7 +91,8 @@ test.describe.serial("host workspace", () => {
     const board = /\/api\/v1\/branches\/[^/]+\/queue-tickets/;
     await page.goto("/host");
     const seen = countRequests(page, board);
-    await page.waitForTimeout(7000);
+    // Two polls at 3 s ±20% jitter take at most 7.2 s.
+    await page.waitForTimeout(8000);
     expect(seen.length).toBeGreaterThanOrEqual(2);
 
     await setHidden(page, true);

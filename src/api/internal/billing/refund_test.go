@@ -23,7 +23,7 @@ func (f *fixture) paid() string {
 	return f.settle().Str("id")
 }
 
-// TestConcurrentRefundOneRecord (BIL-A6 non-member part).
+// TestConcurrentRefundOneRecord (BIL-A6 non-member part). [BIL-007]
 func TestConcurrentRefundOneRecord(t *testing.T) {
 	f := setup(t)
 	sid := f.paid()
