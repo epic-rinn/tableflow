@@ -46,6 +46,12 @@ type Config struct {
 	// DataKey (32 bytes) seals secret-bearing stored data such as
 	// idempotency replay responses. Required; never logged.
 	DataKey []byte
+
+	// Mail: SMTP relay (Mailpit locally), sender, and the public PWA URL used
+	// in emailed links.
+	SMTPAddr     string
+	MailFrom     string
+	PWAPublicURL string
 }
 
 // Load reads configuration using getenv (os.Getenv in production).
@@ -96,6 +102,16 @@ func Load(getenv func(string) string) (Config, error) {
 	errs = appendErr(errs, err)
 	cfg.PWAOrigins, err = origins(valueOr(getenv("PWA_ORIGINS"), "http://localhost:3000,http://127.0.0.1:3000"))
 	errs = appendErr(errs, err)
+	cfg.SMTPAddr = valueOr(getenv("SMTP_ADDR"), "127.0.0.1:1025")
+	cfg.MailFrom = valueOr(getenv("MAIL_FROM"), "TableFlow <no-reply@tableflow.local>")
+	var publicURL []string
+	publicURL, err = origins(valueOr(getenv("PWA_PUBLIC_URL"), "http://localhost:3000"))
+	errs = appendErr(errs, err)
+	if len(publicURL) == 1 {
+		cfg.PWAPublicURL = publicURL[0]
+	} else if err == nil {
+		errs = append(errs, errors.New("PWA_PUBLIC_URL must be a single origin"))
+	}
 	cfg.DataKey, err = dataKey(getenv("DATA_ENCRYPTION_KEY"))
 	errs = appendErr(errs, err)
 	cfg.TrustedProxies, err = prefixes(getenv("TRUSTED_PROXY_CIDRS"))

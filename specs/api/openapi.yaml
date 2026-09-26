@@ -20,6 +20,8 @@ tags:
     description: Staff sessions, activation and administration (admin origin only)
   - name: guest
     description: Anonymous bootstrap and QR capability sessions (PWA origin only)
+  - name: member
+    description: Member accounts and sessions (PWA origin only); responses never reveal whether an email is registered
 paths:
   /api/v1/health/live:
     get:
@@ -397,8 +399,228 @@ paths:
             application/json:
               schema: {$ref: '#/components/schemas/GuestSession'}
         '401': {$ref: '#/components/responses/Error'}
+  /api/v1/members:
+    post:
+      operationId: signUpMember
+      tags: [member]
+      summary: Register; emails a verification link (or an existing-account notice)
+      description: Throttled per client IP (20 per 10 minutes).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [email, password, locale]
+              properties:
+                email: {type: string, maxLength: 254}
+                password: {type: string, minLength: 12, maxLength: 512}
+                locale: {type: string, enum: [th, en]}
+      responses:
+        '202':
+          description: Neutral acknowledgement (same for registered and unknown emails)
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/CheckEmail'}
+        '400': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '415': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+  /api/v1/members/verification:
+    post:
+      operationId: resendMemberVerification
+      tags: [member]
+      summary: Email a new verification link to an unverified account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [email]
+              properties:
+                email: {type: string, maxLength: 254}
+      responses:
+        '202':
+          description: Neutral acknowledgement (same for registered and unknown emails)
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/CheckEmail'}
+        '400': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '415': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+  /api/v1/members/verify:
+    post:
+      operationId: verifyMemberEmail
+      tags: [member]
+      summary: Confirm an email address with a single-use token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [token]
+              properties:
+                token: {type: string, maxLength: 64}
+      responses:
+        '200':
+          description: Email verified
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [status]
+                properties:
+                  status: {type: string, const: verified}
+        '400': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '415': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+  /api/v1/members/me:
+    get:
+      operationId: getCurrentMember
+      tags: [member]
+      summary: The signed-in member's own account
+      security: [{memberSession: []}]
+      responses:
+        '200':
+          description: Own account
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Member'}
+        '401': {$ref: '#/components/responses/Error'}
+  /api/v1/members/password-reset/request:
+    post:
+      operationId: requestMemberPasswordReset
+      tags: [member]
+      summary: Email a password-reset link when the account exists
+      description: Throttled per email (5) and client IP (30) per 10 minutes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [email]
+              properties:
+                email: {type: string, maxLength: 254}
+      responses:
+        '202':
+          description: Neutral acknowledgement (same for registered and unknown emails)
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/CheckEmail'}
+        '400': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '415': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+  /api/v1/members/password-reset/confirm:
+    post:
+      operationId: confirmMemberPasswordReset
+      tags: [member]
+      summary: Set a new password; verifies the email and revokes every session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [token, new_password]
+              properties:
+                token: {type: string, maxLength: 64}
+                new_password: {type: string, minLength: 12, maxLength: 512}
+      responses:
+        '200':
+          description: Password reset; the member cookie is cleared
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [status]
+                properties:
+                  status: {type: string, const: password_reset}
+        '400': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '415': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+  /api/v1/sessions/member:
+    post:
+      operationId: createMemberSession
+      tags: [member]
+      summary: Member sign-in
+      description: >-
+        Throttled per email (10) and client IP (100) per 10 minutes. Sets
+        `__Host-tf_member` (HttpOnly, Secure, SameSite=Lax, Path=/; 30 days
+        absolute, 7 days idle). Unverified members may sign in; features that
+        need a trusted email check `email_verified`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [email, password]
+              properties:
+                email: {type: string, maxLength: 254}
+                password: {type: string, maxLength: 512}
+      responses:
+        '201':
+          description: Session created
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Member'}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '415': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+    delete:
+      operationId: deleteMemberSession
+      tags: [member]
+      summary: Member sign-out
+      security: [{memberSession: []}]
+      responses:
+        '204':
+          description: Session revoked and cookie cleared
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
 components:
   securitySchemes:
+    memberSession:
+      type: apiKey
+      in: cookie
+      name: __Host-tf_member
+      description: Member session on the PWA origin; coexists with guest cookies.
     guestSession:
       type: apiKey
       in: cookie
@@ -552,3 +774,19 @@ components:
       required: [expires_at]
       properties:
         expires_at: {type: string, format: date-time}
+    CheckEmail:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status: {type: string, const: check_email}
+    Member:
+      type: object
+      additionalProperties: false
+      required: [member_id, email, locale, email_verified]
+      properties:
+        member_id: {type: string, format: uuid}
+        email: {type: string}
+        locale: {type: string, enum: [th, en]}
+        email_verified: {type: boolean}
+        session_expires_at: {type: string, format: date-time}

@@ -1,6 +1,6 @@
 # MVP HTTP contract
 
-Status: design contract; health, staff-identity and guest-session routes are implemented and their wire schemas live in [openapi.yaml](openapi.yaml). Base path: `/api/v1`. All routes below are relative to that base. Wire schemas move to OpenAPI per [architecture](../architecture/system.md) before their implementation.
+Status: design contract; health, staff-identity, guest-session and member-identity routes are implemented and their wire schemas live in [openapi.yaml](openapi.yaml). Base path: `/api/v1`. All routes below are relative to that base. Wire schemas move to OpenAPI per [architecture](../architecture/system.md) before their implementation.
 
 ## Common conventions
 
@@ -20,15 +20,17 @@ Status: design contract; health, staff-identity and guest-session routes are imp
 | POST `/sessions/anonymous` | Public, PWA Origin, rate limited | Empty → anonymous cookie; bootstrap identity for queue join (implemented, MVP-03) |
 | POST `/sessions/capability` | Public, PWA Origin, rate limited | `{token, kind: queue\|visit}` → guest cookie and resource ID/branch; token appears only in body (implemented, MVP-03; resource state added by MVP-05/06) |
 | GET `/sessions/guest` | Guest session | Current guest scope (implemented, MVP-03) |
-| POST `/members` | Public, rate limited | `{email,password,locale}` → generic registration acknowledgement; verification email |
-| POST `/sessions/member` | Member credentials | `{email,password}` → member cookie and own identity |
+| POST `/members` | Public, PWA Origin, rate limited | `{email,password,locale}` → 202 generic acknowledgement; verification email or existing-account notice (implemented, MVP-04) |
+| POST `/members/verification` | Public, rate limited | `{email}` → 202 neutral; new verification link for unverified accounts (implemented) |
+| POST `/sessions/member` | Member credentials | `{email,password}` → member cookie and own identity (implemented) |
+| GET `/members/me` / DELETE `/sessions/member` | Member session | Own identity / sign-out (implemented; member-specific instead of `/sessions/current`, which serves staff) |
 | POST `/sessions/staff` | Staff credentials, admin Origin, throttled | `{email,password}` → 201 staff cookie, assigned branch/roles (implemented) |
 | GET `/sessions/current` | Current principal | Own identity/roles (implemented for staff) |
 | DELETE `/sessions/current` | Current principal | Empty → revoke current session, clear cookie (implemented for staff; guest/member in MVP-03/04) |
 | POST `/staff/activate` | Manager-issued single-use token | `{token,password,display_name?}` → activates an invited staff account (implemented) |
-| POST `/members/verify` | Single-use token | `{token}` → verification acknowledgement |
-| POST `/members/password-reset/request` | Public, rate limited | `{email}` → neutral acknowledgement |
-| POST `/members/password-reset/confirm` | Single-use token | `{token,new_password}` → reset and revoke old sessions |
+| POST `/members/verify` | Single-use token | `{token}` → verification acknowledgement (implemented) |
+| POST `/members/password-reset/request` | Public, rate limited | `{email}` → neutral acknowledgement (implemented) |
+| POST `/members/password-reset/confirm` | Single-use token | `{token,new_password}` → reset, verify email and revoke old sessions (implemented) |
 
 Staff account invitation/activation uses manager-issued single-use credentials; do not expose a public role selector. A browser may hold separately scoped member and guest sessions so a logged-in member can claim a visit without destroying its guest access.
 

@@ -16,6 +16,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/epic-rinn/tableflow/src/api/internal/platform/password"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/throttle"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/token"
 )
@@ -113,13 +114,13 @@ type Activation struct {
 type Service struct {
 	pool     *pgxpool.Pool
 	limiter  *throttle.Limiter
-	hasher   *Hasher
+	hasher   *password.Hasher
 	idle     time.Duration
 	absolute time.Duration
 }
 
 // NewService builds the identity service.
-func NewService(pool *pgxpool.Pool, hasher *Hasher, idle, absolute time.Duration) *Service {
+func NewService(pool *pgxpool.Pool, hasher *password.Hasher, idle, absolute time.Duration) *Service {
 	return &Service{pool: pool, limiter: throttle.New(pool), hasher: hasher, idle: idle, absolute: absolute}
 }
 
@@ -201,9 +202,9 @@ func (s *Service) Authenticate(ctx context.Context, raw string) (Principal, erro
 
 // Login verifies credentials and creates a session. The raw token is
 // returned once for the cookie.
-func (s *Service) Login(ctx context.Context, email, password string, ip netip.Addr) (Principal, string, time.Time, error) {
+func (s *Service) Login(ctx context.Context, email, pw string, ip netip.Addr) (Principal, string, time.Time, error) {
 	norm, ok := NormalizeEmail(email)
-	if !ok || password == "" || len(password) > maxPasswordBytes {
+	if !ok || pw == "" || len(pw) > password.MaxBytes {
 		return Principal{}, "", time.Time{}, &ValidationError{Fields: map[string]string{"email": "enter an email and password"}}
 	}
 	emailBucket := throttle.HashedKey("login:email", norm)
@@ -224,7 +225,7 @@ func (s *Service) Login(ctx context.Context, email, password string, ip netip.Ad
 	if hash != nil {
 		encoded = *hash
 	}
-	match, err := s.hasher.Verify(ctx, password, encoded)
+	match, err := s.hasher.Verify(ctx, pw, encoded)
 	if err != nil {
 		return Principal{}, "", time.Time{}, fmt.Errorf("verify password: %w", err)
 	}
@@ -255,12 +256,12 @@ func (s *Service) Logout(ctx context.Context, p Principal) error {
 }
 
 // Activate sets the password of an invited account using a single-use token.
-func (s *Service) Activate(ctx context.Context, rawToken, password, displayName string, ip netip.Addr, requestID string) error {
+func (s *Service) Activate(ctx context.Context, rawToken, pw, displayName string, ip netip.Addr, requestID string) error {
 	if err := s.limiter.Hit(ctx, throttle.IPKey("activate:ip", ip), activationPerIP, throttleWindow); err != nil {
 		return err
 	}
 	fields := map[string]string{}
-	if msg := validatePassword(password); msg != "" {
+	if msg := password.Validate(pw); msg != "" {
 		fields["password"] = msg
 	}
 	name, nameOK := validDisplayName(displayName)
@@ -282,7 +283,7 @@ func (s *Service) Activate(ctx context.Context, rawToken, password, displayName 
 		return fmt.Errorf("find token: %w", err)
 	}
 	// Hash before the transaction: no locks held during slow work.
-	pwHash, err := s.hasher.Hash(ctx, password)
+	pwHash, err := s.hasher.Hash(ctx, pw)
 	if err != nil {
 		return err
 	}

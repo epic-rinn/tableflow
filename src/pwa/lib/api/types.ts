@@ -7,3 +7,11 @@ export type GuestSession = {
   resource_id: string;
   expires_at: string;
 };
+
+export type Member = {
+  member_id: string;
+  email: string;
+  locale: "th" | "en";
+  email_verified: boolean;
+  session_expires_at?: string;
+};

@@ -46,7 +46,7 @@ done < <(tooling/runtime/e2e-db.sh)
 [[ -n "${E2E_MANAGER_TOKEN:-}" && -n "${E2E_VISIT_TOKEN:-}" ]] || { echo "E2E setup produced no tokens" >&2; exit 1; }
 make api-build
 DATABASE_URL="postgres://tableflow_app:app_dev_only@127.0.0.1:${DB_PORT}/tableflow_e2e?sslmode=disable" \
-  ADMIN_ORIGINS="http://127.0.0.1:3001" PWA_ORIGINS="http://127.0.0.1:3000" \
+  ADMIN_ORIGINS="http://127.0.0.1:3001" PWA_ORIGINS="http://127.0.0.1:3000" PWA_PUBLIC_URL="http://127.0.0.1:3000" \
   DATA_ENCRYPTION_KEY="$(make -s -f Makefile print-data-key)" \
   HTTP_ADDR="$API_ADDR" ./tmp/tableflow-api >"$LOG_DIR/api.log" 2>&1 &
 api_pid=$!

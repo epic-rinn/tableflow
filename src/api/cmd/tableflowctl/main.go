@@ -19,6 +19,7 @@ import (
 
 	"github.com/epic-rinn/tableflow/src/api/internal/identity"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/database"
+	"github.com/epic-rinn/tableflow/src/api/internal/platform/password"
 )
 
 func main() {
@@ -56,7 +57,7 @@ func run(args []string) error {
 	}
 	defer pool.Close()
 
-	svc := identity.NewService(pool, identity.NewHasher(1), time.Hour, 12*time.Hour)
+	svc := identity.NewService(pool, password.New(1), time.Hour, 12*time.Hour)
 	branchID, staff, act, err := svc.Bootstrap(ctx, *name, *email, *display)
 	var ve *identity.ValidationError
 	if errors.As(err, &ve) {

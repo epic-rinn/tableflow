@@ -12,17 +12,20 @@ import (
 
 	"github.com/epic-rinn/tableflow/src/api/internal/access"
 	"github.com/epic-rinn/tableflow/src/api/internal/identity"
+	"github.com/epic-rinn/tableflow/src/api/internal/members"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/config"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/database"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/health"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/httpx"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/idempotency"
+	"github.com/epic-rinn/tableflow/src/api/internal/platform/mail"
+	"github.com/epic-rinn/tableflow/src/api/internal/platform/password"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/server"
 )
 
 // Routes maps each implemented path pattern to its method handlers. The
 // OpenAPI contract test compares this set with the documented operations.
-func Routes(health *health.Handler, id *identity.HTTP, acc *access.HTTP) map[string]map[string]http.HandlerFunc {
+func Routes(health *health.Handler, id *identity.HTTP, acc *access.HTTP, mem *members.HTTP) map[string]map[string]http.HandlerFunc {
 	routes := map[string]map[string]http.HandlerFunc{
 		"/api/v1/health/live":  {http.MethodGet: health.Live},
 		"/api/v1/health/ready": {http.MethodGet: health.Ready},
@@ -32,6 +35,9 @@ func Routes(health *health.Handler, id *identity.HTTP, acc *access.HTTP) map[str
 	}
 	if acc != nil {
 		maps.Copy(routes, acc.Routes())
+	}
+	if mem != nil {
+		maps.Copy(routes, mem.Routes())
 	}
 	return routes
 }
@@ -83,14 +89,20 @@ func Run(ctx context.Context, cfg config.Config, logger *slog.Logger, ln net.Lis
 	if err != nil {
 		return err
 	}
-	svc := identity.NewService(pool, identity.NewHasher(hashConcurrency), cfg.StaffSessionIdle, cfg.StaffSessionAbsolute)
+	hasher := password.New(hashConcurrency) // shared bound across staff and members
+	svc := identity.NewService(pool, hasher, cfg.StaffSessionIdle, cfg.StaffSessionAbsolute)
 	idHTTP := identity.NewHTTP(svc, cfg.AdminOrigins, cfg.TrustedProxies, logger)
 	accSvc := access.NewService(pool)
 	accHTTP := access.NewHTTP(accSvc, cfg.PWAOrigins, cfg.TrustedProxies, logger)
-	h := NewHandler(logger, Routes(health.New(pool, cfg.ReadinessTimeout, logger), idHTTP, accHTTP))
+	outbox := mail.NewQueue(mail.SMTP{Addr: cfg.SMTPAddr, From: cfg.MailFrom, Timeout: 10 * time.Second}, 100, 10*time.Second, logger)
+	go outbox.Run(ctx, 2)
+	memSvc := members.NewService(pool, hasher, outbox, cfg.PWAPublicURL)
+	memHTTP := members.NewHTTP(memSvc, cfg.PWAOrigins, cfg.TrustedProxies, logger)
+	h := NewHandler(logger, Routes(health.New(pool, cfg.ReadinessTimeout, logger), idHTTP, accHTTP, memHTTP))
 	go purgeLoop(ctx, logger, map[string]func(context.Context) (int64, error){
 		"identity":    svc.Purge,
 		"access":      accSvc.Purge,
+		"members":     memSvc.Purge,
 		"idempotency": func(ctx context.Context) (int64, error) { return idempotency.Purge(ctx, pool) },
 	})
 	logger.Info("api listening", "addr", ln.Addr().String())

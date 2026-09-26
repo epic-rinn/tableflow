@@ -1,4 +1,5 @@
-package identity
+// Package password hashes and verifies passwords with argon2id.
+package password
 
 import (
 	"context"
@@ -22,7 +23,7 @@ const (
 	argonSaltLen   = 16
 
 	minPasswordRunes = 12
-	maxPasswordBytes = 128 * 4
+	MaxBytes         = 128 * 4
 	maxPasswordRunes = 128
 )
 
@@ -33,8 +34,8 @@ type Hasher struct {
 	dummy string
 }
 
-// NewHasher allows at most concurrency simultaneous hash operations.
-func NewHasher(concurrency int) *Hasher {
+// New allows at most concurrency simultaneous hash operations.
+func New(concurrency int) *Hasher {
 	h := &Hasher{slots: make(chan struct{}, concurrency)}
 	h.dummy = h.encode([]byte("timing-equalisation-dummy-password"), mustSalt())
 	return h
@@ -121,14 +122,14 @@ func decodeHash(encoded string) (argonParams, []byte, []byte, error) {
 	return p, salt, key, nil
 }
 
-// validatePassword applies length-only rules (NIST SP 800-63B style).
-func validatePassword(pw string) string {
+// Validate applies length-only rules (NIST SP 800-63B style).
+func Validate(pw string) string {
 	switch {
 	case !utf8.ValidString(pw):
 		return "must be valid text"
 	case utf8.RuneCountInString(pw) < minPasswordRunes:
 		return fmt.Sprintf("must be at least %d characters", minPasswordRunes)
-	case utf8.RuneCountInString(pw) > maxPasswordRunes || len(pw) > maxPasswordBytes:
+	case utf8.RuneCountInString(pw) > maxPasswordRunes || len(pw) > MaxBytes:
 		return fmt.Sprintf("must be at most %d characters", maxPasswordRunes)
 	}
 	return ""

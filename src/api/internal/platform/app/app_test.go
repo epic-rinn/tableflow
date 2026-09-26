@@ -20,6 +20,7 @@ import (
 
 	"github.com/epic-rinn/tableflow/src/api/internal/access"
 	"github.com/epic-rinn/tableflow/src/api/internal/identity"
+	"github.com/epic-rinn/tableflow/src/api/internal/members"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/config"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/dbtest"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/health"
@@ -98,7 +99,8 @@ func TestHealthOpenApiValidation(t *testing.T) {
 	}
 	idHTTP := identity.NewHTTP(nil, nil, nil, discard) // handlers are not invoked
 	accHTTP := access.NewHTTP(nil, nil, nil, discard)
-	for path, methods := range Routes(health.New(fakePinger{}, time.Second, discard), idHTTP, accHTTP) {
+	memHTTP := members.NewHTTP(nil, nil, nil, discard)
+	for path, methods := range Routes(health.New(fakePinger{}, time.Second, discard), idHTTP, accHTTP, memHTTP) {
 		for method := range methods {
 			implemented = append(implemented, method+" "+path)
 		}
@@ -109,8 +111,8 @@ func TestHealthOpenApiValidation(t *testing.T) {
 		t.Fatalf("documented operations %v\n!= implemented %v", documented, implemented)
 	}
 
-	up := NewHandler(discard, Routes(health.New(fakePinger{}, time.Second, discard), nil, nil))
-	down := NewHandler(discard, Routes(health.New(fakePinger{err: errors.New("down")}, time.Second, discard), nil, nil))
+	up := NewHandler(discard, Routes(health.New(fakePinger{}, time.Second, discard), nil, nil, nil))
+	down := NewHandler(discard, Routes(health.New(fakePinger{err: errors.New("down")}, time.Second, discard), nil, nil, nil))
 	conform(t, doc, "/api/v1/health/live", do(up, "/api/v1/health/live"))
 	conform(t, doc, "/api/v1/health/ready", do(up, "/api/v1/health/ready"))
 	conform(t, doc, "/api/v1/health/ready", do(down, "/api/v1/health/ready"))
@@ -118,7 +120,7 @@ func TestHealthOpenApiValidation(t *testing.T) {
 }
 
 func TestUnknownRoutesAreJSON404(t *testing.T) {
-	h := NewHandler(discard, Routes(health.New(fakePinger{}, time.Second, discard), nil, nil))
+	h := NewHandler(discard, Routes(health.New(fakePinger{}, time.Second, discard), nil, nil, nil))
 	for _, p := range []string{"/", "/api/v1/queue-tickets", "/api/v1/health/live/extra"} {
 		resp := do(h, p)
 		if resp.StatusCode != http.StatusNotFound || resp.Header.Get("Content-Type") != "application/json; charset=utf-8" {

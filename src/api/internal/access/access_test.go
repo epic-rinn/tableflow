@@ -23,6 +23,7 @@ import (
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/app"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/dbtest"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/health"
+	"github.com/epic-rinn/tableflow/src/api/internal/platform/password"
 )
 
 const (
@@ -47,10 +48,10 @@ func newEnv(t *testing.T) *env {
 	}
 	t.Cleanup(pool.Close)
 	trusted := []netip.Prefix{netip.MustParsePrefix("127.0.0.1/32")}
-	idSvc := identity.NewService(pool, identity.NewHasher(2), time.Hour, 12*time.Hour)
+	idSvc := identity.NewService(pool, password.New(2), time.Hour, 12*time.Hour)
 	routes := app.Routes(health.New(pool, time.Second, quiet),
 		identity.NewHTTP(idSvc, []string{adminOrigin}, trusted, quiet),
-		access.NewHTTP(access.NewService(pool), []string{pwaOrigin}, trusted, quiet))
+		access.NewHTTP(access.NewService(pool), []string{pwaOrigin}, trusted, quiet), nil)
 	srv := httptest.NewServer(app.NewHandler(quiet, routes))
 	t.Cleanup(srv.Close)
 	e := &env{t: t, pool: pool, srv: srv}

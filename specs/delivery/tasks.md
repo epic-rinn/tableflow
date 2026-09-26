@@ -1,6 +1,6 @@
 # MVP implementation tasks
 
-Status: MVP-01 and MVP-02 done; MVP-03 implemented-unverified (M0 gate pending); all other tasks planned. Created: 2026-09-26.
+Status: MVP-01 and MVP-02 done; MVP-03 and MVP-04 implemented-unverified (M0 gate pending); all other tasks planned. Created: 2026-09-26.
 
 This is the implementation queue for Claude. Codex maintains task scope and the Word report; Claude maintains execution status and evidence. The [roadmap](roadmap.md) groups milestones, while this file owns task order and status. Canonical feature specs remain the authority for behavior.
 
@@ -22,7 +22,7 @@ All implementation tasks are owned by Claude. MVP-22 additionally requires the r
 | MVP-01 Runtime and verification foundation | M0 | `001-foundation` | None | done |
 | MVP-02 Staff identity and access | M0 | `002-staff-access` | MVP-01 | done |
 | MVP-03 Guest capabilities and mutation infrastructure | M0 | `003-guest-access` | MVP-02 | implemented-unverified |
-| MVP-04 Member identity | M0 | `004-member-access` | MVP-02 | planned |
+| MVP-04 Member identity | M0 | `004-member-access` | MVP-02 | implemented-unverified |
 | MVP-05 Tables and queue entry | M1 | `005-queue-entry` | MVP-03 | planned |
 | MVP-06 Calling and seating | M1 | `006-call-seat` | MVP-05 | planned |
 | MVP-07 Moves and table lifecycle | M1 | `007-table-lifecycle` | MVP-06 | planned |

@@ -19,6 +19,7 @@ import (
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/app"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/dbtest"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/health"
+	pwhash "github.com/epic-rinn/tableflow/src/api/internal/platform/password"
 )
 
 const (
@@ -44,9 +45,9 @@ func newEnv(t *testing.T) *env {
 		t.Fatal(err)
 	}
 	t.Cleanup(pool.Close)
-	svc := identity.NewService(pool, identity.NewHasher(4), time.Hour, 12*time.Hour)
+	svc := identity.NewService(pool, pwhash.New(4), time.Hour, 12*time.Hour)
 	h := identity.NewHTTP(svc, []string{adminOrigin}, []netip.Prefix{netip.MustParsePrefix("127.0.0.1/32")}, quiet)
-	srv := httptest.NewServer(app.NewHandler(quiet, app.Routes(health.New(pool, time.Second, quiet), h, nil)))
+	srv := httptest.NewServer(app.NewHandler(quiet, app.Routes(health.New(pool, time.Second, quiet), h, nil, nil)))
 	t.Cleanup(srv.Close)
 	e := &env{t: t, pool: pool, svc: svc, srv: srv}
 	branch, _, act, err := svc.Bootstrap(context.Background(), "Main", "manager@example.com", "Manager")

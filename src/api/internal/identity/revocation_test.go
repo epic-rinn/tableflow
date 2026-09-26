@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/dbtest"
+	"github.com/epic-rinn/tableflow/src/api/internal/platform/password"
 )
 
 const testPassword = "correct horse battery staple"
@@ -24,7 +25,7 @@ func twoManagers(t *testing.T) (*Service, *pgxpool.Pool, Principal, Principal) {
 		t.Fatal(err)
 	}
 	t.Cleanup(pool.Close)
-	svc := NewService(pool, NewHasher(2), time.Hour, 12*time.Hour)
+	svc := NewService(pool, password.New(2), time.Hour, 12*time.Hour)
 	branch, _, act, err := svc.Bootstrap(ctx, "Main", "a@example.com", "A")
 	if err != nil {
 		t.Fatal(err)
