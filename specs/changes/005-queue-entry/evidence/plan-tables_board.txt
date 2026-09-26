@@ -1,0 +1,32 @@
+Limit  (cost=99.72..99.97 rows=100 width=89) (actual time=0.076..0.083 rows=100.00 loops=1)
+  Buffers: shared hit=46
+  ->  Sort  (cost=99.72..99.97 rows=100 width=89) (actual time=0.076..0.079 rows=100.00 loops=1)
+        Sort Key: t.label
+        Sort Method: quicksort  Memory: 38kB
+        Buffers: shared hit=46
+        ->  Nested Loop Left Join  (cost=3.23..96.40 rows=100 width=89) (actual time=0.023..0.056 rows=100.00 loops=1)
+              Buffers: shared hit=43
+              ->  Hash Left Join  (cost=2.80..6.32 rows=100 width=85) (actual time=0.018..0.031 rows=100.00 loops=1)
+                    Hash Cond: (t.id = c.table_id)
+                    Buffers: shared hit=3
+                    ->  Seq Scan on dining_tables t  (cost=0.00..3.25 rows=100 width=53) (actual time=0.003..0.007 rows=100.00 loops=1)
+                          Filter: (branch_id = '00000000-0000-7000-8000-0000000000c1'::uuid)
+                          Buffers: shared hit=2
+                    ->  Hash  (cost=1.80..1.80 rows=80 width=48) (actual time=0.011..0.012 rows=80.00 loops=1)
+                          Buckets: 1024  Batches: 1  Memory Usage: 13kB
+                          Buffers: shared hit=1
+                          ->  Seq Scan on table_claims c  (cost=0.00..1.80 rows=80 width=48) (actual time=0.002..0.005 rows=80.00 loops=1)
+                                Buffers: shared hit=1
+              ->  Memoize  (cost=0.43..8.04 rows=1 width=20) (actual time=0.000..0.000 rows=0.10 loops=100)
+                    Cache Key: c.queue_ticket_id
+                    Cache Mode: logical
+                    Hits: 89  Misses: 11  Evictions: 0  Overflows: 0  Memory Usage: 2kB
+                    Buffers: shared hit=40
+                    ->  Index Scan using queue_tickets_pkey on queue_tickets q  (cost=0.42..8.04 rows=1 width=20) (actual time=0.001..0.001 rows=0.91 loops=11)
+                          Index Cond: (id = c.queue_ticket_id)
+                          Index Searches: 10
+                          Buffers: shared hit=40
+Planning:
+  Buffers: shared hit=486
+Planning Time: 0.433 ms
+Execution Time: 0.110 ms

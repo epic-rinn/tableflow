@@ -1,0 +1,36 @@
+Nested Loop Left Join  (cost=8.45..121.79 rows=1 width=154) (actual time=0.123..0.126 rows=1.00 loops=1)
+  Join Filter: (g.id = t.seating_group_id)
+  Rows Removed by Join Filter: 1
+  Buffers: shared hit=70
+  ->  Hash Right Join  (cost=8.45..11.71 rows=1 width=120) (actual time=0.027..0.029 rows=1.00 loops=1)
+        Hash Cond: (dt.id = t.called_table_id)
+        Buffers: shared hit=6
+        ->  Seq Scan on dining_tables dt  (cost=0.00..3.00 rows=100 width=21) (actual time=0.003..0.006 rows=100.00 loops=1)
+              Buffers: shared hit=2
+        ->  Hash  (cost=8.44..8.44 rows=1 width=131) (actual time=0.012..0.012 rows=1.00 loops=1)
+              Buckets: 1024  Batches: 1  Memory Usage: 9kB
+              Buffers: shared hit=4
+              ->  Index Scan using queue_tickets_pkey on queue_tickets t  (cost=0.42..8.44 rows=1 width=131) (actual time=0.010..0.010 rows=1.00 loops=1)
+                    Index Cond: (id = '01a0ddbb-75ad-72ff-adef-bf8ba46da869'::uuid)
+                    Index Searches: 1
+                    Buffers: shared hit=4
+  ->  Seq Scan on seating_groups g  (cost=0.00..1.03 rows=3 width=22) (actual time=0.001..0.001 rows=2.00 loops=1)
+        Buffers: shared hit=1
+  SubPlan 1
+    ->  Aggregate  (cost=6.05..6.06 rows=1 width=8) (never executed)
+          ->  Index Only Scan using queue_tickets_waiting_group on queue_tickets o  (cost=0.27..6.04 rows=1 width=0) (never executed)
+                Index Cond: ((branch_id = t.branch_id) AND (seating_group_id IS NULL) AND (join_order < t.join_order))
+                Heap Fetches: 0
+                Index Searches: 0
+  SubPlan 2
+    ->  Aggregate  (cost=102.94..102.95 rows=1 width=8) (actual time=0.091..0.091 rows=1.00 loops=1)
+          Buffers: shared hit=63
+          ->  Index Only Scan using queue_tickets_waiting_group on queue_tickets o_1  (cost=0.27..102.80 rows=54 width=0) (actual time=0.007..0.084 rows=166.00 loops=1)
+                Index Cond: ((branch_id = t.branch_id) AND (seating_group_id = t.seating_group_id) AND (join_order < t.join_order))
+                Heap Fetches: 166
+                Index Searches: 1
+                Buffers: shared hit=63
+Planning:
+  Buffers: shared hit=547
+Planning Time: 0.543 ms
+Execution Time: 0.171 ms

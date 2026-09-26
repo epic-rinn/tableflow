@@ -40,7 +40,7 @@ test.describe.serial("host workspace", () => {
       await form.getByLabel("Label").fill(label);
       await form.getByLabel("Seats").fill(seats);
       await form.getByRole("button", { name: "Add table" }).click();
-      await expect(page.getByRole("status")).toContainText(`Table ${label} added.`);
+      await expect(page.getByRole("main").getByRole("status")).toContainText(`Table ${label} added.`);
     }
 
     await page.goto("/host");
@@ -69,7 +69,7 @@ test.describe.serial("host workspace", () => {
     await expect(h4).toContainText("occupied");
 
     await h4.getByRole("button", { name: "Depart (paid)" }).click();
-    await expect(page.getByRole("alert")).toContainText("can no longer do that");
+    await expect(page.getByRole("main").getByRole("alert")).toContainText("can no longer do that");
 
     await h4.getByLabel("Reason for table H4").fill("left before ordering");
     await h4.getByRole("button", { name: "Close empty" }).click();

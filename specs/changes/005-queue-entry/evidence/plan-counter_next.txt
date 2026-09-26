@@ -1,0 +1,12 @@
+Insert on queue_counters  (cost=0.00..0.02 rows=1 width=24) (actual time=0.105..0.106 rows=1.00 loops=1)
+  Conflict Resolution: UPDATE
+  Conflict Arbiter Indexes: queue_counters_pkey
+  Tuples Inserted: 1
+  Conflicting Tuples: 0
+  Buffers: shared hit=22
+  ->  Result  (cost=0.00..0.02 rows=1 width=24) (actual time=0.043..0.043 rows=1.00 loops=1)
+Planning:
+  Buffers: shared hit=38
+Planning Time: 0.043 ms
+Trigger for constraint queue_counters_branch_id_fkey: time=0.194 calls=1
+Execution Time: 0.329 ms

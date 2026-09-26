@@ -1,0 +1,8 @@
+Index Scan using visits_pkey on visits  (cost=0.42..8.44 rows=1 width=32) (actual time=0.008..0.009 rows=1.00 loops=1)
+  Index Cond: (id = '01a0ddbb-78b4-7ac1-96cd-23c36c85b438'::uuid)
+  Index Searches: 1
+  Buffers: shared hit=4
+Planning:
+  Buffers: shared hit=120
+Planning Time: 0.152 ms
+Execution Time: 0.016 ms

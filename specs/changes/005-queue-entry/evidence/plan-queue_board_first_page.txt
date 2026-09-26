@@ -1,0 +1,30 @@
+Limit  (cost=0.43..87.81 rows=51 width=154) (actual time=0.029..0.079 rows=51.00 loops=1)
+  Buffers: shared hit=55
+  ->  Nested Loop Left Join  (cost=0.43..855.46 rows=499 width=154) (actual time=0.029..0.076 rows=51.00 loops=1)
+        Buffers: shared hit=55
+        ->  Nested Loop Left Join  (cost=0.27..838.38 rows=499 width=137) (actual time=0.017..0.044 rows=51.00 loops=1)
+              Join Filter: (g.id = t.seating_group_id)
+              Rows Removed by Join Filter: 50
+              Buffers: shared hit=32
+              ->  Index Scan using queue_tickets_active on queue_tickets t  (cost=0.27..818.63 rows=499 width=131) (actual time=0.012..0.026 rows=51.00 loops=1)
+                    Index Cond: ((branch_id = '00000000-0000-7000-8000-0000000000c1'::uuid) AND (join_order > 0))
+                    Index Searches: 1
+                    Buffers: shared hit=31
+              ->  Materialize  (cost=0.00..1.04 rows=3 width=22) (actual time=0.000..0.000 rows=1.98 loops=51)
+                    Storage: Memory  Maximum Storage: 17kB
+                    Buffers: shared hit=1
+                    ->  Seq Scan on seating_groups g  (cost=0.00..1.03 rows=3 width=22) (actual time=0.002..0.003 rows=3.00 loops=1)
+                          Buffers: shared hit=1
+        ->  Memoize  (cost=0.15..0.20 rows=1 width=21) (actual time=0.000..0.000 rows=0.20 loops=51)
+              Cache Key: t.called_table_id
+              Cache Mode: logical
+              Hits: 40  Misses: 11  Evictions: 0  Overflows: 0  Memory Usage: 2kB
+              Buffers: shared hit=23
+              ->  Index Scan using dining_tables_branch_id_id_key on dining_tables dt  (cost=0.14..0.19 rows=1 width=21) (actual time=0.002..0.002 rows=0.91 loops=11)
+                    Index Cond: (id = t.called_table_id)
+                    Index Searches: 10
+                    Buffers: shared hit=23
+Planning:
+  Buffers: shared hit=555
+Planning Time: 0.475 ms
+Execution Time: 0.105 ms

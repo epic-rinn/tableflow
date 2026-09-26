@@ -1,0 +1,85 @@
+[
+  {
+    "Plan": {
+      "Node Type": "ModifyTable",
+      "Operation": "Update",
+      "Parallel Aware": false,
+      "Async Capable": false,
+      "Relation Name": "table_claims",
+      "Alias": "table_claims",
+      "Startup Cost": 0.00,
+      "Total Cost": 2.20,
+      "Plan Rows": 0,
+      "Plan Width": 0,
+      "Actual Startup Time": 0.069,
+      "Actual Total Time": 0.070,
+      "Actual Rows": 0.00,
+      "Actual Loops": 1,
+      "Disabled": false,
+      "Shared Hit Blocks": 26,
+      "Shared Read Blocks": 0,
+      "Shared Dirtied Blocks": 0,
+      "Shared Written Blocks": 0,
+      "Local Hit Blocks": 0,
+      "Local Read Blocks": 0,
+      "Local Dirtied Blocks": 0,
+      "Local Written Blocks": 0,
+      "Temp Read Blocks": 0,
+      "Temp Written Blocks": 0,
+      "Plans": [
+        {
+          "Node Type": "Seq Scan",
+          "Parent Relationship": "Outer",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Relation Name": "table_claims",
+          "Alias": "table_claims",
+          "Startup Cost": 0.00,
+          "Total Cost": 2.20,
+          "Plan Rows": 1,
+          "Plan Width": 22,
+          "Actual Startup Time": 0.006,
+          "Actual Total Time": 0.008,
+          "Actual Rows": 1.00,
+          "Actual Loops": 1,
+          "Disabled": false,
+          "Filter": "((visit_id = '01a0ddbb-78b4-7ac1-96cd-23c36c85b438'::uuid) AND (table_id = '01a0ddbb-7265-715d-b1e0-96d47191ebd3'::uuid))",
+          "Rows Removed by Filter": 79,
+          "Shared Hit Blocks": 1,
+          "Shared Read Blocks": 0,
+          "Shared Dirtied Blocks": 0,
+          "Shared Written Blocks": 0,
+          "Local Hit Blocks": 0,
+          "Local Read Blocks": 0,
+          "Local Dirtied Blocks": 0,
+          "Local Written Blocks": 0,
+          "Temp Read Blocks": 0,
+          "Temp Written Blocks": 0
+        }
+      ]
+    },
+    "Planning": {
+      "Shared Hit Blocks": 91,
+      "Shared Read Blocks": 0,
+      "Shared Dirtied Blocks": 0,
+      "Shared Written Blocks": 0,
+      "Local Hit Blocks": 0,
+      "Local Read Blocks": 0,
+      "Local Dirtied Blocks": 0,
+      "Local Written Blocks": 0,
+      "Temp Read Blocks": 0,
+      "Temp Written Blocks": 0
+    },
+    "Planning Time": 0.132,
+    "Triggers": [
+      {
+        "Trigger Name": "RI_ConstraintTrigger_c_294834",
+        "Constraint Name": "table_claims_branch_id_table_id_fkey",
+        "Relation": "table_claims",
+        "Time": 0.146,
+        "Calls": 1
+      }
+    ],
+    "Execution Time": 0.243
+  }
+]

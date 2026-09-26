@@ -1,6 +1,6 @@
 # Change: 005-queue-entry — Tables and queue entry
 
-Status: implemented-unverified. Date: 2026-09-26. Scope owner: Claude. Task: MVP-05. Verification: M1 milestone gate ([ADR-0004](../../decisions/0004-milestone-verification.md)).
+Status: done (M1 gate). Date: 2026-09-26. Scope owner: Claude. Task: MVP-05. Verification: M1 milestone gate ([ADR-0004](../../decisions/0004-milestone-verification.md)).
 
 ## Problem and behavior
 
@@ -37,10 +37,10 @@ Maps QUE-001, QUE-002, waiting cancellation from QUE-004, the table subset of OP
 
 | Requirement | Test | Status |
 | --- | --- | --- |
-| QUE-A1 same-key join retry (parallel) | TestQueueJoinIdempotent | written, not run |
-| QUE-A2 group position | TestGroupPositionIndependentOfOtherGroups | written, not run |
-| QUE-A4 priority across the date boundary | TestJoinOrderSurvivesDailyRenumbering | written, not run |
-| Tracking privacy and branch isolation | TestTrackingShowsOnlyOwnTicket, TestQueueBranchIsolation | written, not run |
-| Table/group configuration and validation | TestTableConfiguration, TestSeatingGroupValidation | written, not run |
-| Cancellation | TestGuestAndHostCancel | written, not run |
-| Hidden-tab/backoff polling | admin/PWA browser tests | written, not run |
+| QUE-A1 same-key join retry (parallel) | TestQueueJoinIdempotent | passed (M1 gate) |
+| QUE-A2 group position | TestGroupPositionIndependentOfOtherGroups | passed (M1 gate) |
+| QUE-A4 priority across the date boundary | TestJoinOrderSurvivesDailyRenumbering | passed (M1 gate) |
+| Tracking privacy and branch isolation | TestTrackingShowsOnlyOwnTicket, TestQueueBranchIsolation | passed (M1 gate) |
+| Table/group configuration and validation | TestTableConfiguration, TestSeatingGroupValidation | passed (M1 gate) |
+| Cancellation | TestGuestAndHostCancel | passed (M1 gate) |
+| Hidden-tab/backoff polling | admin/PWA browser tests | passed (M1 gate) |

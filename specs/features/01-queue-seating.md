@@ -1,6 +1,6 @@
 # Queue and seating
 
-Status: specified; implemented in M1 (MVP-05–07), verification at the M1 gate. Actors: guest, host/server, manager.
+Status: specified; implemented and verified in M1 (MVP-05–07, gate passed 2026-09-26). Actors: guest, host/server, manager.
 
 ## Requirements
 

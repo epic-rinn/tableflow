@@ -1,6 +1,6 @@
 # Change: 007-table-lifecycle — Moves and table lifecycle
 
-Status: implemented-unverified. Date: 2026-09-26. Scope owner: Claude. Task: MVP-07. Verification: M1 gate (ADR-0004).
+Status: done (M1 gate). Date: 2026-09-26. Scope owner: Claude. Task: MVP-07. Verification: M1 gate (ADR-0004).
 
 ## Problem and behavior
 
@@ -26,8 +26,8 @@ No merging or splitting of tables.
 
 | Requirement | Test | Status |
 | --- | --- | --- |
-| SEA-A2 move keeps access; old table cleaning | TestMoveKeepsAccessAndCleansOldTable | written, not run |
-| ACC-A2 rotation | TestRotateAccessInvalidatesOldQR | written, not run |
-| Move versus depart race | TestMoveVersusDepartOneWinner | written, not run |
-| SEA-A3 paid retention | TestPaidVisitKeepsTable | written, not run |
-| Close-empty, ready, occupied rejection | TestCloseEmptyAndReady | written, not run |
+| SEA-A2 move keeps access; old table cleaning | TestMoveKeepsAccessAndCleansOldTable | passed (M1 gate) |
+| ACC-A2 rotation | TestRotateAccessInvalidatesOldQR | passed (M1 gate) |
+| Move versus depart race | TestMoveVersusDepartOneWinner | passed (M1 gate) |
+| SEA-A3 paid retention | TestPaidVisitKeepsTable | passed (M1 gate) |
+| Close-empty, ready, occupied rejection | TestCloseEmptyAndReady | passed (M1 gate) |

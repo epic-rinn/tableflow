@@ -1,0 +1,11 @@
+Update on table_claims  (cost=0.00..2.20 rows=0 width=0) (actual time=0.065..0.066 rows=0.00 loops=1)
+  Buffers: shared hit=26
+  ->  Seq Scan on table_claims  (cost=0.00..2.20 rows=1 width=22) (actual time=0.006..0.007 rows=1.00 loops=1)
+        Filter: ((visit_id = '01a0ddbb-78b4-7ac1-96cd-23c36c85b438'::uuid) AND (table_id = '01a0ddbb-7265-715d-b1e0-96d47191ebd3'::uuid))
+        Rows Removed by Filter: 79
+        Buffers: shared hit=1
+Planning:
+  Buffers: shared hit=91
+Planning Time: 0.136 ms
+Trigger for constraint table_claims_branch_id_table_id_fkey: time=0.126 calls=1
+Execution Time: 0.217 ms

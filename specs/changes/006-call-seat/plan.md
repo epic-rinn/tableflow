@@ -1,6 +1,6 @@
 # Change: 006-call-seat — Calling and seating
 
-Status: implemented-unverified. Date: 2026-09-26. Scope owner: Claude. Task: MVP-06. Verification: M1 gate (ADR-0004).
+Status: done (M1 gate). Date: 2026-09-26. Scope owner: Claude. Task: MVP-06. Verification: M1 gate (ADR-0004).
 
 ## Problem and behavior
 
@@ -24,9 +24,9 @@ Maps QUE-003, QUE-004, SEA-001, SEA-002 and ADM-002. Hosts call a waiting ticket
 
 | Requirement | Test | Status |
 | --- | --- | --- |
-| SEA-A1 two hosts, one table (call and seat) | TestConcurrentCallsOneClaim, TestConcurrentSeatsOneVisit | written, not run |
-| QUE-A3 no-show versus seat | TestNoShowVersusSeatOneWinner | written, not run |
-| Repeated seating returns the original visit | TestSeatRetryReturnsOriginal | written, not run |
-| Deadline does not release the hold | TestOverdueHoldPersists | written, not run |
-| Fairness and manager override with audit | TestBypassRequiresManagerReason | written, not run |
-| Incompatible table rejected | TestIncompatibleTableRejected | written, not run |
+| SEA-A1 two hosts, one table (call and seat) | TestConcurrentCallsOneClaim, TestConcurrentSeatsOneVisit | passed (M1 gate) |
+| QUE-A3 no-show versus seat | TestNoShowVersusSeatOneWinner | passed (M1 gate) |
+| Repeated seating returns the original visit | TestSeatRetryReturnsOriginal | passed (M1 gate) |
+| Deadline does not release the hold | TestOverdueHoldPersists | passed (M1 gate) |
+| Fairness and manager override with audit | TestBypassRequiresManagerReason | passed (M1 gate) |
+| Incompatible table rejected | TestIncompatibleTableRejected | passed (M1 gate) |

@@ -350,14 +350,15 @@ func (h *HTTP) join(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	actor := actorFrom(r)
-	if actor.Anonymous != nil {
-		ip := throttle.IPKey("queue-join:ip", httpx.ClientIP(r, h.trusted))
-		if err := h.svc.CheckJoinLimits(r.Context(), *actor.Anonymous, ip); err != nil {
-			h.fail(w, r, err)
-			return
-		}
-	}
+	ip := throttle.IPKey("queue-join:ip", httpx.ClientIP(r, h.trusted))
 	h.mutate(w, r, "queue.join", in, func(ctx context.Context, tx pgx.Tx) (int, any, error) {
+		// Only first executions count toward the limit: retries of a
+		// committed key replay without reaching this function.
+		if actor.Anonymous != nil {
+			if err := h.svc.CheckJoinLimits(ctx, *actor.Anonymous, ip); err != nil {
+				return 0, nil, err
+			}
+		}
 		res, err := h.svc.Join(ctx, tx, actor, branch, in)
 		return http.StatusCreated, res, err
 	})

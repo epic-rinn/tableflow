@@ -49,6 +49,6 @@ test.describe("queue", () => {
     await page.goto(`/join/${branch}`);
     await page.getByLabel("Number of people").fill("12");
     await page.getByRole("button", { name: "Join the queue" }).click();
-    await expect(page.getByRole("alert")).toContainText("ask a staff member");
+    await expect(page.getByRole("main").getByRole("alert")).toContainText("ask a staff member");
   });
 });
