@@ -1,6 +1,6 @@
 # Change: 019-e2e — Complete journey regression suite
 
-Status: implemented-unverified (M6 gate pending; `make verify` passes). Date: 2026-09-27. Scope owner: Claude. Task: MVP-19. Verification: M6 gate (ADR-0004).
+Status: done (M6 gate passed 2026-09-27). Date: 2026-09-27. Scope owner: Claude. Task: MVP-19. Verification: M6 gate (ADR-0004).
 
 ## Problem and behavior
 

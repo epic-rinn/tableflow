@@ -1,6 +1,6 @@
 # MVP implementation roadmap
 
-M0–M3 are **done** (MVP-01–13, gates passed 2026-09-26 UTC). MU (UI redesign, UI-01/02) is **done** (gate passed 2026-09-27). M4 is **done** (MVP-14/15, gate passed 2026-09-27). M5 is **done** (MVP-16–18, gate passed 2026-09-27). M6 is planned.
+M0–M3 are **done** (MVP-01–13, gates passed 2026-09-26 UTC). MU (UI redesign, UI-01/02) is **done** (gate passed 2026-09-27). M4 is **done** (MVP-14/15, gate passed 2026-09-27). M5 is **done** (MVP-16–18, gate passed 2026-09-27). M6: MVP-19/20 done; MVP-21 is blocked on live email (the user's Resend domain and key); MVP-22 needs the operator walkthrough ([checklist](../changes/022-pilot/plan.md)).
 
 The [MVP task backlog](tasks.md) owns implementation-task status and dependencies. Claude implements those tasks; Codex primarily maintains planning and the original Word report. Begin with the prepared [001-foundation packet](../changes/001-foundation/plan.md), which covers only the runtime/testing portion of M0. Identity is delivered by MVP-02–04 before M0 is complete.
 

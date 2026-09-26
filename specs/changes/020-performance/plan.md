@@ -1,6 +1,6 @@
 # Change: 020-performance — Representative performance qualification
 
-Status: implemented-unverified (M6 gate pending; qualification run complete). Date: 2026-09-27. Scope owner: Claude. Task: MVP-20. Verification: M6 gate (ADR-0004).
+Status: done (M6 gate passed 2026-09-27). Date: 2026-09-27. Scope owner: Claude. Task: MVP-20. Verification: M6 gate (ADR-0004).
 
 ## Problem and behavior
 

@@ -1,6 +1,6 @@
 # Change: 021-operations — Deployment and restore rehearsal
 
-Status: implemented-unverified (M6 gate pending); live email **blocked** on the user's Resend domain and key. Date: 2026-09-27. Scope owner: Claude. Task: MVP-21. Verification: M6 gate (ADR-0004).
+Status: **blocked** on live email only (the user's Resend domain and key); everything else was verified at the M6 gate (2026-09-27). Date: 2026-09-27. Scope owner: Claude. Task: MVP-21. Verification: M6 gate (ADR-0004).
 
 ## Problem and behavior
 
