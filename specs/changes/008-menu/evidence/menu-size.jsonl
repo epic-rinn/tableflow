@@ -1,0 +1,4 @@
+{"response": "full menu, uncompressed", "bytes": 628133, "encoding": null, "p50_ms": 6.02, "p95_ms": 8.68}
+{"response": "full menu, gzip", "bytes": 81599, "encoding": "gzip", "p50_ms": 7.87, "p95_ms": 9.52}
+{"response": "one category (50 items), uncompressed", "bytes": 63896, "encoding": null, "p50_ms": 1.73, "p95_ms": 3.52}
+{"response": "one category (50 items), gzip", "bytes": 8700, "encoding": "gzip", "p50_ms": 2.01, "p95_ms": 3.29}

@@ -70,7 +70,7 @@ Implemented in M1 (MVP-05–07) with these additions: GET/PUT `/branches/{branch
 | GET `/branches/{branch_id}/assistance` | Server | `state,limit,cursor` → assistance board |
 | POST `/assistance/{request_id}/transition` | Server | `{expected_version,to_state: acknowledged\|resolved}` → request |
 
-Implemented in M2 (MVP-08–10). `PUT /branches/{id}/menu` takes `expected_revision` and a nested category → item → group → option tree; `PATCH /menu-items/{id}/availability` uses the item version; `GET/POST /visits/{id}/assistance` serve the visit's guests. Wire schemas: [openapi.yaml](openapi.yaml).
+Implemented in M2 (MVP-08–10). `PUT /branches/{id}/menu` takes `expected_revision` and a nested category → item → group → option tree; `PATCH /menu-items/{id}/availability` uses the item version; `GET/POST /visits/{id}/assistance` serve the visit's guests. `GET /branches/{id}/menu?category_id=` returns all categories with items for one category only (large-menu split); the menu route is gzip-compressed when accepted. Wire schemas: [openapi.yaml](openapi.yaml).
 
 Menu responses are capped at the pilot's configured maximum 500 items, with bounded options per item. M0/ordering contract tests must validate a response-byte cap; do not silently truncate a menu. Split by category if the pilot exceeds that bound.
 

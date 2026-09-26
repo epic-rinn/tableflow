@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"net"
 	"net/netip"
 	"net/url"
 	"os"
@@ -50,6 +51,9 @@ type Config struct {
 	// Mail: SMTP relay (Mailpit locally), sender, and the public PWA URL used
 	// in emailed links.
 	SMTPAddr     string
+	SMTPTLS      string // none (loopback only) | implicit | starttls
+	SMTPUsername string
+	SMTPPassword string // secret; never logged
 	MailFrom     string
 	PWAPublicURL string
 }
@@ -103,6 +107,10 @@ func Load(getenv func(string) string) (Config, error) {
 	cfg.PWAOrigins, err = origins(valueOr(getenv("PWA_ORIGINS"), "http://localhost:3000,http://127.0.0.1:3000"))
 	errs = appendErr(errs, err)
 	cfg.SMTPAddr = valueOr(getenv("SMTP_ADDR"), "127.0.0.1:1025")
+	cfg.SMTPTLS = valueOr(getenv("SMTP_TLS"), "none")
+	cfg.SMTPUsername = getenv("SMTP_USERNAME")
+	cfg.SMTPPassword = getenv("SMTP_PASSWORD")
+	errs = appendErr(errs, validateSMTP(cfg))
 	cfg.MailFrom = valueOr(getenv("MAIL_FROM"), "TableFlow <no-reply@tableflow.local>")
 	var publicURL []string
 	publicURL, err = origins(valueOr(getenv("PWA_PUBLIC_URL"), "http://localhost:3000"))
@@ -208,4 +216,31 @@ func dataKey(raw string) ([]byte, error) {
 		return nil, errors.New("DATA_ENCRYPTION_KEY must be base64 of exactly 32 bytes")
 	}
 	return k, nil
+}
+
+// validateSMTP requires TLS for any non-loopback relay and for credentials;
+// plaintext is only for a local sink such as Mailpit.
+func validateSMTP(cfg Config) error {
+	switch cfg.SMTPTLS {
+	case "none", "implicit", "starttls":
+	default:
+		return errors.New("SMTP_TLS must be none, implicit or starttls")
+	}
+	host, _, err := net.SplitHostPort(cfg.SMTPAddr)
+	if err != nil {
+		return errors.New("SMTP_ADDR must be host:port")
+	}
+	if cfg.SMTPTLS == "none" {
+		ip, err := netip.ParseAddr(host)
+		if host != "localhost" && (err != nil || !ip.IsLoopback()) {
+			return errors.New("SMTP_TLS=none is only allowed for a loopback relay; use implicit or starttls")
+		}
+		if cfg.SMTPUsername != "" || cfg.SMTPPassword != "" {
+			return errors.New("SMTP credentials require SMTP_TLS=implicit or starttls")
+		}
+	}
+	if (cfg.SMTPUsername == "") != (cfg.SMTPPassword == "") {
+		return errors.New("set both SMTP_USERNAME and SMTP_PASSWORD, or neither")
+	}
+	return nil
 }

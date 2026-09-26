@@ -1,6 +1,6 @@
 # Change: 009-ordering — Shared-visit ordering
 
-Status: implemented-unverified. Date: 2026-09-26. Scope owner: Claude. Task: MVP-09. Verification: M2 gate (ADR-0004).
+Status: done (M2 gate). Date: 2026-09-26. Scope owner: Claude. Task: MVP-09. Verification: M2 gate (ADR-0004).
 
 ## Problem and behavior
 
@@ -18,12 +18,12 @@ Maps ORD-001 to ORD-003, ORD-005, order gating from ORD-007, and ADM-002.
 
 | Requirement | Test | Status |
 | --- | --- | --- |
-| ORD-A1 two phones, one visit | TestTwoPhonesOrderOnce | written, not run |
-| ORD-A2 lost response retry; ORD-003 key/body conflict | TestOrderRetryAndConflict | written, not run |
-| ORD-A3 sold out or repriced after browsing | TestStaleMenuRejectsWholeOrder | written, not run |
-| Menu change racing submission | TestMenuChangeVersusSubmission | written, not run |
-| Bounds and validation | TestOrderValidation | written, not run |
-| Cross-visit denial, private reads | TestOrderAccessControl | written, not run |
-| Assisted order actor | TestAssistedOrderRecordsStaff | written, not run |
-| Order gating on non-open visits; close-empty guard | TestOrdersOnlyOnOpenVisits | written, not run |
-| Distinct carts per phone | PWA browser test | written, not run |
+| ORD-A1 two phones, one visit | TestTwoPhonesOrderOnce | passed (M2 gate) |
+| ORD-A2 lost response retry; ORD-003 key/body conflict | TestOrderRetryAndConflict | passed (M2 gate) |
+| ORD-A3 sold out or repriced after browsing | TestStaleMenuRejectsWholeOrder | passed (M2 gate) |
+| Menu change racing submission | TestMenuChangeVersusSubmission | passed (M2 gate) |
+| Bounds and validation | TestOrderValidation | passed (M2 gate) |
+| Cross-visit denial, private reads | TestOrderAccessControl | passed (M2 gate) |
+| Assisted order actor | TestAssistedOrderRecordsStaff | passed (M2 gate) |
+| Order gating on non-open visits; close-empty guard | TestOrdersOnlyOnOpenVisits | passed (M2 gate) |
+| Distinct carts per phone | PWA browser test | passed (M2 gate) |

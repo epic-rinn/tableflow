@@ -1,6 +1,6 @@
 # MVP implementation roadmap
 
-M0 and M1 are **done** (MVP-01–07, gates passed 2026-09-26). M2–M6 are planned.
+M0–M2 are **done** (MVP-01–10, gates passed 2026-09-26). M3–M6 are planned.
 
 The [MVP task backlog](tasks.md) owns implementation-task status and dependencies. Claude implements those tasks; Codex primarily maintains planning and the original Word report. Begin with the prepared [001-foundation packet](../changes/001-foundation/plan.md), which covers only the runtime/testing portion of M0. Identity is delivered by MVP-02–04 before M0 is complete.
 

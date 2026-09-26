@@ -1,6 +1,6 @@
 # MVP implementation tasks
 
-Status: M0 and M1 (MVP-01–07) done; M2 (MVP-08–10) implemented-unverified, gate pending; later tasks planned. Created: 2026-09-26.
+Status: M0–M2 (MVP-01–10) done; M3 onwards planned. Created: 2026-09-26.
 
 This is the implementation queue for Claude. Codex maintains task scope and the Word report; Claude maintains execution status and evidence. The [roadmap](roadmap.md) groups milestones, while this file owns task order and status. Canonical feature specs remain the authority for behavior.
 
@@ -26,9 +26,9 @@ All implementation tasks are owned by Claude. MVP-22 additionally requires the r
 | MVP-05 Tables and queue entry | M1 | `005-queue-entry` | MVP-03 | done |
 | MVP-06 Calling and seating | M1 | `006-call-seat` | MVP-05 | done |
 | MVP-07 Moves and table lifecycle | M1 | `007-table-lifecycle` | MVP-06 | done |
-| MVP-08 Menu management and browsing | M2 | `008-menu` | MVP-07 | implemented-unverified |
-| MVP-09 Shared-visit ordering | M2 | `009-ordering` | MVP-08 | implemented-unverified |
-| MVP-10 Kitchen and assistance | M2 | `010-kitchen` | MVP-09 | implemented-unverified |
+| MVP-08 Menu management and browsing | M2 | `008-menu` | MVP-07 | done |
+| MVP-09 Shared-visit ordering | M2 | `009-ordering` | MVP-08 | done |
+| MVP-10 Kitchen and assistance | M2 | `010-kitchen` | MVP-09 | done |
 | MVP-11 Bill calculation and policies | M3 | `011-bill-calculation` | MVP-10 | planned |
 | MVP-12 Cashier settlement | M3 | `012-settlement` | MVP-11 | planned |
 | MVP-13 Receipts and full refunds | M3 | `013-refunds` | MVP-12 | planned |
@@ -66,7 +66,7 @@ All implementation tasks are owned by Claude. MVP-22 additionally requires the r
 
 - Deliver: signup/login/logout, email verification and password reset through a local mail adapter, single-use token handling, member PWA account screens and session revocation on reset.
 - Map: ACC-002/004; [access](../features/05-access-pwa.md). No points or visit claims yet.
-- Accept: neutral account-discovery responses, expired/replayed token rejection, rate limits, no credential caching, coexistence with guest sessions, and cross-account access denial. Record deployment email-provider selection as unresolved until configured, not as a working production service.
+- Accept: neutral account-discovery responses, expired/replayed token rejection, rate limits, no credential caching, coexistence with guest sessions, and cross-account access denial. Production provider is selected in [ADR-0005](../decisions/0005-production-email.md); domain, credentials and live delivery verification remain pending, not a working production service.
 
 ### MVP-05 — Tables and queue entry
 
@@ -168,7 +168,7 @@ All implementation tasks are owned by Claude. MVP-22 additionally requires the r
 
 - Deliver: reproducible staging deployment configuration/runbook, secret handling, HTTPS/origin setup, health monitoring, migration recovery procedure, backup/restore drill and email adapter configuration checks. No production deployment without approval.
 - Map: ACC-002/004, PWA-001, release gates and [repository boundaries](../architecture/repository.md).
-- Accept: restored database reconciles sample bills/ledger/claims; fresh and upgrade migrations tested; staged artifact inspection excludes specs/docs/AI files; security/session/cache checks hold on deployed origins. Record unresolved provider/hosting choices for the user.
+- Accept: restored database reconciles sample bills/ledger/claims; fresh and upgrade migrations tested; staged artifact inspection excludes specs/docs/AI files; security/session/cache checks hold on deployed origins. Implement and verify production email per [ADR-0005](../decisions/0005-production-email.md). Obtain the user's sending domain and credentials securely; record unresolved hosting choices separately.
 
 ### MVP-22 — Operator pilot sign-off
 

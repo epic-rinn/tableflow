@@ -5,6 +5,7 @@ package mail
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -34,12 +35,24 @@ type Outbox interface {
 	Enqueue(m Message) bool
 }
 
-// SMTP delivers without authentication (local Mailpit). Header values are
-// rejected if they contain line breaks.
+// TLS modes for SMTP delivery.
+const (
+	TLSNone     = "none"     // loopback relays only (local Mailpit)
+	TLSImplicit = "implicit" // SMTPS, e.g. Resend port 465
+	TLSStartTLS = "starttls" // upgrade required, e.g. Resend port 587
+)
+
+// SMTP delivers through a relay: Mailpit locally (TLSNone on loopback) or
+// Resend in production (TLS required, username "resend", API key as the
+// password). With starttls it never falls back to plaintext. Header values
+// with line breaks are rejected.
 type SMTP struct {
-	Addr    string
-	From    string
-	Timeout time.Duration
+	Addr     string
+	From     string
+	Timeout  time.Duration
+	TLS      string
+	Username string
+	Password string
 }
 
 func headerSafe(v string) bool { return !strings.ContainsAny(v, "\r\n") }
@@ -53,18 +66,41 @@ func (s SMTP) Send(ctx context.Context, m Message) error {
 	if d, ok := ctx.Deadline(); ok && d.Before(deadline) {
 		deadline = d
 	}
-	conn, err := (&net.Dialer{Deadline: deadline}).DialContext(ctx, "tcp", s.Addr)
+	host, _, _ := net.SplitHostPort(s.Addr)
+	tlsConfig := &tls.Config{ServerName: host, MinVersion: tls.VersionTLS12}
+	var conn net.Conn
+	var err error
+	dialer := &net.Dialer{Deadline: deadline}
+	if s.TLS == TLSImplicit {
+		conn, err = (&tls.Dialer{NetDialer: dialer, Config: tlsConfig}).DialContext(ctx, "tcp", s.Addr)
+	} else {
+		conn, err = dialer.DialContext(ctx, "tcp", s.Addr)
+	}
 	if err != nil {
 		return fmt.Errorf("mail: dial: %w", err)
 	}
 	_ = conn.SetDeadline(deadline)
-	host, _, _ := net.SplitHostPort(s.Addr)
 	c, err := smtp.NewClient(conn, host)
 	if err != nil {
 		conn.Close()
 		return fmt.Errorf("mail: hello: %w", err)
 	}
 	defer c.Close()
+	if s.TLS == TLSStartTLS {
+		if ok, _ := c.Extension("STARTTLS"); !ok {
+			return errors.New("mail: server does not offer STARTTLS; refusing plaintext")
+		}
+		if err := c.StartTLS(tlsConfig); err != nil {
+			return fmt.Errorf("mail: starttls: %w", err)
+		}
+	}
+	if s.Username != "" {
+		// PlainAuth itself refuses to send credentials without TLS (except
+		// to localhost).
+		if err := c.Auth(smtp.PlainAuth("", s.Username, s.Password, host)); err != nil {
+			return fmt.Errorf("mail: auth: %w", err)
+		}
+	}
 	from := s.From
 	if i := strings.LastIndex(from, "<"); i >= 0 {
 		from = strings.TrimSuffix(from[i+1:], ">")

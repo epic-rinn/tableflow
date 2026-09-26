@@ -1,6 +1,6 @@
 # Change: 008-menu — Menu management and browsing
 
-Status: implemented-unverified. Date: 2026-09-26. Scope owner: Claude. Task: MVP-08. Verification: M2 gate ([ADR-0004](../../decisions/0004-milestone-verification.md)).
+Status: done (M2 gate). Date: 2026-09-26. Scope owner: Claude. Task: MVP-08. Verification: M2 gate ([ADR-0004](../../decisions/0004-milestone-verification.md)).
 
 ## Problem and behavior
 
@@ -27,8 +27,8 @@ Maps MEN-001 and the menu subset of OPS-001/ADM-005 ([ordering](../../features/0
 
 | Requirement | Test | Status |
 | --- | --- | --- |
-| MEN-001 editor, bounds, invalid option config | TestMenuReplaceValidation, TestMenuReplaceCreatesUpdatesRetires | written, not run |
-| Revisions: relevant vs irrelevant changes | TestChangedRevisionTracksChargeChanges | written, not run |
-| Availability toggle roles and versions | TestAvailabilityToggle | written, not run |
-| Public browse, batched, no retired entries | TestMenuBrowseBatched | written, not run |
-| Response size at 500 items | Gate measurement | planned |
+| MEN-001 editor, bounds, invalid option config | TestMenuReplaceValidation, TestMenuReplaceCreatesUpdatesRetires | passed (M2 gate) |
+| Revisions: relevant vs irrelevant changes | TestChangedRevisionTracksChargeChanges | passed (M2 gate) |
+| Availability toggle roles and versions | TestAvailabilityToggle | passed (M2 gate) |
+| Public browse, batched, no retired entries | TestMenuBrowseBatched | passed (M2 gate) |
+| Response size at 500 items | Gate measurement | measured |

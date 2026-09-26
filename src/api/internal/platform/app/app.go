@@ -96,7 +96,8 @@ func Run(ctx context.Context, cfg config.Config, logger *slog.Logger, ln net.Lis
 	idHTTP := identity.NewHTTP(svc, cfg.AdminOrigins, cfg.TrustedProxies, logger)
 	accSvc := access.NewService(pool)
 	accHTTP := access.NewHTTP(accSvc, cfg.PWAOrigins, cfg.TrustedProxies, logger)
-	outbox := mail.NewQueue(mail.SMTP{Addr: cfg.SMTPAddr, From: cfg.MailFrom, Timeout: 10 * time.Second}, 100, 10*time.Second, logger)
+	outbox := mail.NewQueue(mail.SMTP{Addr: cfg.SMTPAddr, From: cfg.MailFrom, Timeout: 10 * time.Second,
+		TLS: cfg.SMTPTLS, Username: cfg.SMTPUsername, Password: cfg.SMTPPassword}, 100, 10*time.Second, logger)
 	go outbox.Run(ctx, 2)
 	memSvc := members.NewService(pool, hasher, outbox, cfg.PWAPublicURL)
 	memHTTP := members.NewHTTP(memSvc, cfg.PWAOrigins, cfg.TrustedProxies, logger)

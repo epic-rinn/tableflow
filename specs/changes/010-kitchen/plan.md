@@ -1,6 +1,6 @@
 # Change: 010-kitchen — Kitchen and assistance
 
-Status: implemented-unverified. Date: 2026-09-26. Scope owner: Claude. Task: MVP-10. Verification: M2 gate (ADR-0004).
+Status: done (M2 gate). Date: 2026-09-26. Scope owner: Claude. Task: MVP-10. Verification: M2 gate (ADR-0004).
 
 ## Problem and behavior
 
@@ -34,9 +34,9 @@ Maps ORD-004, ORD-006, ORD-007, ADM-002 and ADM-003.
 
 | Requirement | Test | Status |
 | --- | --- | --- |
-| ORD-004 role/state matrix | TestLineTransitionMatrix | written, not run |
-| ORD-A5 rejected line not chargeable | TestRejectedLineExcludedFromTotal | written, not run |
-| Manager-only late cancellation, audited | TestLateCancellationNeedsManager | written, not run |
-| ORD-007 paid visit: no financial edits | TestPaidVisitRejectsFinancialChanges | written, not run |
-| ORD-006 coalescing, ORD-A6 acknowledgement | TestAssistanceCoalescesAndAcknowledges | written, not run |
-| Kitchen/assistance board plans vs history | Gate measurement | planned |
+| ORD-004 role/state matrix | TestLineTransitionMatrix | passed (M2 gate) |
+| ORD-A5 rejected line not chargeable | TestRejectedLineExcludedFromTotal | passed (M2 gate) |
+| Manager-only late cancellation, audited | TestLateCancellationNeedsManager | passed (M2 gate) |
+| ORD-007 paid visit: no financial edits | TestPaidVisitRejectsFinancialChanges | passed (M2 gate) |
+| ORD-006 coalescing, ORD-A6 acknowledgement | TestAssistanceCoalescesAndAcknowledges | passed (M2 gate) |
+| Kitchen/assistance board plans vs history | Gate measurement | measured |

@@ -73,3 +73,41 @@ func TestLoadIdentityDefaultsAndValidation(t *testing.T) {
 		}
 	}
 }
+
+func TestSMTPRequiresTLSOutsideLoopback(t *testing.T) {
+	base := map[string]string{"DATABASE_URL": "x", "DATA_ENCRYPTION_KEY": testKey}
+	with := func(kv ...string) map[string]string {
+		m := map[string]string{}
+		for k, v := range base {
+			m[k] = v
+		}
+		for i := 0; i+1 < len(kv); i += 2 {
+			m[kv[i]] = kv[i+1]
+		}
+		return m
+	}
+	ok := []map[string]string{
+		with(), // Mailpit default
+		with("SMTP_ADDR", "smtp.resend.com:465", "SMTP_TLS", "implicit", "SMTP_USERNAME", "resend", "SMTP_PASSWORD", "dummy"),
+		with("SMTP_ADDR", "smtp.resend.com:587", "SMTP_TLS", "starttls", "SMTP_USERNAME", "resend", "SMTP_PASSWORD", "dummy"),
+	}
+	bad := []map[string]string{
+		with("SMTP_ADDR", "smtp.resend.com:587"),                                                    // plaintext to a remote relay
+		with("SMTP_USERNAME", "resend", "SMTP_PASSWORD", "dummy"),                                   // credentials without TLS
+		with("SMTP_ADDR", "smtp.resend.com:465", "SMTP_TLS", "implicit", "SMTP_USERNAME", "resend"), // half credentials
+		with("SMTP_TLS", "maybe"),
+	}
+	for i, m := range ok {
+		if _, err := Load(env(m)); err != nil {
+			t.Errorf("ok[%d] rejected: %v", i, err)
+		}
+	}
+	for i, m := range bad {
+		_, err := Load(env(m))
+		if err == nil {
+			t.Errorf("bad[%d] accepted", i)
+		} else if strings.Contains(err.Error(), "dummy") {
+			t.Errorf("error echoes the password: %v", err)
+		}
+	}
+}

@@ -6,7 +6,7 @@ Date: 2026-09-26 (M1 milestone gate, ADR-0004). Reviewer: Claude — **self-revi
 
 | Severity | Location | Trigger / evidence | Impact | Resolution |
 | --- | --- | --- | --- | --- |
-| P3 (open decision) | Fairness rule (`older_compatible.sql`) | Any older waiting party that *fits* a table counts as compatible, so seating a party of 6 at the only 6-top while an older couple waits needs a manager reason | More manager overrides than hosts may expect | Follows QUE-003/SEA-001 literally; the pilot operator should confirm or refine it (MVP-22). The override is available and audited |
+| Decided (2026-09-26, owner) | Fairness rule (`older_compatible.sql`) | Any older waiting party that fits a table counts as compatible | More manager overrides than a best-fit rule | Owner confirmed the implemented rule: oldest compatible first across groups, override with audited reason, no best-fit optimisation in MVP. Recorded in QUE-003 |
 | P3 (accepted) | Idempotency retention | Seating replays are kept 72 h (the data model says 24 h and until the resource ends) | Tickets and visits end within a business day, so 72 h covers both | Documented in `http.go` |
 
 Checked: one claim per table under racing calls and seats; no-show versus seat has one winner with consistent ticket, table and visit state; retries return the original visit and dining token (stored sealed, not in plaintext); overdue holds persist until staff act; incompatible tables are rejected; bypasses need a manager and a reason and are audited; other branches get 404.

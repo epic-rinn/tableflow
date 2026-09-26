@@ -1,6 +1,6 @@
 # Menu, orders, and kitchen
 
-Status: specified; implemented in M2 (MVP-08–10), verification at the M2 gate. Actors: dining guest, server, kitchen, manager.
+Status: specified; implemented and verified in M2 (MVP-08–10, gate passed 2026-09-26). Actors: dining guest, server, kitchen, manager.
 
 ## Requirements
 

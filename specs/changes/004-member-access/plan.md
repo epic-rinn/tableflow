@@ -53,4 +53,4 @@ These follow the staff patterns: authentication is one unique-hash lookup; confi
 
 ## Final decisions
 
-Implemented as planned. Gate fixes are listed in [review](review.md). Unresolved for the user: production email provider and sender domain (MVP-21).
+Implemented as planned. Gate fixes are listed in [review](review.md). Production email: Resend via SMTP with TLS required (owner decision 2026-09-26); sender domain and credentials pending (MVP-21).
