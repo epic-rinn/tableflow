@@ -20,6 +20,11 @@ Workload: 300 foreground queue clients at 10-second polls, 20 staff clients at 3
 | Daily report (≤31 days) | ≤1 second | Indexed date/branch filter; historical work outside polling routes |
 | Hot SQL query | Normally ≤50 ms actual execution | Review outliers, scanned/returned rows, spills, lock waits, and buffers |
 
+Proposed client budgets ([UI design](../product/ui-design.md), UI-A4):
+- **Limits:** gzip first-load JavaScript of at most **250 KiB** for PWA `/t`, `/q` and `/join/*`, and at most **400 KiB** for admin workspaces. Both include the framework.
+- **Fonts:** self-hosted, subset or variable, at most 150 KiB per app. No third-party runtime hosts.
+- **Measuring:** measure from the production build output (`.next/static` chunks referenced by the route) before and after UI-01/UI-02, and record the baseline in the change packet.
+
 Report unexpected 5xx/timeouts separately from intentional conflicts and validation errors; target <0.5% unexpected failures in the baseline. No tolerated double charges/seats/points. These budgets include pool wait inside the API but exclude browser network/rendering; measure browser experience separately. Proposed mobile goals: p75 LCP ≤2.5 s, INP ≤200 ms, CLS ≤0.1 under a documented device/network profile; field and lab data are not interchangeable.
 
 Avoid mechanical query-count gaming: a single unbounded join can be worse than several bounded reads. If a budget needs changing, record measured reason/tradeoff in the change plan, not a silent exception.

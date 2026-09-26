@@ -35,3 +35,10 @@ Use independent database connections and synchronization barriers; a sequential 
 ## Verification gate
 
 There is no hosted CI ([ADR-0003](../decisions/0003-local-verification.md)). `make verify` runs specs-check, Go formatting/vet/race tests, PostgreSQL-backed migration/integration tests, pinned frontend lint/typecheck/build, OpenAPI contract validation, browser smoke tests and the artifact boundary check locally. Extend it as new check types are introduced. Each task's review records the actual `make verify` run and its environment. Run targeted checks while developing; run representative performance measurements for data-path changes, not blindly on every prose edit.
+
+## UI checks (UI-01/UI-02 onwards)
+
+- **Locators:** browser tests locate by role, label and accessible name, never by CSS class or Tailwind utility. A redesign must keep names stable, or update the tests in the same change with a stated reason.
+- **Accessibility scan:** `@axe-core/playwright` scans each main screen inside `make verify`. Serious or critical violations fail the gate; others are listed in the review.
+- **Viewports:** journeys run at a phone viewport (390×844) for the PWA and at desktop (1280×800) and tablet (1024×768) for the admin. Save full-page screenshots under `tmp/playwright/` as review evidence; they are not pixel-diff baselines in MVP.
+

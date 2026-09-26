@@ -1,6 +1,6 @@
 # MVP implementation tasks
 
-Status: M0–M3 (MVP-01–13) done; M4 onwards planned. Created: 2026-09-26.
+Status: M0–M3 (MVP-01–13) done; MU (UI-01/02, UI redesign) next, then M4 onwards. UI track added 2026-09-27 at the owner's request ([ADR-0006](../decisions/0006-ui-stack.md)). Created: 2026-09-26.
 
 This is the implementation queue for Claude. Codex maintains task scope and the Word report; Claude maintains execution status and evidence. The [roadmap](roadmap.md) groups milestones, while this file owns task order and status. Canonical feature specs remain the authority for behavior.
 
@@ -32,7 +32,9 @@ All implementation tasks are owned by Claude. MVP-22 additionally requires the r
 | MVP-11 Bill calculation and policies | M3 | `011-bill-calculation` | MVP-10 | done |
 | MVP-12 Cashier settlement | M3 | `012-settlement` | MVP-11 | done |
 | MVP-13 Receipts and full refunds | M3 | `013-refunds` | MVP-12 | done |
-| MVP-14 Member visit claim and tier snapshot | M4 | `014-member-claim` | MVP-04, MVP-13 | planned |
+| UI-01 Admin design system and redesign | MU | `ui-01-admin-design` | MVP-13 | planned |
+| UI-02 PWA design system and redesign | MU | `ui-02-pwa-design` | UI-01 | planned |
+| MVP-14 Member visit claim and tier snapshot | M4 | `014-member-claim` | MVP-04, MVP-13, UI-02 | planned |
 | MVP-15 Atomic loyalty and member history | M4 | `015-loyalty-ledger` | MVP-14 | planned |
 | MVP-16 Manager reporting and audit | M5 | `016-reporting` | MVP-15 | planned |
 | MVP-17 Installable PWA and cache isolation | M5 | `017-pwa` | MVP-16 | planned |
@@ -121,6 +123,35 @@ All implementation tasks are owned by Claude. MVP-22 additionally requires the r
 - Deliver: authorized historical receipt lookup, manager full-refund recording with external reference/reason, immutable original settlement, and cashier/manager UI.
 - Map: BIL-007/008, ADM-004/005.
 - Accept: repeated/concurrent refunds create one record; paid bills never reopen; cashier-only and guest users cannot refund; historical prices remain unchanged. Test nonmember refund now; member reversal is gated on MVP-15.
+
+### UI-01 — Admin design system and redesign
+
+- **Deliver:**
+  - Tailwind CSS v4 and shadcn/ui in `src/admin`, with pinned versions, tokens, self-hosted fonts, and light/dark themes;
+  - the sidebar app shell with a role-filtered navigation, top bar and freshness indicator;
+  - every existing workspace redesigned to [UI design](../product/ui-design.md): login/activate, host board and queue, kitchen board, visit orders, cashier, receipts, menu, configuration, staff and charges;
+  - dialogs for consequential actions;
+  - `@axe-core/playwright` scans added to `make verify`.
+- **Map:** UI-001/002/004/005, ADM-002–006 presentation.
+- **Accept:**
+  - UI-A1 and UI-A3;
+  - all existing admin browser journeys pass with stable accessible names;
+  - a baseline and after-change client-JS measurement against the budget;
+  - screenshots in the review.
+- **Scope:** no API or behaviour changes.
+
+### UI-02 — PWA design system and redesign
+
+- **Deliver:**
+  - Tailwind CSS v4 and shadcn/ui in `src/pwa`, with the shared token values and self-hosted fonts;
+  - the Grab-style mobile patterns (hero header, queue ticket card and stepper, category chips, option bottom sheet, sticky cart bar and cart sheet, order timeline, receipt-style bill, help sheet, offline banner) and restyled account pages;
+  - phone-viewport journeys and axe scans.
+- **Map:** UI-001/003/004/005, PWA-003–005 presentation.
+- **Accept:**
+  - UI-A1, UI-A2 and UI-A4 (at most 250 KiB gzip first-load JS on `/t`, no third-party requests);
+  - existing PWA journeys pass, carts and idempotent retries unchanged;
+  - no Grab brand assets.
+- **Scope:** no service worker (MVP-17) and no behaviour changes.
 
 ### MVP-14 — Member visit claim and tier snapshot
 

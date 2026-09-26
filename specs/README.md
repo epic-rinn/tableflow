@@ -6,7 +6,7 @@ Status: desired MVP baseline; runtime foundation (MVP-01) done, domain features 
 
 | Task | Read |
 | --- | --- |
-| Understand scope | [MVP](product/mvp.md), [glossary](product/glossary.md) |
+| Understand scope | [MVP](product/mvp.md), [glossary](product/glossary.md), [UI design](product/ui-design.md) |
 | Queue or seating | [Queue and seating](features/01-queue-seating.md), [data model](architecture/data-model.md) |
 | Menu, ordering, kitchen | [Ordering](features/02-ordering.md) |
 | Bills or loyalty | [Settlement](features/03-settlement.md), [loyalty](features/04-loyalty.md) |
