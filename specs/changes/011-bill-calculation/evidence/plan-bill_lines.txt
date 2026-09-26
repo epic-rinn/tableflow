@@ -1,0 +1,14 @@
+BEGIN
+Sort  (cost=8.77..8.79 rows=10 width=69) (actual time=0.072..0.075 rows=32.00 loops=1)
+  Sort Key: created_at, id
+  Sort Method: quicksort  Memory: 32kB
+  Buffers: shared hit=45
+  ->  Index Scan using order_lines_by_visit on order_lines  (cost=0.42..8.60 rows=10 width=69) (actual time=0.045..0.054 rows=32.00 loops=1)
+        Index Cond: (visit_id = '01a0ddbb-78b4-7ac1-96cd-23c36c85b438'::uuid)
+        Index Searches: 1
+        Buffers: shared hit=39
+Planning:
+  Buffers: shared hit=157
+Planning Time: 0.246 ms
+Execution Time: 0.095 ms
+ROLLBACK

@@ -1,0 +1,35 @@
+BEGIN
+Limit  (cost=1.26..28.71 rows=26 width=58) (actual time=0.028..0.092 rows=26.00 loops=1)
+  Buffers: shared hit=242
+  ->  Nested Loop Left Join  (cost=1.26..105552.86 rows=99990 width=58) (actual time=0.027..0.089 rows=26.00 loops=1)
+        Buffers: shared hit=242
+        ->  Nested Loop  (cost=0.99..76209.80 rows=99990 width=57) (actual time=0.025..0.074 rows=26.00 loops=1)
+              Buffers: shared hit=164
+              ->  Nested Loop  (cost=0.83..73708.60 rows=99990 width=68) (actual time=0.014..0.033 rows=26.00 loops=1)
+                    Buffers: shared hit=109
+                    ->  Index Scan using settlements_by_branch on settlements s  (cost=0.42..11677.15 rows=99990 width=68) (actual time=0.008..0.010 rows=26.00 loops=1)
+                          Index Cond: ((branch_id = '00000000-0000-7000-8000-0000000000c1'::uuid) AND (ROW(paid_at, id) < ROW('9999-01-01 00:00:00+00'::timestamp with time zone, 'ffffffff-ffff-ffff-ffff-ffffffffffff'::uuid)))
+                          Index Searches: 1
+                          Buffers: shared hit=5
+                    ->  Index Scan using visits_pkey on visits v  (cost=0.42..0.62 rows=1 width=32) (actual time=0.001..0.001 rows=1.00 loops=26)
+                          Index Cond: (id = s.visit_id)
+                          Index Searches: 26
+                          Buffers: shared hit=104
+              ->  Memoize  (cost=0.15..0.17 rows=1 width=21) (actual time=0.001..0.001 rows=1.00 loops=26)
+                    Cache Key: v.table_id
+                    Cache Mode: logical
+                    Hits: 0  Misses: 26  Evictions: 0  Overflows: 0  Memory Usage: 4kB
+                    Buffers: shared hit=55
+                    ->  Index Scan using dining_tables_branch_id_id_key on dining_tables t  (cost=0.14..0.16 rows=1 width=21) (actual time=0.001..0.001 rows=1.00 loops=26)
+                          Index Cond: (id = v.table_id)
+                          Index Searches: 26
+                          Buffers: shared hit=55
+        ->  Index Scan using refunds_settlement_id_key on refunds r  (cost=0.28..0.29 rows=1 width=32) (actual time=0.000..0.000 rows=1.00 loops=26)
+              Index Cond: (settlement_id = s.id)
+              Index Searches: 26
+              Buffers: shared hit=78
+Planning:
+  Buffers: shared hit=442
+Planning Time: 0.568 ms
+Execution Time: 0.123 ms
+ROLLBACK

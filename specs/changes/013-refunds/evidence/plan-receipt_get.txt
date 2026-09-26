@@ -1,0 +1,45 @@
+BEGIN
+Nested Loop Left Join  (cost=1.67..35.81 rows=1 width=284) (actual time=0.038..0.041 rows=1.00 loops=1)
+  Join Filter: (rs.id = r.recorded_by)
+  Rows Removed by Join Filter: 1
+  Buffers: shared hit=21
+  ->  Nested Loop Left Join  (cost=1.67..34.79 rows=1 width=295) (actual time=0.036..0.038 rows=1.00 loops=1)
+        Buffers: shared hit=20
+        ->  Nested Loop  (cost=1.40..26.49 rows=1 width=216) (actual time=0.032..0.033 rows=1.00 loops=1)
+              Join Filter: (cs.id = s.confirmed_by)
+              Buffers: shared hit=18
+              ->  Nested Loop  (cost=1.40..25.47 rows=1 width=227) (actual time=0.026..0.027 rows=1.00 loops=1)
+                    Buffers: shared hit=17
+                    ->  Nested Loop  (cost=1.25..25.31 rows=1 width=238) (actual time=0.014..0.015 rows=1.00 loops=1)
+                          Buffers: shared hit=12
+                          ->  Nested Loop  (cost=0.83..16.87 rows=1 width=214) (actual time=0.011..0.011 rows=1.00 loops=1)
+                                Buffers: shared hit=8
+                                ->  Index Scan using settlements_pkey on settlements s  (cost=0.42..8.44 rows=1 width=155) (actual time=0.005..0.006 rows=1.00 loops=1)
+                                      Index Cond: (id = '01a0dee8-9cdc-72e3-aa40-b5261c6e5180'::uuid)
+                                      Index Searches: 1
+                                      Buffers: shared hit=4
+                                ->  Index Scan using bill_snapshots_pkey on bill_snapshots b  (cost=0.42..8.44 rows=1 width=91) (actual time=0.004..0.004 rows=1.00 loops=1)
+                                      Index Cond: (id = s.snapshot_id)
+                                      Index Searches: 1
+                                      Buffers: shared hit=4
+                          ->  Index Scan using visits_pkey on visits v  (cost=0.42..8.44 rows=1 width=40) (actual time=0.003..0.003 rows=1.00 loops=1)
+                                Index Cond: (id = s.visit_id)
+                                Index Searches: 1
+                                Buffers: shared hit=4
+                    ->  Index Scan using dining_tables_branch_id_id_key on dining_tables t  (cost=0.14..0.16 rows=1 width=21) (actual time=0.011..0.011 rows=1.00 loops=1)
+                          Index Cond: (id = v.table_id)
+                          Index Searches: 1
+                          Buffers: shared hit=5
+              ->  Seq Scan on staff_accounts cs  (cost=0.00..1.01 rows=1 width=21) (actual time=0.006..0.006 rows=1.00 loops=1)
+                    Buffers: shared hit=1
+        ->  Index Scan using refunds_settlement_id_key on refunds r  (cost=0.28..8.29 rows=1 width=95) (actual time=0.004..0.004 rows=0.00 loops=1)
+              Index Cond: (settlement_id = '01a0dee8-9cdc-72e3-aa40-b5261c6e5180'::uuid)
+              Index Searches: 1
+              Buffers: shared hit=2
+  ->  Seq Scan on staff_accounts rs  (cost=0.00..1.01 rows=1 width=21) (actual time=0.001..0.001 rows=1.00 loops=1)
+        Buffers: shared hit=1
+Planning:
+  Buffers: shared hit=722 read=8
+Planning Time: 0.888 ms
+Execution Time: 0.084 ms
+ROLLBACK

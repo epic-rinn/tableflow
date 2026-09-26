@@ -135,6 +135,41 @@ func TestChargePolicyVersions(t *testing.T) {
 	if n := f.e.Count("SELECT count(*) FROM audit_events WHERE action = 'charge_policy.updated'"); n != 1 {
 		t.Fatalf("audit rows = %d", n)
 	}
+	// Concurrent edits of the same version: one wins, the other conflicts.
+	next := map[string]any{"expected_version": 1, "tax_mode": "inclusive", "tax_bp": 700, "service_bp": 0}
+	var wg sync.WaitGroup
+	res := make([]testenv.Resp, 4)
+	for i := range res {
+		wg.Add(1)
+		go func() { defer wg.Done(); res[i] = f.e.StaffSend("PUT", f.e.Manager, path, next) }()
+	}
+	wg.Wait()
+	won := 0
+	for _, r := range res {
+		switch {
+		case r.Status == 200:
+			won++
+		case r.Code() != "VERSION_CONFLICT":
+			t.Fatalf("concurrent edit: %d %s", r.Status, r.Raw)
+		}
+	}
+	if won != 1 {
+		t.Fatalf("concurrent policy edits won = %d", won)
+	}
+}
+
+// TestBeginRequiresCharges: a visit without chargeable lines is closed as
+// empty (SEA-004), not settled at zero.
+func TestBeginRequiresCharges(t *testing.T) {
+	f := setup(t)
+	id, v := f.order(f.tea, 1)
+	if r := f.e.StaffSend("POST", f.e.Kitchen, "/api/v1/order-lines/"+id+"/transition",
+		map[string]any{"expected_version": v, "to_state": "rejected", "reason": "none left"}); r.Status != 200 {
+		t.Fatalf("reject: %d", r.Status)
+	}
+	if r := f.begin(f.e.Cashier, f.bill(f.e.Cashier).Num("bill_version")); r.Code() != "NOTHING_TO_SETTLE" {
+		t.Fatalf("empty begin: %d %s", r.Status, r.Raw)
+	}
 }
 
 // TestBillUsesSnapshotsAndChargeableLines (BIL-A2 integration): rejected
@@ -254,6 +289,7 @@ func TestSettlementVersusOrderSubmission(t *testing.T) {
 	}
 	// Concurrent begin and order: exactly one of them wins the visit lock.
 	f2 := setup(t)
+	f2.serve(f2.order(f2.rice, 1))
 	var wg sync.WaitGroup
 	var begin, order testenv.Resp
 	bv := f2.bill(f2.e.Cashier).Num("bill_version")
@@ -365,13 +401,15 @@ func TestGuestCannotSettle(t *testing.T) {
 	f.serve(id, v)
 	g := f.e.Diner(f.token)
 	bv := f.bill(f.e.Cashier).Num("bill_version")
-	if r := g.Send(f.path("/settlement/begin"), "", map[string]any{"expected_version": bv}); r.Status != 401 {
+	// Guest sessions live on the PWA origin: the staff origin guard or the
+	// missing staff session refuses them (403/401), never a settlement.
+	if r := g.Send(f.path("/settlement/begin"), "", map[string]any{"expected_version": bv}); r.Status != 401 && r.Status != 403 {
 		t.Fatalf("guest begin: %d", r.Status)
 	}
 	s := f.begin(f.e.Cashier, bv)
 	r := g.Send(f.path("/settlement/confirm"), "", map[string]any{"expected_version": s.Num("bill_version"),
 		"amount_satang": s.Num("total_satang"), "method": "bank_transfer", "verification_note": "slip attached"})
-	if r.Status != 401 {
+	if r.Status != 401 && r.Status != 403 {
 		t.Fatalf("guest confirm: %d %s", r.Status, r.Raw)
 	}
 	if r := f.confirm(f.e.Host, "", s.Num("bill_version"), s.Num("total_satang")); r.Status != 403 {
@@ -388,6 +426,7 @@ func TestConfirmEffects(t *testing.T) {
 	f := setup(t)
 	id, v := f.order(f.tea, 1)
 	f.serve(id, v)
+	phone := f.e.Diner(f.token) // a diner session from before payment
 	s := f.begin(f.e.Cashier, f.bill(f.e.Cashier).Num("bill_version"))
 	for _, bad := range []map[string]any{
 		{"expected_version": s.Num("bill_version"), "amount_satang": 6000, "method": "crypto", "verification_note": "x"},
@@ -405,8 +444,11 @@ func TestConfirmEffects(t *testing.T) {
 	if len(ref) != 12 || ref[:2] != "R-" {
 		t.Fatalf("receipt reference %q", ref)
 	}
-	if r := f.e.Diner(f.token).Get(f.path("/orders")); r.Status != 401 && r.Status != 404 {
-		t.Fatalf("dining access survived payment: %d", r.Status)
+	if r := phone.Get(f.path("/orders")); r.Status != 401 {
+		t.Fatalf("dining session survived payment: %d", r.Status)
+	}
+	if r := f.e.Do("POST", "/api/v1/sessions/capability", "", testenv.PWAOrigin, "", map[string]any{"token": f.token, "kind": "visit"}); r.Code() != "TOKEN_INVALID" {
+		t.Fatalf("dining QR still exchanges after payment: %d %s", r.Status, r.Raw)
 	}
 	if r := f.e.StaffSend("POST", f.e.Cashier, "/api/v1/bills/resolve", map[string]any{"dining_token": f.token}); r.Status != 404 {
 		t.Fatalf("revoked token resolved: %d", r.Status)
@@ -427,5 +469,20 @@ func TestConfirmEffects(t *testing.T) {
 	}
 	if b := f.bill(f.e.Cashier); b.Str("visit_state") != "departed" || b.Num("total_satang") != 6000 {
 		t.Fatalf("departed bill: %s", b.Raw)
+	}
+}
+
+// TestBillStatementsConstant: a bill read costs the same statements for 1 or
+// 30 lines (no per-line queries).
+func TestBillStatementsConstant(t *testing.T) {
+	f := setup(t)
+	f.order(f.tea, 1)
+	one := f.e.Statements(func() { f.bill(f.e.Cashier) })
+	for range 29 {
+		f.order(f.rice, 1)
+	}
+	many := f.e.Statements(func() { f.bill(f.e.Cashier) })
+	if one != many || many > 6 {
+		t.Fatalf("bill statements: %d for 1 line, %d for 30", one, many)
 	}
 }

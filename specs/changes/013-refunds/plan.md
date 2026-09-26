@@ -1,6 +1,6 @@
 # Change: 013-refunds — Receipts and full refunds
 
-Status: implemented-unverified (M3 gate pending). Date: 2026-09-27. Scope owner: Claude. Task: MVP-13. Verification: M3 gate (ADR-0004).
+Status: done (M3 gate passed 2026-09-26 UTC). Date: 2026-09-27. Scope owner: Claude. Task: MVP-13. Verification: M3 gate (ADR-0004).
 
 ## Problem and behavior
 
@@ -20,7 +20,7 @@ Managers record one full refund per settlement: `POST /settlements/{id}/refund {
 
 | Requirement | Test | Status |
 | --- | --- | --- |
-| One refund under concurrency and replay | TestConcurrentRefundOneRecord | written, not run |
-| Roles (cashier, guest denied) | TestRefundRoles | written, not run |
-| Paid bill never reopens; historical prices unchanged | TestReceiptImmutable | written, not run |
-| Receipt lookup and pagination | TestReceiptLookup | written, not run |
+| One refund under concurrency and replay | TestConcurrentRefundOneRecord | passed |
+| Roles (cashier, guest denied) | TestRefundRoles | passed |
+| Paid bill never reopens; historical prices unchanged | TestReceiptImmutable | passed |
+| Receipt lookup and pagination | TestReceiptLookup | passed |

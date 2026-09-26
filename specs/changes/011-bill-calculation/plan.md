@@ -1,6 +1,6 @@
 # Change: 011-bill-calculation — Bill calculation and policies
 
-Status: implemented-unverified (M3 gate pending). Date: 2026-09-27. Scope owner: Claude. Task: MVP-11. Verification: M3 gate ([ADR-0004](../../decisions/0004-milestone-verification.md)).
+Status: done (M3 gate passed 2026-09-26 UTC). Date: 2026-09-27. Scope owner: Claude. Task: MVP-11. Verification: M3 gate ([ADR-0004](../../decisions/0004-milestone-verification.md)).
 
 ## Problem and behavior
 
@@ -24,13 +24,15 @@ Maps BIL-001, BIL-003, BIL-004 and the charge-policy subset of OPS-001/ADM-005 (
   - `GET/PUT /branches/{id}/charge-policy` (staff read, manager write with `expected_version`), a split of the combined configuration route recorded in the HTTP contract;
   - `GET /visits/{id}/bill` for the visit's guests or cashier, manager and host staff;
   - `POST /bills/resolve {dining_token}` for cashiers, with the token in the body only.
+- **Concurrent edits:** no branch lock is taken, to keep the global lock order (branch before actor rows in staff administration). The `(branch_id, version)` primary key arbitrates concurrent edits, and the loser gets `VERSION_CONFLICT`.
 - **Frozen totals:** while `settling` or `paid`, the bill shows the frozen snapshot from MVP-12, not a recomputation, so later policy changes never alter historical bills.
 
 ## Verification map
 
 | Requirement | Test | Status |
 | --- | --- | --- |
-| BIL-A2 exclusive/inclusive, fractional rounding (hand-computed fixtures) | TestCalculateFixtures | written, not run |
-| Rejected/cancelled lines and later menu price changes | TestBillUsesSnapshotsAndChargeableLines | written, not run |
-| Policy versions, bounds, roles | TestChargePolicyVersions | written, not run |
-| Bill access (guest own visit, staff, resolve by token) | TestBillAccess | written, not run |
+| BIL-A2 exclusive/inclusive, fractional rounding (hand-computed fixtures) | TestCalculateFixtures | passed |
+| Rejected/cancelled lines and later menu price changes | TestBillUsesSnapshotsAndChargeableLines | passed |
+| Policy versions, bounds, roles | TestChargePolicyVersions | passed |
+| Bill access (guest own visit, staff, resolve by token) | TestBillAccess | passed |
+| Constant statements per bill read | TestBillStatementsConstant | passed |

@@ -1,8 +1,7 @@
 // Package billing implements charge policies, bill calculation, cashier
 // settlement, receipts and full refunds (MVP-11/12/13).
 //
-// Lock order: acting staff rows (FOR SHARE) → branch (policy edits only) →
-// visit (FOR UPDATE; the same row orders and cancellations lock) → guest
+// Lock order: acting staff rows (FOR SHARE) → visit (FOR UPDATE; the same row orders and cancellations lock) → guest
 // capability/sessions (children of the visit) → settlement → refund.
 package billing
 
@@ -15,6 +14,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/epic-rinn/tableflow/src/api/internal/access"
@@ -40,6 +40,7 @@ var (
 	ErrVersionConflict = errors.New("version conflict")
 	ErrVisitState      = errors.New("visit state conflict")
 	ErrAmountMismatch  = errors.New("amount differs from bill total")
+	ErrNothingToSettle = errors.New("no chargeable lines")
 )
 
 // ValidationError carries per-field messages.
@@ -170,9 +171,9 @@ func (s *Service) SetChargePolicy(ctx context.Context, tx pgx.Tx, p identity.Pri
 	if p.BranchID != branchID {
 		return PolicyView{}, ErrNotFound
 	}
-	if _, err := tx.Exec(ctx, q("branch_lock"), branchID); err != nil {
-		return PolicyView{}, err
-	}
+	// No branch lock: staff administration locks branch → staff, so taking
+	// the branch after the actor rows could deadlock. The (branch, version)
+	// primary key arbitrates concurrent edits instead.
 	cur, err := currentPolicy(ctx, tx, branchID)
 	if err != nil {
 		return PolicyView{}, err
@@ -183,6 +184,9 @@ func (s *Service) SetChargePolicy(ctx context.Context, tx pgx.Tx, p identity.Pri
 	next := PolicyView{Policy: Policy{Version: cur.Version + 1, TaxMode: in.TaxMode, TaxBP: *in.TaxBP, ServiceBP: *in.ServiceBP, Configured: true}}
 	var at time.Time
 	if err := tx.QueryRow(ctx, q("policy_insert"), branchID, next.Version, next.TaxMode, next.TaxBP, next.ServiceBP, p.StaffID).Scan(&at); err != nil {
+		if pg := (*pgconn.PgError)(nil); errors.As(err, &pg) && pg.Code == "23505" { // concurrent edit took this version
+			return PolicyView{}, ErrVersionConflict
+		}
 		return PolicyView{}, err
 	}
 	next.UpdatedAt = &at

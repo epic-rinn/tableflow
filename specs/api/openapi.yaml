@@ -1671,7 +1671,7 @@ paths:
       tags: [billing]
       summary: 'Freeze ordering and snapshot totals at the observed bill version (cashier/manager)'
       description: >-
-        409 BILL_VERSION_CONFLICT carries the fresh bill; 409 UNRESOLVED_LINES lists lines not yet served, rejected or cancelled; 409 ALREADY_PAID carries the settlement.
+        409 BILL_VERSION_CONFLICT carries the fresh bill; 409 UNRESOLVED_LINES lists lines not yet served, rejected or cancelled; 409 NOTHING_TO_SETTLE when no line is chargeable (close the visit as empty); 409 ALREADY_PAID carries the settlement.
       security: [{staffSession: []}]
       parameters:
         - {$ref: '#/components/parameters/IdempotencyKey'}

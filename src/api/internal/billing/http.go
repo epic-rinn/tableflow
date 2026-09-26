@@ -109,6 +109,8 @@ func (h *HTTP) fail(w http.ResponseWriter, r *http.Request, err error) {
 		httpx.WriteError(w, r, http.StatusConflict, "VERSION_CONFLICT", "This changed meanwhile; refresh and try again")
 	case errors.Is(err, ErrVisitState):
 		httpx.WriteError(w, r, http.StatusConflict, "VISIT_STATE_CONFLICT", "This visit is not in a state that allows this")
+	case errors.Is(err, ErrNothingToSettle):
+		httpx.WriteError(w, r, http.StatusConflict, "NOTHING_TO_SETTLE", "This bill has no charges; close the visit as empty instead")
 	case errors.Is(err, ErrAmountMismatch):
 		httpx.WriteError(w, r, http.StatusUnprocessableEntity, "AMOUNT_MISMATCH", "The recorded amount must equal the bill total")
 	case errors.Is(err, context.Canceled):

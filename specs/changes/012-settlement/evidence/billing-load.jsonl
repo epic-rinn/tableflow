@@ -1,0 +1,8 @@
+{"route": "GET /branches/{id}/settlements", "samples": 120, "rps": 1.0, "codes": {"200": 120}, "p50_ms": 4.48, "p95_ms": 6.16, "p99_ms": 12.47, "max_ms": 14.03}
+{"route": "GET /settlements/{id}", "samples": 120, "rps": 1.0, "codes": {"200": 120}, "p50_ms": 1.87, "p95_ms": 3.56, "p99_ms": 5.19, "max_ms": 5.21}
+{"route": "GET /visits/{id}/bill (cashier)", "samples": 984, "rps": 8.2, "codes": {"200": 984}, "p50_ms": 4.55, "p95_ms": 7.72, "p99_ms": 9.99, "max_ms": 35.67}
+{"route": "GET /visits/{id}/bill (diner)", "samples": 3589, "rps": 29.9, "codes": {"200": 3402, "401": 187}, "p50_ms": 4.32, "p95_ms": 6.39, "p99_ms": 7.83, "max_ms": 41.81}
+{"route": "POST settlement/begin", "samples": 569, "rps": 4.7, "codes": {"200": 569}, "p50_ms": 11.96, "p95_ms": 17.94, "p99_ms": 22.17, "max_ms": 27.4}
+{"route": "POST settlement/confirm", "samples": 35, "rps": 0.3, "codes": {"201": 35}, "p50_ms": 10.26, "p95_ms": 13.3, "p99_ms": 13.76, "max_ms": 13.56}
+{"route": "POST settlement/reopen", "samples": 534, "rps": 4.5, "codes": {"200": 534}, "p50_ms": 7.6, "p95_ms": 11.36, "p99_ms": 16.44, "max_ms": 22.18}
+{"total_rps": 49.6, "diners": 300, "served_visits": 35, "warmup_s": 30, "measure_s": 120}

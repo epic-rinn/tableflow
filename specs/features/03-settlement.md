@@ -1,6 +1,6 @@
 # Bills and cashier settlement
 
-Status: specified, unimplemented. Actors: guest (read/request), cashier, manager.
+Status: specified; implemented and verified in M3 for non-members (MVP-11–13, gate passed 2026-09-26 UTC). Member discount, points award and reversal wait for M4 (MVP-14/15). Actors: guest (read/request), cashier, manager.
 
 ## Requirements
 

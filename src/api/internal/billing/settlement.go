@@ -87,6 +87,9 @@ func (s *Service) BeginSettlement(ctx context.Context, tx pgx.Tx, p identity.Pri
 	if len(unresolved) > 0 {
 		return Bill{}, &UnresolvedError{Lines: unresolved}
 	}
+	if len(lines) == 0 {
+		return Bill{}, ErrNothingToSettle // close-empty handles visits without charges (SEA-004)
+	}
 	pol, err := currentPolicy(ctx, tx, v.branchID)
 	if err != nil {
 		return Bill{}, err

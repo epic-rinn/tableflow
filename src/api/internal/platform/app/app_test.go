@@ -19,6 +19,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 
 	"github.com/epic-rinn/tableflow/src/api/internal/access"
+	"github.com/epic-rinn/tableflow/src/api/internal/billing"
 	"github.com/epic-rinn/tableflow/src/api/internal/identity"
 	"github.com/epic-rinn/tableflow/src/api/internal/members"
 	"github.com/epic-rinn/tableflow/src/api/internal/menu"
@@ -106,7 +107,8 @@ func TestHealthOpenApiValidation(t *testing.T) {
 	seatHTTP := seating.NewHTTP(nil, nil, idHTTP, accHTTP, nil, nil, discard)
 	menuHTTP := menu.NewHTTP(nil, idHTTP, discard)
 	orderHTTP := ordering.NewHTTP(nil, nil, nil, idHTTP, accHTTP, nil, discard)
-	for path, methods := range Routes(health.New(fakePinger{}, time.Second, discard), idHTTP, accHTTP, memHTTP, seatHTTP, menuHTTP, orderHTTP) {
+	billHTTP := billing.NewHTTP(nil, nil, nil, idHTTP, accHTTP, discard)
+	for path, methods := range Routes(health.New(fakePinger{}, time.Second, discard), idHTTP, accHTTP, memHTTP, seatHTTP, menuHTTP, orderHTTP, billHTTP) {
 		for method := range methods {
 			implemented = append(implemented, method+" "+path)
 		}

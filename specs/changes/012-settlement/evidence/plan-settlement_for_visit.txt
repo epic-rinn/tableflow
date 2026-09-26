@@ -1,0 +1,10 @@
+BEGIN
+Index Scan using settlements_visit_id_key on settlements  (cost=0.42..8.44 rows=1 width=37) (actual time=0.009..0.010 rows=1.00 loops=1)
+  Index Cond: (visit_id = '01a0ddbb-7772-7144-b9a7-5825185d5191'::uuid)
+  Index Searches: 1
+  Buffers: shared hit=4
+Planning:
+  Buffers: shared hit=137
+Planning Time: 0.142 ms
+Execution Time: 0.026 ms
+ROLLBACK

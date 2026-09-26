@@ -93,7 +93,7 @@ Menu responses are capped at the pilot's configured maximum 500 items, with boun
 
 Payment confirmation authenticates staff again on every retry, even if the idempotency result exists. After guest access is revoked at payment, receipt retrieval remains staff-mediated in MVP.
 
-Settlement conflicts use stable codes: `BILL_VERSION_CONFLICT` (body also carries the fresh `bill`), `UNRESOLVED_LINES` (body carries `lines`), `ALREADY_PAID` (body carries `settlement`, `fields.receipt_reference`), `VISIT_STATE_CONFLICT`, `AMOUNT_MISMATCH` (422) and `ALREADY_REFUNDED`. The visit gains the `settling` state between begin and confirm/reopen.
+Settlement conflicts use stable codes: `BILL_VERSION_CONFLICT` (body also carries the fresh `bill`), `UNRESOLVED_LINES` (body carries `lines`), `ALREADY_PAID` (body carries `settlement`, `fields.receipt_reference`), `VISIT_STATE_CONFLICT`, `NOTHING_TO_SETTLE` (no chargeable lines; use close-empty), `AMOUNT_MISMATCH` (422) and `ALREADY_REFUNDED`. The visit gains the `settling` state between begin and confirm/reopen.
 
 ## Configuration and reports
 

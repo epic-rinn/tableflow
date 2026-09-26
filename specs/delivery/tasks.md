@@ -1,6 +1,6 @@
 # MVP implementation tasks
 
-Status: M0–M2 (MVP-01–10) done; M3 (MVP-11–13) implemented-unverified pending its gate; M4 onwards planned. Created: 2026-09-26.
+Status: M0–M3 (MVP-01–13) done; M4 onwards planned. Created: 2026-09-26.
 
 This is the implementation queue for Claude. Codex maintains task scope and the Word report; Claude maintains execution status and evidence. The [roadmap](roadmap.md) groups milestones, while this file owns task order and status. Canonical feature specs remain the authority for behavior.
 
@@ -29,9 +29,9 @@ All implementation tasks are owned by Claude. MVP-22 additionally requires the r
 | MVP-08 Menu management and browsing | M2 | `008-menu` | MVP-07 | done |
 | MVP-09 Shared-visit ordering | M2 | `009-ordering` | MVP-08 | done |
 | MVP-10 Kitchen and assistance | M2 | `010-kitchen` | MVP-09 | done |
-| MVP-11 Bill calculation and policies | M3 | `011-bill-calculation` | MVP-10 | implemented-unverified |
-| MVP-12 Cashier settlement | M3 | `012-settlement` | MVP-11 | implemented-unverified |
-| MVP-13 Receipts and full refunds | M3 | `013-refunds` | MVP-12 | implemented-unverified |
+| MVP-11 Bill calculation and policies | M3 | `011-bill-calculation` | MVP-10 | done |
+| MVP-12 Cashier settlement | M3 | `012-settlement` | MVP-11 | done |
+| MVP-13 Receipts and full refunds | M3 | `013-refunds` | MVP-12 | done |
 | MVP-14 Member visit claim and tier snapshot | M4 | `014-member-claim` | MVP-04, MVP-13 | planned |
 | MVP-15 Atomic loyalty and member history | M4 | `015-loyalty-ledger` | MVP-14 | planned |
 | MVP-16 Manager reporting and audit | M5 | `016-reporting` | MVP-15 | planned |

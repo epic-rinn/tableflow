@@ -1,6 +1,6 @@
 # Change: 012-settlement — Cashier settlement
 
-Status: implemented-unverified (M3 gate pending). Date: 2026-09-27. Scope owner: Claude. Task: MVP-12. Verification: M3 gate (ADR-0004).
+Status: done (M3 gate passed 2026-09-26 UTC). Date: 2026-09-27. Scope owner: Claude. Task: MVP-12. Verification: M3 gate (ADR-0004).
 
 ## Problem and behavior
 
@@ -16,6 +16,7 @@ The table stays claimed until departure (SEA-004). Settlement is for non-members
 - **States:** visit states gain `settling`. Begin (`expected_version` = `bill_version`) locks the visit and refuses in these cases:
   - lines still `submitted` or not yet `served` → `409 UNRESOLVED_LINES`, listing the items;
   - a version mismatch → `409 BILL_VERSION_CONFLICT`, with the fresh bill in the body.
+  - a visit with no chargeable line → `409 NOTHING_TO_SETTLE` (close it as empty instead).
   On success it stores a `bill_snapshots` row (totals, policy version, lines JSON) and bumps `bill_version`.
 - **Serialisation:** order submission and line cancellation already require `open` and lock the same visit row, so a concurrent submission either commits first (and must be resolved before settlement) or fails because settling began (ORD-A4).
 - **Confirm:**
@@ -33,10 +34,11 @@ The table stays claimed until departure (SEA-004). Settlement is for non-members
 
 | Requirement | Test | Status |
 | --- | --- | --- |
-| BIL-A1 stale bill version | TestBeginRejectsStaleBill | written, not run |
-| Unresolved kitchen lines | TestBeginRequiresResolvedLines | written, not run |
-| BIL-A3 two cashiers, response loss | TestConcurrentConfirmOneSettlement | written, not run |
-| BIL-A4 guest credentials cannot settle | TestGuestCannotSettle | written, not run |
-| BIL-A5 reopen invalidates old version | TestReopenInvalidatesConfirmation | written, not run |
-| ORD-A4 settlement versus order submission | TestSettlementVersusOrderSubmission | written, not run |
-| Exact amount, frozen ordering, access revoked, table retained, paid → depart → ready | TestConfirmEffects | written, not run |
+| BIL-A1 stale bill version | TestBeginRejectsStaleBill | passed |
+| Unresolved kitchen lines | TestBeginRequiresResolvedLines | passed |
+| BIL-A3 two cashiers, response loss | TestConcurrentConfirmOneSettlement | passed |
+| BIL-A4 guest credentials cannot settle | TestGuestCannotSettle | passed |
+| BIL-A5 reopen invalidates old version | TestReopenInvalidatesConfirmation | passed |
+| ORD-A4 settlement versus order submission | TestSettlementVersusOrderSubmission | passed |
+| Exact amount, frozen ordering, access revoked, table retained, paid → depart → ready | TestConfirmEffects, admin cashier.spec.ts | passed |
+| No zero-value settlement | TestBeginRequiresCharges | passed |

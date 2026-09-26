@@ -1,0 +1,10 @@
+BEGIN
+Index Scan using bill_snapshots_visit_id_bill_version_key on bill_snapshots  (cost=0.42..8.44 rows=1 width=87) (actual time=0.032..0.034 rows=1.00 loops=1)
+  Index Cond: ((visit_id = '01a0ddbb-7772-7144-b9a7-5825185d5191'::uuid) AND (bill_version = 1))
+  Index Searches: 1
+  Buffers: shared hit=2 read=2
+Planning:
+  Buffers: shared hit=140
+Planning Time: 0.150 ms
+Execution Time: 0.053 ms
+ROLLBACK
