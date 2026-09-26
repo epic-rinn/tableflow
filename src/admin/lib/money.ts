@@ -11,3 +11,13 @@ export function bahtToSatang(input: string): number | null {
 }
 
 export const satangToBaht = (satang: number) => (satang / 100).toFixed(2).replace(/\.00$/, "");
+
+// Rates travel as basis points (1/100 %); staff type percentages ("7", "7.25").
+export function percentToBP(input: string): number | null {
+  if (!/^\d{1,3}(\.\d{1,2})?$/.test(input.trim())) return null;
+  const [whole, frac = ""] = input.trim().split(".");
+  const bp = Number(whole) * 100 + Number(frac.padEnd(2, "0"));
+  return bp <= 10000 ? bp : null;
+}
+
+export const bpToPercent = (bp: number) => (bp / 100).toFixed(2).replace(/\.?0+$/, "");

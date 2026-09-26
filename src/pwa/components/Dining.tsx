@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Freshness } from "@/components/Freshness";
 import { api } from "@/lib/api/client";
-import type { Assistance, Menu, MenuItem, OrdersPage, Visit } from "@/lib/api/types";
+import type { Assistance, Bill, Menu, MenuItem, OrdersPage, Visit } from "@/lib/api/types";
 import { formatTHB } from "@/lib/money";
 import { useIdempotent } from "@/lib/useIdempotent";
 import { usePolling } from "@/lib/usePolling";
@@ -88,7 +88,8 @@ function DiningRoom({ visit }: { visit: Visit }) {
   return (
     <>
       <h2>Table {visit.table.label}</h2>
-      {!open && <p role="status">Ordering is closed for this table.</p>}
+      {visit.state === "settling" && <p role="status">Your bill is being settled at the counter, so ordering is paused.</p>}
+      {!open && visit.state !== "settling" && <p role="status">Ordering is closed for this table.</p>}
       {notice && <p role={notice.role}>{notice.text}</p>}
 
       {open && (
@@ -151,7 +152,63 @@ function DiningRoom({ visit }: { visit: Visit }) {
         </p>
       </section>
 
+      <BillPanel visitId={visit.id} />
       <AssistancePanel visitId={visit.id} disabled={offline} />
+    </>
+  );
+}
+
+const percent = (bp: number) => (bp / 100).toFixed(2).replace(/\.?0+$/, "");
+
+// The itemised bill as Go calculated it (BIL-001/003); read-only. Paying
+// happens with staff at the counter — nothing here can settle the bill.
+function BillPanel({ visitId }: { visitId: string }) {
+  const [shown, setShown] = useState(false);
+  return (
+    <section aria-labelledby="bill-title">
+      <h3 id="bill-title">Bill</h3>
+      <button type="button" aria-expanded={shown} onClick={() => setShown(!shown)}>
+        {shown ? "Hide bill" : "View bill"}
+      </button>
+      {shown && <BillDetails visitId={visitId} />}
+    </section>
+  );
+}
+
+function BillDetails({ visitId }: { visitId: string }) {
+  const bill = usePolling(useCallback((s: AbortSignal) => api<Bill>(`/visits/${visitId}/bill`, { signal: s }), [visitId]), POLL_MS);
+  const b = bill.data;
+  if (!b) return bill.error ? <p role="alert">{bill.error.message}</p> : <p role="status">Loading bill…</p>;
+  return (
+    <>
+      <Freshness updatedAt={bill.updatedAt} error={bill.error} intervalMs={POLL_MS} />
+      <ul>
+        {b.lines.map((l) => (
+          <li key={l.id}>
+            {l.quantity}× {l.name_th} <small>{l.name_en}</small> · {formatTHB(l.line_total_satang)}
+          </li>
+        ))}
+      </ul>
+      <dl>
+        <dt>Subtotal</dt>
+        <dd>{formatTHB(b.gross_satang)}</dd>
+        {b.discount_satang > 0 && (
+          <>
+            <dt>Discount</dt>
+            <dd>−{formatTHB(b.discount_satang)}</dd>
+          </>
+        )}
+        <dt>Service charge ({percent(b.policy.service_bp)}%)</dt>
+        <dd>{formatTHB(b.service_satang)}</dd>
+        <dt>{b.policy.tax_mode === "inclusive" ? `Tax included (${percent(b.policy.tax_bp)}%)` : `Tax (${percent(b.policy.tax_bp)}%)`}</dt>
+        <dd>{formatTHB(b.tax_satang)}</dd>
+        <dt>Total</dt>
+        <dd>
+          <strong>{formatTHB(b.total_satang)}</strong>
+        </dd>
+      </dl>
+      {!b.frozen && b.unresolved_lines > 0 && <p>{b.unresolved_lines} item(s) are still being prepared; the total may change.</p>}
+      <p>Please pay a staff member at the counter. Showing a transfer slip here does not complete payment.</p>
     </>
   );
 }

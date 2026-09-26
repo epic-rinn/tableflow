@@ -4,7 +4,7 @@ export type { ApiError };
 
 export type ApiResult<T> =
   | { ok: true; status: number; data: T }
-  | { ok: false; status: number; error: ApiError };
+  | { ok: false; status: number; error: ApiError; body?: unknown };
 
 const offline: ApiError = {
   code: "NETWORK",
@@ -54,5 +54,6 @@ export async function api<T>(path: string, init: ApiInit = {}): Promise<ApiResul
     code: "UNAVAILABLE",
     message: "The service is temporarily unavailable.",
   };
-  return { ok: false, status: res.status, error };
+  // body keeps extra conflict payloads (e.g. the fresh bill) for callers.
+  return { ok: false, status: res.status, error, body: payload };
 }

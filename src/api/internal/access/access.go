@@ -132,6 +132,29 @@ func RevokeCapability(ctx context.Context, tx pgx.Tx, kind, resourceID string) e
 	return nil
 }
 
+// ResolveCapability maps a raw capability token to its branch and resource
+// without creating a session; staff use it to find a visit's bill from the
+// diner's QR (BIL-001). Revoked or expired tokens do not resolve.
+func ResolveCapability(ctx context.Context, db interface {
+	QueryRow(context.Context, string, ...any) pgx.Row
+}, kind, rawToken string) (branchID, resourceID string, err error) {
+	hash, ok := token.Hash(rawToken)
+	if !ok || !validKind(kind) {
+		return "", "", ErrTokenInvalid
+	}
+	var id string
+	var generation int
+	var expires *time.Time
+	err = db.QueryRow(ctx, q("capability_lookup"), hash, kind).Scan(&id, &branchID, &resourceID, &generation, &expires)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", "", ErrTokenInvalid
+	}
+	if err != nil {
+		return "", "", fmt.Errorf("lookup capability: %w", err)
+	}
+	return branchID, resourceID, nil
+}
+
 // Exchange turns a QR token into a new guest session. The capability is not
 // consumed, so every diner at the table can exchange the same token.
 func (s *Service) Exchange(ctx context.Context, rawToken, kind string, ip netip.Addr) (Guest, string, error) {

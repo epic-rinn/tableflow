@@ -24,6 +24,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/epic-rinn/tableflow/src/api/internal/access"
+	"github.com/epic-rinn/tableflow/src/api/internal/billing"
 	"github.com/epic-rinn/tableflow/src/api/internal/identity"
 	"github.com/epic-rinn/tableflow/src/api/internal/menu"
 	"github.com/epic-rinn/tableflow/src/api/internal/ordering"
@@ -53,6 +54,7 @@ type Env struct {
 	Manager string // staff cookie values
 	Host    string
 	Kitchen string
+	Cashier string
 
 	statements *statementCounter
 }
@@ -98,7 +100,8 @@ func New(t *testing.T) *Env {
 	routes := app.Routes(health.New(pool, time.Second, quiet), idHTTP, accHTTP,
 		seating.NewHTTP(seating.NewService(pool, idSvc), store, idHTTP, accHTTP, []string{PWAOrigin}, trusted, quiet),
 		menu.NewHTTP(menu.NewService(pool, idSvc), idHTTP, quiet),
-		ordering.NewHTTP(ordering.NewService(pool, idSvc), pool, store, idHTTP, accHTTP, []string{PWAOrigin}, quiet))
+		ordering.NewHTTP(ordering.NewService(pool, idSvc), pool, store, idHTTP, accHTTP, []string{PWAOrigin}, quiet),
+		billing.NewHTTP(billing.NewService(pool, idSvc), pool, store, idHTTP, accHTTP, quiet))
 	srv := httptest.NewServer(app.NewHandler(quiet, routes))
 	t.Cleanup(srv.Close)
 	e := &Env{T: t, Pool: pool, Srv: srv, statements: counter}
@@ -114,6 +117,7 @@ func New(t *testing.T) *Env {
 	e.Manager = e.login("manager@example.com")
 	e.Host = e.StaffMember("host@example.com", "host")
 	e.Kitchen = e.StaffMember("kitchen@example.com", "kitchen")
+	e.Cashier = e.StaffMember("cashier@example.com", "cashier")
 	return e
 }
 

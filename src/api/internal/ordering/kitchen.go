@@ -221,7 +221,7 @@ func (s *Service) RaiseAssistance(ctx context.Context, tx pgx.Tx, actor Actor, v
 	if err != nil {
 		return Assistance{}, false, err
 	}
-	if state != "open" && state != "paid" {
+	if state != "open" && state != "settling" && state != "paid" {
 		return Assistance{}, false, ErrVisitState
 	}
 	by := "guest"

@@ -82,7 +82,7 @@ export type TicketPage = { items: Ticket[]; next_cursor: string | null; server_t
 export type Visit = {
   id: string;
   branch_id: string;
-  state: "open" | "paid" | "departed" | "closed";
+  state: "open" | "settling" | "paid" | "departed" | "closed";
   party_size: number;
   needs: Need[];
   table: { id: string; label: string };
@@ -117,3 +117,29 @@ export type Assistance = {
   id: string; visit_id: string; table_label: string; topic: "help" | "allergy" | "checkout"; note: string | null;
   state: "open" | "acknowledged" | "resolved"; version: number; created_at: string; acknowledged_at: string | null; resolved_at: string | null;
 };
+
+export type Policy = { version: number; tax_mode: "exclusive" | "inclusive"; tax_bp: number; service_bp: number; configured: boolean };
+export type ChargePolicy = Policy & { updated_at: string | null };
+export type BillLine = {
+  id: string; name_th: string; name_en: string; options: OptionSnapshot[];
+  unit_price_satang: number; quantity: number; line_total_satang: number; state: LineState;
+};
+export type Totals = {
+  gross_satang: number; discount_bp: number; discount_satang: number; net_satang: number;
+  service_satang: number; tax_satang: number; total_satang: number;
+};
+export type SettlementRef = { id: string; receipt_reference: string; paid_at: string };
+export type Bill = Totals & {
+  visit_id: string; branch_id: string; table_label: string; visit_state: Visit["state"]; bill_version: number;
+  frozen: boolean; policy: Policy; lines: BillLine[]; unresolved_lines: number; settlement: SettlementRef | null; server_time: string;
+};
+export type PaymentMethod = "cash" | "bank_transfer" | "card" | "other";
+export type Settlement = { id: string; visit_id: string; receipt_reference: string; amount_satang: number; method: PaymentMethod; paid_at: string; bill: Bill };
+export type Refund = { id: string; amount_satang: number; reason: string; external_reference: string; recorded_by: string; created_at: string };
+export type Receipt = Totals & {
+  id: string; visit_id: string; receipt_reference: string; table_label: string; visit_state: "paid" | "departed";
+  amount_satang: number; method: PaymentMethod; verification_note: string; external_reference: string | null;
+  confirmed_by: string; paid_at: string; bill_version: number; policy: Policy; lines: BillLine[]; refund: Refund | null;
+};
+export type ReceiptSummary = { id: string; receipt_reference: string; amount_satang: number; method: PaymentMethod; paid_at: string; table_label: string; refunded: boolean };
+export type ReceiptPage = { items: ReceiptSummary[]; next_cursor: string | null };

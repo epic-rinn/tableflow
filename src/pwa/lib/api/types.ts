@@ -35,7 +35,7 @@ export type Ticket = {
 export type Visit = {
   id: string;
   branch_id: string;
-  state: "open" | "paid" | "departed" | "closed";
+  state: "open" | "settling" | "paid" | "departed" | "closed";
   party_size: number;
   table: { id: string; label: string };
   version: number;
@@ -51,3 +51,12 @@ export type OrderLine = {
 };
 export type OrdersPage = { items: { id: string; created_at: string; lines: OrderLine[] }[]; chargeable_total_satang: number };
 export type Assistance = { id: string; topic: "help" | "allergy" | "checkout"; state: "open" | "acknowledged" | "resolved"; note: string | null };
+export type BillLine = {
+  id: string; name_th: string; name_en: string; options: { name_th: string; name_en: string }[];
+  unit_price_satang: number; quantity: number; line_total_satang: number; state: string;
+};
+export type Bill = {
+  visit_state: Visit["state"]; bill_version: number; frozen: boolean; lines: BillLine[]; unresolved_lines: number;
+  policy: { version: number; tax_mode: "exclusive" | "inclusive"; tax_bp: number; service_bp: number; configured: boolean };
+  gross_satang: number; discount_bp: number; discount_satang: number; service_satang: number; tax_satang: number; total_satang: number;
+};

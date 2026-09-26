@@ -24,6 +24,8 @@ tags:
     description: Tables, seating groups, queue, holds, visits and table lifecycle
   - name: ordering
     description: Menu, orders, kitchen lines and assistance
+  - name: billing
+    description: Charge policies, bills, cashier settlement, receipts and full refunds (admin origin; guests may only read their bill)
   - name: member
     description: Member accounts and sessions (PWA origin only); responses never reveal whether an email is registered
 paths:
@@ -1555,6 +1557,319 @@ paths:
         '409': {$ref: '#/components/responses/Error'}
         '415': {$ref: '#/components/responses/Error'}
         '422': {$ref: '#/components/responses/Error'}
+  /api/v1/branches/{branch_id}/charge-policy:
+    parameters:
+      - {name: branch_id, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      operationId: getChargePolicy
+      tags: [billing]
+      summary: 'Current charge/tax policy version (branch staff); version 0 = unconfigured'
+      security: [{staffSession: []}]
+      responses:
+        '200':
+          description: Current policy
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ChargePolicy'}
+        '401': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+    put:
+      operationId: setChargePolicy
+      tags: [billing]
+      summary: 'Append a new charge/tax policy version (manager)'
+      description: >-
+        Rates are basis points and must be validated with the operator before live use; no statutory defaults. Open bills use the new version at once; frozen settlement snapshots never change.
+      security: [{staffSession: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [expected_version, tax_mode, tax_bp, service_bp]
+              properties:
+                expected_version: {type: integer, minimum: 0}
+                tax_mode: {type: string, enum: [exclusive, inclusive]}
+                tax_bp: {type: integer, minimum: 0, maximum: 10000}
+                service_bp: {type: integer, minimum: 0, maximum: 10000}
+      responses:
+        '200':
+          description: New policy version
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ChargePolicy'}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '415': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+  /api/v1/visits/{visit_id}/bill:
+    parameters:
+      - {name: visit_id, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      operationId: getVisitBill
+      tags: [billing]
+      summary: 'Itemised bill (the visit guest, or cashier/manager)'
+      description: >-
+        Live totals from order-line snapshots and the current policy while open; the frozen snapshot while settling, paid or departed.
+      security: [{staffSession: []}, {guestSession: []}]
+      responses:
+        '200':
+          description: Bill
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Bill'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+  /api/v1/bills/resolve:
+    post:
+      operationId: resolveBill
+      tags: [billing]
+      summary: 'Find a bill from the diner''s dining QR token (cashier/manager)'
+      description: >-
+        The token travels in the body only and identifies the visit; it never authorizes settlement. Revoked or unknown tokens return 404.
+      security: [{staffSession: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [dining_token]
+              properties:
+                dining_token: {type: string, maxLength: 200}
+      responses:
+        '200':
+          description: Bill
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Bill'}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '415': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+  /api/v1/visits/{visit_id}/settlement/begin:
+    parameters:
+      - {name: visit_id, in: path, required: true, schema: {type: string, format: uuid}}
+    post:
+      operationId: beginSettlement
+      tags: [billing]
+      summary: 'Freeze ordering and snapshot totals at the observed bill version (cashier/manager)'
+      description: >-
+        409 BILL_VERSION_CONFLICT carries the fresh bill; 409 UNRESOLVED_LINES lists lines not yet served, rejected or cancelled; 409 ALREADY_PAID carries the settlement.
+      security: [{staffSession: []}]
+      parameters:
+        - {$ref: '#/components/parameters/IdempotencyKey'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [expected_version]
+              properties:
+                expected_version: {type: integer, minimum: 1}
+      responses:
+        '200':
+          description: Settling bill (frozen)
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+            Idempotency-Replayed:
+              description: Present when a committed result is replayed
+              schema: {type: string, const: 'true'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Bill'}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/BillingError'}
+        '415': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+  /api/v1/visits/{visit_id}/settlement/reopen:
+    parameters:
+      - {name: visit_id, in: path, required: true, schema: {type: string, format: uuid}}
+    post:
+      operationId: reopenSettlement
+      tags: [billing]
+      summary: 'Return a settling bill to open with a reason (cashier/manager); paid bills never reopen'
+      security: [{staffSession: []}]
+      parameters:
+        - {$ref: '#/components/parameters/IdempotencyKey'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [expected_version, reason]
+              properties:
+                expected_version: {type: integer, minimum: 1}
+                reason: {type: string, minLength: 1, maxLength: 500}
+      responses:
+        '200':
+          description: Open bill with a new version
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+            Idempotency-Replayed:
+              description: Present when a committed result is replayed
+              schema: {type: string, const: 'true'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Bill'}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/BillingError'}
+        '415': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+  /api/v1/visits/{visit_id}/settlement/confirm:
+    parameters:
+      - {name: visit_id, in: path, required: true, schema: {type: string, format: uuid}}
+    post:
+      operationId: confirmSettlement
+      tags: [billing]
+      summary: 'Record externally verified payment of the exact total (cashier/manager)'
+      description: >-
+        Staff are re-authenticated and role-checked on every retry before a stored result is replayed. Creates the one settlement and receipt reference, marks the visit paid and revokes dining access; the table stays claimed until departure. A concurrent or later confirmation gets 409 ALREADY_PAID with the receipt reference. Amount other than the snapshot total is 422 AMOUNT_MISMATCH.
+      security: [{staffSession: []}]
+      parameters:
+        - {$ref: '#/components/parameters/IdempotencyKey'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [expected_version, amount_satang, method, verification_note]
+              properties:
+                expected_version: {type: integer, minimum: 1}
+                amount_satang: {type: integer, minimum: 0}
+                method: {type: string, enum: [cash, bank_transfer, card, other]}
+                verification_note: {type: string, minLength: 1, maxLength: 500}
+                external_reference: {type: [string, 'null'], maxLength: 200}
+      responses:
+        '201':
+          description: Settlement with the paid bill
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+            Idempotency-Replayed:
+              description: Present when a committed result is replayed
+              schema: {type: string, const: 'true'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Settlement'}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/BillingError'}
+        '415': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+  /api/v1/branches/{branch_id}/settlements:
+    parameters:
+      - {name: branch_id, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      operationId: listSettlements
+      tags: [billing]
+      summary: 'Receipts of a branch, newest first (cashier/manager)'
+      security: [{staffSession: []}]
+      parameters:
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100}}
+        - {name: cursor, in: query, schema: {type: string, maxLength: 512}}
+        - {name: receipt_reference, in: query, schema: {type: string, pattern: '^R-[A-Z2-7]{10}$'}}
+      responses:
+        '200':
+          description: Receipt page
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ReceiptPage'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+  /api/v1/settlements/{settlement_id}:
+    parameters:
+      - {name: settlement_id, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      operationId: getSettlement
+      tags: [billing]
+      summary: 'Immutable historical receipt with its frozen bill and any refund (cashier/manager)'
+      security: [{staffSession: []}]
+      responses:
+        '200':
+          description: Receipt
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Receipt'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+  /api/v1/settlements/{settlement_id}/refund:
+    parameters:
+      - {name: settlement_id, in: path, required: true, schema: {type: string, format: uuid}}
+    post:
+      operationId: refundSettlement
+      tags: [billing]
+      summary: 'Record the one full refund completed outside the system (manager)'
+      description: >-
+        The original settlement is kept unchanged and the visit is never reopened. A second refund gets 409 ALREADY_REFUNDED.
+      security: [{staffSession: []}]
+      parameters:
+        - {$ref: '#/components/parameters/IdempotencyKey'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [reason, external_reference]
+              properties:
+                reason: {type: string, minLength: 1, maxLength: 500}
+                external_reference: {type: string, minLength: 1, maxLength: 200}
+      responses:
+        '201':
+          description: Receipt with the refund
+          headers:
+            Cache-Control: {$ref: '#/components/headers/PrivateNoStore'}
+            Idempotency-Replayed:
+              description: Present when a committed result is replayed
+              schema: {type: string, const: 'true'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Receipt'}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '415': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
 components:
   parameters:
     IdempotencyKey:
@@ -1585,6 +1900,11 @@ components:
       name: __Host-tf_staff
       description: Host-only staff session cookie. Mutations also require an allowed admin Origin.
   responses:
+    BillingError:
+      description: Error, optionally with the fresh bill, unresolved lines or the existing settlement
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/BillingError'}
     Error:
       description: Error in the common envelope
       content:
@@ -1859,7 +2179,7 @@ components:
       properties:
         id: {type: string, format: uuid}
         branch_id: {type: string, format: uuid}
-        state: {type: string, enum: [open, paid, departed, closed]}
+        state: {type: string, enum: [open, settling, paid, departed, closed]}
         party_size: {type: integer}
         needs: {$ref: '#/components/schemas/Needs'}
         table:
@@ -2084,3 +2404,157 @@ components:
       properties:
         items: {type: array, items: {$ref: '#/components/schemas/Assistance'}}
         server_time: {type: string, format: date-time}
+    BillingError:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error: {$ref: '#/components/schemas/Error/properties/error'}
+        bill: {$ref: '#/components/schemas/Bill'}
+        lines: {type: array, items: {$ref: '#/components/schemas/BillLine'}}
+        settlement: {$ref: '#/components/schemas/SettlementRef'}
+    Policy:
+      type: object
+      additionalProperties: false
+      required: [version, tax_mode, tax_bp, service_bp, configured]
+      properties:
+        version: {type: integer, minimum: 0}
+        tax_mode: {type: string, enum: [exclusive, inclusive]}
+        tax_bp: {type: integer, minimum: 0, maximum: 10000}
+        service_bp: {type: integer, minimum: 0, maximum: 10000}
+        configured: {type: boolean}
+    ChargePolicy:
+      type: object
+      additionalProperties: false
+      required: [version, tax_mode, tax_bp, service_bp, configured, updated_at]
+      properties:
+        version: {type: integer, minimum: 0}
+        tax_mode: {type: string, enum: [exclusive, inclusive]}
+        tax_bp: {type: integer, minimum: 0, maximum: 10000}
+        service_bp: {type: integer, minimum: 0, maximum: 10000}
+        configured: {type: boolean}
+        updated_at: {type: [string, 'null'], format: date-time}
+    BillLine:
+      type: object
+      additionalProperties: false
+      required: [id, name_th, name_en, options, unit_price_satang, quantity, line_total_satang, state]
+      properties:
+        id: {type: string, format: uuid}
+        name_th: {type: string}
+        name_en: {type: string}
+        options: {type: array, items: {$ref: '#/components/schemas/OptionSnapshot'}}
+        unit_price_satang: {type: integer}
+        quantity: {type: integer}
+        line_total_satang: {type: integer}
+        state: {type: string, enum: [submitted, accepted, preparing, ready, served]}
+    SettlementRef:
+      type: object
+      additionalProperties: false
+      required: [id, receipt_reference, paid_at]
+      properties:
+        id: {type: string, format: uuid}
+        receipt_reference: {type: string, pattern: '^R-[A-Z2-7]{10}$'}
+        paid_at: {type: string, format: date-time}
+    Bill:
+      type: object
+      additionalProperties: false
+      required: [visit_id, branch_id, table_label, visit_state, bill_version, frozen, policy, lines, unresolved_lines,
+                 settlement, member_claim, server_time, gross_satang, discount_bp, discount_satang, net_satang,
+                 service_satang, tax_satang, total_satang]
+      properties:
+        visit_id: {type: string, format: uuid}
+        branch_id: {type: string, format: uuid}
+        table_label: {type: string}
+        visit_state: {type: string, enum: [open, settling, paid, departed, closed]}
+        bill_version: {type: integer, minimum: 1}
+        frozen: {type: boolean}
+        policy: {$ref: '#/components/schemas/Policy'}
+        lines: {type: array, items: {$ref: '#/components/schemas/BillLine'}}
+        unresolved_lines: {type: integer, minimum: 0}
+        settlement:
+          oneOf:
+            - {type: 'null'}
+            - {$ref: '#/components/schemas/SettlementRef'}
+        member_claim: {type: 'null', description: 'Member claim status (MVP-14); always null until then'}
+        server_time: {type: string, format: date-time}
+        gross_satang: {type: integer, minimum: 0}
+        discount_bp: {type: integer, minimum: 0, maximum: 10000}
+        discount_satang: {type: integer, minimum: 0}
+        net_satang: {type: integer, minimum: 0}
+        service_satang: {type: integer, minimum: 0}
+        tax_satang: {type: integer, minimum: 0}
+        total_satang: {type: integer, minimum: 0}
+    Settlement:
+      type: object
+      additionalProperties: false
+      required: [id, visit_id, receipt_reference, amount_satang, method, paid_at, bill]
+      properties:
+        id: {type: string, format: uuid}
+        visit_id: {type: string, format: uuid}
+        receipt_reference: {type: string, pattern: '^R-[A-Z2-7]{10}$'}
+        amount_satang: {type: integer, minimum: 0}
+        method: {type: string, enum: [cash, bank_transfer, card, other]}
+        paid_at: {type: string, format: date-time}
+        bill: {$ref: '#/components/schemas/Bill'}
+    Refund:
+      type: object
+      additionalProperties: false
+      required: [id, amount_satang, reason, external_reference, recorded_by, created_at]
+      properties:
+        id: {type: string, format: uuid}
+        amount_satang: {type: integer, minimum: 0}
+        reason: {type: string}
+        external_reference: {type: string}
+        recorded_by: {type: string, description: Staff display name}
+        created_at: {type: string, format: date-time}
+    Receipt:
+      type: object
+      additionalProperties: false
+      required: [id, visit_id, receipt_reference, table_label, visit_state, amount_satang, method, verification_note,
+                 external_reference, confirmed_by, paid_at, bill_version, policy, lines, refund, gross_satang,
+                 discount_bp, discount_satang, net_satang, service_satang, tax_satang, total_satang]
+      properties:
+        id: {type: string, format: uuid}
+        visit_id: {type: string, format: uuid}
+        receipt_reference: {type: string, pattern: '^R-[A-Z2-7]{10}$'}
+        table_label: {type: string}
+        visit_state: {type: string, enum: [paid, departed]}
+        amount_satang: {type: integer, minimum: 0}
+        method: {type: string, enum: [cash, bank_transfer, card, other]}
+        verification_note: {type: string}
+        external_reference: {type: [string, 'null']}
+        confirmed_by: {type: string, description: Staff display name}
+        paid_at: {type: string, format: date-time}
+        bill_version: {type: integer}
+        policy: {$ref: '#/components/schemas/Policy'}
+        lines: {type: array, items: {$ref: '#/components/schemas/BillLine'}}
+        refund:
+          oneOf:
+            - {type: 'null'}
+            - {$ref: '#/components/schemas/Refund'}
+        gross_satang: {type: integer, minimum: 0}
+        discount_bp: {type: integer, minimum: 0, maximum: 10000}
+        discount_satang: {type: integer, minimum: 0}
+        net_satang: {type: integer, minimum: 0}
+        service_satang: {type: integer, minimum: 0}
+        tax_satang: {type: integer, minimum: 0}
+        total_satang: {type: integer, minimum: 0}
+    ReceiptSummary:
+      type: object
+      additionalProperties: false
+      required: [id, receipt_reference, amount_satang, method, paid_at, table_label, refunded]
+      properties:
+        id: {type: string, format: uuid}
+        receipt_reference: {type: string}
+        amount_satang: {type: integer}
+        method: {type: string, enum: [cash, bank_transfer, card, other]}
+        paid_at: {type: string, format: date-time}
+        table_label: {type: string}
+        refunded: {type: boolean}
+    ReceiptPage:
+      type: object
+      additionalProperties: false
+      required: [items, next_cursor]
+      properties:
+        items: {type: array, items: {$ref: '#/components/schemas/ReceiptSummary'}}
+        next_cursor: {type: [string, 'null']}

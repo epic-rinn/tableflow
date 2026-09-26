@@ -45,7 +45,7 @@ test.describe.serial("staff access", () => {
 
     const nav = page.getByRole("navigation", { name: "Workspaces" });
     await expect(nav.getByRole("link", { name: "Staff" })).toBeVisible();
-    await expect(nav.getByRole("link", { name: "Cashier" })).toHaveCount(0); // managers see kitchen (MVP-10), not cashier yet
+    await expect(nav.getByRole("link", { name: "Cashier" })).toBeVisible(); // managers also settle (MVP-12)
 
     await nav.getByRole("link", { name: "Staff" }).click();
     await page.getByLabel("Email").fill("kitchen@e2e.test");

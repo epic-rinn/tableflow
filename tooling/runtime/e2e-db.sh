@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Recreates the disposable tableflow_e2e database in the compose PostgreSQL,
-# migrates it, bootstraps one branch, seeds a dining capability and prints
+# migrates it, bootstraps one branch, seeds a dining capability, a served
+# bill at E2E-2 and prints
 # E2E_MANAGER_TOKEN=... and E2E_VISIT_TOKEN=... lines.
 # Database/grant statements mirror src/api/db/local/init.sql.
 set -euo pipefail
@@ -53,6 +54,20 @@ WITH c AS (
 INSERT INTO menu_items (branch_id, category_id, name_th, name_en, price_satang, sort, changed_revision)
 SELECT branch_id, id, 'ชาไทย', 'Thai Tea', 6000, 0, 2 FROM c
 UNION ALL SELECT branch_id, id, 'กาแฟเย็น', 'Iced Coffee', 7000, 1, 2 FROM c;
+-- A party at E2E-2 whose two Thai Teas were already served: ready to settle.
+WITH t AS (
+    INSERT INTO dining_tables (branch_id, label, capacity, state)
+    SELECT id, 'E2E-2', 4, 'occupied' FROM branches RETURNING id, branch_id
+), v AS (
+    INSERT INTO visits (branch_id, table_id, party_size) SELECT branch_id, id, 2 FROM t RETURNING id, branch_id, table_id
+), c AS (
+    INSERT INTO table_claims (table_id, branch_id, visit_id) SELECT table_id, branch_id, id FROM v
+), o AS (
+    INSERT INTO orders (branch_id, visit_id, actor_kind, menu_revision) SELECT branch_id, id, 'guest', 2 FROM v RETURNING id, branch_id, visit_id
+)
+INSERT INTO order_lines (branch_id, order_id, visit_id, item_id, name_th, name_en, unit_price_satang, quantity, state)
+SELECT o.branch_id, o.id, o.visit_id, i.id, i.name_th, i.name_en, i.price_satang, 2, 'served'
+FROM o JOIN menu_items i ON i.name_en = 'Thai Tea';
 SQL
 echo "E2E_VISIT_TOKEN=$visit_token"
 echo "E2E_BRANCH_ID=$(docker compose exec -T postgres psql -U tableflow_owner -d tableflow_e2e -Atc 'SELECT id FROM branches')"

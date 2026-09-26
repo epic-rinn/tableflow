@@ -72,3 +72,22 @@ td {
 .note, .allergy-open { font-weight: bold; }
 .not-chargeable { text-decoration: line-through; }
 .menu-category, .menu-item, .menu-group { margin: 0.5rem 0; }
+
+.totals {
+  display: grid;
+  grid-template-columns: max-content max-content;
+  gap: 0.25rem 1.5rem;
+}
+
+.totals dd {
+  margin: 0;
+  text-align: right;
+}
+
+.inline-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  list-style: none;
+  padding: 0;
+}

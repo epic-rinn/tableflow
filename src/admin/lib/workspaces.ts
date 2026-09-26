@@ -9,8 +9,12 @@ export const WORKSPACES: readonly Workspace[] = [
   { href: "/kitchen", label: "Kitchen", role: "kitchen" },
   { href: "/kitchen", label: "Kitchen", role: "manager" },
   { href: "/cashier", label: "Cashier", role: "cashier" },
+  { href: "/cashier", label: "Cashier", role: "manager" },
+  { href: "/receipts", label: "Receipts", role: "cashier" },
+  { href: "/receipts", label: "Receipts", role: "manager" },
   { href: "/configuration", label: "Tables & groups", role: "manager" },
   { href: "/menu", label: "Menu", role: "manager" },
+  { href: "/charges", label: "Charges & tax", role: "manager" },
   { href: "/staff", label: "Staff", role: "manager" },
 ];
 

@@ -39,4 +39,14 @@ test.describe.serial("dining", () => {
     await expect(help).toContainText("Allergy question: waiting for staff");
     await expect(help).toContainText("cannot confirm that a dish is safe");
   });
+
+  test("guests can read the itemised bill but never settle it", async ({ page }) => {
+    await page.goto(`/t#${token}`);
+    const bill = page.getByRole("region", { name: "Bill" });
+    await bill.getByRole("button", { name: "View bill" }).click();
+    await expect(bill).toContainText("ชาไทย");
+    await expect(bill).toContainText("Total");
+    await expect(bill).toContainText("Please pay a staff member at the counter");
+    await expect(bill.getByRole("button", { name: /pay|confirm/i })).toHaveCount(0);
+  });
 });

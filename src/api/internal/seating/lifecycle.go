@@ -75,7 +75,7 @@ func (s *Service) Move(ctx context.Context, tx pgx.Tx, p identity.Principal, vis
 	if v.version != expectedVersion {
 		return Visit{}, ErrVersionConflict
 	}
-	if v.state != "open" && v.state != "paid" {
+	if v.state != "open" && v.state != "settling" && v.state != "paid" {
 		return Visit{}, ErrVisitState
 	}
 	if tableID == v.tableID {
@@ -236,7 +236,7 @@ func (s *Service) RotateAccess(ctx context.Context, tx pgx.Tx, p identity.Princi
 	if v.version != expectedVersion {
 		return SeatResult{}, ErrVersionConflict
 	}
-	if v.state != "open" && v.state != "paid" {
+	if v.state != "open" && v.state != "settling" && v.state != "paid" {
 		return SeatResult{}, ErrVisitState
 	}
 	token, _, err := access.RotateCapability(ctx, tx, access.KindVisit, visitID)
