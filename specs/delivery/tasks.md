@@ -40,8 +40,8 @@ All implementation tasks are owned by Claude. MVP-22 additionally requires the r
 | MVP-17 Installable PWA and cache isolation | M5 | `017-pwa` | MVP-16 | done |
 | MVP-18 Accessibility, locale and recovery audit | M5 | `018-journey-hardening` | MVP-17 | done |
 | MVP-19 Complete journey regression suite | M6 | `019-e2e` | MVP-18 | implemented-unverified |
-| MVP-20 Representative performance qualification | M6 | `020-performance` | MVP-19 | planned |
-| MVP-21 Deployment and restore rehearsal | M6 | `021-operations` | MVP-20 | planned |
+| MVP-20 Representative performance qualification | M6 | `020-performance` | MVP-19 | implemented-unverified |
+| MVP-21 Deployment and restore rehearsal | M6 | `021-operations` | MVP-20 | in-progress |
 | MVP-22 Operator pilot sign-off | M6 | `022-pilot` | MVP-21 | planned |
 
 ## Task briefs

@@ -1,0 +1,7 @@
+date: 2026-09-26T22:30:21Z
+host: Apple M5, 10 CPUs, 24 GiB, Darwin 25.5.0
+docker: 29.1.3 (linux/arm64)
+postgres: 18.6 (Debian 18.6-1.pgdg13+2); limits --cpus=2 --memory=2g; shared_buffers=512MB effective_cache_size=1536MB max_connections=100
+api: go1.27.1 linux/arm64 static binary in postgres:18.6; limits --cpus=2 --memory=1g; DB_MAX_CONNS=10 (default)
+load generator: python3 3.14.6 threads on the host (outside both limits)
+warmup_s: 120 measure_s: 600

@@ -1,0 +1,15 @@
+{
+ "lock_samples": 699,
+ "samples_with_lock_waits": 0,
+ "max_lock_waiters": 0,
+ "max_active_backends": 3,
+ "max_connections_open": 7,
+ "pg_stat_database_delta": {
+  "commits": 168502,
+  "deadlocks": 0,
+  "blocks_hit": 5063828,
+  "blocks_read": 34263,
+  "temp_files": 0,
+  "cache_hit_ratio": 0.99328
+ }
+}

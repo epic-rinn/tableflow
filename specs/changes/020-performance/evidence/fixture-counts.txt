@@ -1,0 +1,10 @@
+tables|100
+menu items|500
+waiting parties|490
+open visits|70
+loyalty ledger|61000
+members|70000
+settlements|100000
+historical visits|100000
+audit events|250000
+order lines|1000840

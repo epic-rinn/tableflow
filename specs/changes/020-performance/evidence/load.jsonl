@@ -1,0 +1,18 @@
+{"route": "GET audit events", "samples": 9, "rps": 0.01, "codes": {"200": 9}, "p50_ms": 1.86, "p95_ms": 2.45, "p99_ms": 2.52, "max_ms": 2.36, "avg_bytes": 17825}
+{"route": "GET daily report (31 days)", "samples": 9, "rps": 0.01, "codes": {"200": 9}, "p50_ms": 38.3, "p95_ms": 43.78, "p99_ms": 44.6, "max_ms": 42.75, "avg_bytes": 14949}
+{"route": "GET kitchen lines", "samples": 996, "rps": 1.66, "codes": {"200": 996}, "p50_ms": 3.68, "p95_ms": 5.54, "p99_ms": 6.48, "max_ms": 10.2, "avg_bytes": 32499}
+{"route": "GET member loyalty", "samples": 997, "rps": 1.66, "codes": {"200": 997}, "p50_ms": 2.42, "p95_ms": 4.21, "p99_ms": 5.77, "max_ms": 45.51, "avg_bytes": 264}
+{"route": "GET member loyalty entries", "samples": 997, "rps": 1.66, "codes": {"200": 997}, "p50_ms": 1.85, "p95_ms": 3.32, "p99_ms": 4.15, "max_ms": 7.89, "avg_bytes": 837}
+{"route": "GET menu category (diner)", "samples": 1531, "rps": 2.55, "codes": {"200": 1531}, "p50_ms": 4.41, "p95_ms": 6.49, "p99_ms": 8.29, "max_ms": 13.07, "avg_bytes": 8505}
+{"route": "GET queue board (host)", "samples": 1991, "rps": 3.32, "codes": {"200": 1991}, "p50_ms": 3.31, "p95_ms": 5.41, "p99_ms": 6.84, "max_ms": 53.07, "avg_bytes": 50164}
+{"route": "GET queue ticket (tracker)", "samples": 9006, "rps": 15.01, "codes": {"200": 9006}, "p50_ms": 2.36, "p95_ms": 3.89, "p99_ms": 4.87, "max_ms": 48.39, "avg_bytes": 496}
+{"route": "GET tables (host)", "samples": 1991, "rps": 3.32, "codes": {"200": 1991}, "p50_ms": 2.19, "p95_ms": 3.77, "p99_ms": 5.19, "max_ms": 10.38, "avg_bytes": 19665}
+{"route": "GET visit bill (cashier)", "samples": 2775, "rps": 4.62, "codes": {"200": 2775}, "p50_ms": 3.25, "p95_ms": 5.14, "p99_ms": 6.4, "max_ms": 13.69, "avg_bytes": 8044}
+{"route": "GET visit bill (diner)", "samples": 4521, "rps": 7.54, "codes": {"200": 4262, "401": 259}, "p50_ms": 2.12, "p95_ms": 3.72, "p99_ms": 5.35, "max_ms": 20.3, "avg_bytes": 15989}
+{"route": "GET visit orders (diner)", "samples": 8995, "rps": 14.99, "codes": {"200": 8479, "401": 516}, "p50_ms": 3.32, "p95_ms": 6.15, "p99_ms": 7.39, "max_ms": 40.04, "avg_bytes": 27322}
+{"route": "POST assisted order", "samples": 3568, "rps": 5.95, "codes": {"201": 3568}, "p50_ms": 5.28, "p95_ms": 7.64, "p99_ms": 9.32, "max_ms": 54.85, "avg_bytes": 723}
+{"route": "POST assisted queue join", "samples": 592, "rps": 0.99, "codes": {"201": 592}, "p50_ms": 5.38, "p95_ms": 8.6, "p99_ms": 9.73, "max_ms": 12.24, "avg_bytes": 575}
+{"route": "POST settlement begin", "samples": 1778, "rps": 2.96, "codes": {"200": 1778}, "p50_ms": 4.22, "p95_ms": 6.36, "p99_ms": 8.31, "max_ms": 14.84, "avg_bytes": 2765}
+{"route": "POST settlement confirm", "samples": 13, "rps": 0.02, "codes": {"201": 13}, "p50_ms": 4.96, "p95_ms": 7.58, "p99_ms": 7.97, "max_ms": 7.37, "avg_bytes": 3111}
+{"route": "POST settlement reopen", "samples": 1765, "rps": 2.94, "codes": {"200": 1765}, "p50_ms": 2.93, "p95_ms": 4.51, "p99_ms": 6.17, "max_ms": 12.21, "avg_bytes": 2762}
+{"summary": true, "total_rps": 69.2, "requests": 41534, "unexpected_errors": 0, "unexpected_rate": 0.0, "client_exceptions": {}, "warmup_s": 120, "measure_s": 600, "threads": 381}

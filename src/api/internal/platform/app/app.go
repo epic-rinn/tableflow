@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
+
 	"github.com/epic-rinn/tableflow/src/api/internal/access"
 	"github.com/epic-rinn/tableflow/src/api/internal/billing"
 	"github.com/epic-rinn/tableflow/src/api/internal/identity"
@@ -127,6 +129,9 @@ func Run(ctx context.Context, cfg config.Config, logger *slog.Logger, ln net.Lis
 		"members":     memSvc.Purge,
 		"idempotency": func(ctx context.Context) (int64, error) { return idempotency.Purge(ctx, pool) },
 	})
+	if cfg.DBPoolStatsInterval > 0 {
+		go poolStatsLoop(ctx, logger, pool, cfg.DBPoolStatsInterval)
+	}
 	logger.Info("api listening", "addr", ln.Addr().String())
 	err = server.Serve(ctx, ln, h, server.Timeouts{
 		ReadHeader: cfg.ReadHeaderTimeout,
@@ -159,5 +164,31 @@ func closePool(pool interface{ Close() }, logger *slog.Logger, timeout time.Dura
 	case <-done:
 	case <-time.After(timeout):
 		logger.Warn("database pool close timed out", "timeout", timeout.String())
+	}
+}
+
+// poolStatsLoop logs pgxpool statistics so load tests and operators can see
+// pool saturation: empty acquires waited for a connection, and the average
+// wait over the interval.
+func poolStatsLoop(ctx context.Context, logger *slog.Logger, pool *pgxpool.Pool, every time.Duration) {
+	t := time.NewTicker(every)
+	defer t.Stop()
+	var lastAcquire, lastEmpty int64
+	var lastWait time.Duration
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+			st := pool.Stat()
+			acquires, empty, wait := st.AcquireCount()-lastAcquire, st.EmptyAcquireCount()-lastEmpty, st.AcquireDuration()-lastWait
+			lastAcquire, lastEmpty, lastWait = st.AcquireCount(), st.EmptyAcquireCount(), st.AcquireDuration()
+			var avg time.Duration
+			if acquires > 0 {
+				avg = wait / time.Duration(acquires)
+			}
+			logger.Info("db pool", "total", st.TotalConns(), "in_use", st.AcquiredConns(), "idle", st.IdleConns(), "max", st.MaxConns(),
+				"acquires", acquires, "waited_acquires", empty, "avg_acquire_ms", float64(avg.Microseconds())/1000)
+		}
 	}
 }

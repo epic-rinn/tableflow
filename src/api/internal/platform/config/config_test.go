@@ -117,3 +117,23 @@ func TestMailConfigRequiresTLS(t *testing.T) {
 		}
 	}
 }
+
+func TestPoolStatsInterval(t *testing.T) {
+	base := map[string]string{"DATABASE_URL": "x", "DATA_ENCRYPTION_KEY": testKey}
+	with := func(k, v string) map[string]string {
+		m := map[string]string{k: v}
+		for bk, bv := range base {
+			m[bk] = bv
+		}
+		return m
+	}
+	if cfg, err := Load(env(base)); err != nil || cfg.DBPoolStatsInterval != 0 {
+		t.Fatalf("default: %v %v", cfg.DBPoolStatsInterval, err)
+	}
+	if cfg, err := Load(env(with("DB_POOL_STATS_INTERVAL", "10s"))); err != nil || cfg.DBPoolStatsInterval != 10*time.Second {
+		t.Fatalf("10s: %v %v", cfg.DBPoolStatsInterval, err)
+	}
+	if _, err := Load(env(with("DB_POOL_STATS_INTERVAL", "2h"))); err == nil {
+		t.Fatal("2h accepted")
+	}
+}

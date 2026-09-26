@@ -1,0 +1,61 @@
+Write-statement plans in rolled-back transactions on the disposable perf database (M5 fixture).
+
+visit_lock (FOR UPDATE): 0.083 ms via ['visits_pkey']
+BEGIN
+LockRows  (cost=0.42..8.45 rows=1 width=30) (actual time=0.068..0.070 rows=1.00 loops=1)
+  Buffers: shared hit=2 read=3 dirtied=1
+  ->  Index Scan using visits_pkey on visits  (cost=0.42..8.44 rows=1 width=30) (actual time=0.057..0.057 rows=1.00 loops=1)
+        Index Cond: (id = '01a0ddbb-78b4-7ca8-8818-6e0b130cfeef'::uuid)
+        Index Searches: 1
+        Buffers: shared hit=1 read=3
+Planning:
+  Buffers: shared hit=151
+Planning Time: 0.189 ms
+Execution Time: 0.083 ms
+ROLLBACK
+
+
+visit_set_state (settling, bump): 0.293 ms via ['visits_pkey']
+BEGIN
+Update on visits  (cost=0.42..8.44 rows=1 width=62) (actual time=0.265..0.267 rows=1.00 loops=1)
+  Buffers: shared hit=55 read=11 dirtied=4
+  ->  Index Scan using visits_pkey on visits  (cost=0.42..8.44 rows=1 width=62) (actual time=0.008..0.008 rows=1.00 loops=1)
+        Index Cond: (id = '01a0ddbb-78b4-7ca8-8818-6e0b130cfeef'::uuid)
+        Index Searches: 1
+        Buffers: shared hit=4
+Planning:
+  Buffers: shared hit=153 read=1 dirtied=1
+Planning Time: 0.222 ms
+Execution Time: 0.293 ms
+ROLLBACK
+
+
+profile_apply: 0.117 ms via ['member_profiles_pkey']
+BEGIN
+Update on member_profiles  (cost=0.29..8.31 rows=1 width=66) (actual time=0.087..0.088 rows=1.00 loops=1)
+  Buffers: shared hit=25
+  ->  Index Scan using member_profiles_pkey on member_profiles  (cost=0.29..8.31 rows=1 width=66) (actual time=0.008..0.008 rows=1.00 loops=1)
+        Index Cond: (id = '01a0df31-3878-7c1e-9c6c-cc7c7e8155f4'::uuid)
+        Index Searches: 1
+        Buffers: shared hit=3
+Planning:
+  Buffers: shared hit=106
+Planning Time: 0.134 ms
+Execution Time: 0.117 ms
+ROLLBACK
+
+
+bump_bill: 0.131 ms via ['visits_pkey']
+BEGIN
+Update on visits  (cost=0.42..8.44 rows=0 width=0) (actual time=0.108..0.109 rows=0.00 loops=1)
+  Buffers: shared hit=57
+  ->  Index Scan using visits_pkey on visits  (cost=0.42..8.44 rows=1 width=18) (actual time=0.013..0.014 rows=1.00 loops=1)
+        Index Cond: (id = '01a0ddbb-78b4-7ca8-8818-6e0b130cfeef'::uuid)
+        Index Searches: 1
+        Buffers: shared hit=5
+Planning:
+  Buffers: shared hit=151
+Planning Time: 0.222 ms
+Execution Time: 0.131 ms
+ROLLBACK
+

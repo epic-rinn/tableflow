@@ -20,6 +20,9 @@ type Config struct {
 	HTTPAddr          string
 	DatabaseURL       string
 	DBMaxConns        int32
+	// DBPoolStatsInterval logs connection-pool statistics (acquire waits,
+	// saturation) at this interval; 0 disables. For load tests and ops.
+	DBPoolStatsInterval time.Duration
 	ReadinessTimeout  time.Duration
 	ShutdownTimeout   time.Duration
 	StatementTimeout  time.Duration
@@ -96,6 +99,10 @@ func Load(getenv func(string) string) (Config, error) {
 	}
 	for _, d := range durations {
 		*d.dst, err = durationValue(getenv, d.name, d.fallback)
+		errs = appendErr(errs, err)
+	}
+	if getenv("DB_POOL_STATS_INTERVAL") != "" {
+		cfg.DBPoolStatsInterval, err = boundedDuration(getenv, "DB_POOL_STATS_INTERVAL", time.Minute, time.Hour)
 		errs = appendErr(errs, err)
 	}
 	cfg.StaffSessionAbsolute, err = boundedDuration(getenv, "STAFF_SESSION_ABSOLUTE", 12*time.Hour, 24*time.Hour)
