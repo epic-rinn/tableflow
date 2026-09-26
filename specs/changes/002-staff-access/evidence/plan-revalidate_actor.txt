@@ -1,0 +1,34 @@
+LockRows  (cost=16.91..29.20 rows=1 width=103) (actual time=0.070..0.092 rows=1.00 loops=1)
+  Buffers: shared hit=19
+  InitPlan 2
+    ->  Index Scan using staff_sessions_token_hash_key on staff_sessions  (cost=0.42..8.44 rows=1 width=16) (actual time=0.015..0.015 rows=1.00 loops=1)
+          Index Cond: (token_hash = sha256(convert_to('live-7'::text, 'UTF8'::name)))
+          Index Searches: 1
+          Buffers: shared hit=4
+  ->  Hash Join  (cost=8.46..20.75 rows=1 width=103) (actual time=0.056..0.076 rows=1.00 loops=1)
+        Hash Cond: (a.id = s.staff_account_id)
+        Buffers: shared hit=17
+        ->  Seq Scan on staff_accounts a  (cost=0.00..6.50 rows=200 width=65) (actual time=0.004..0.017 rows=200.00 loops=1)
+              Filter: (status = 'active'::text)
+              Buffers: shared hit=4
+        ->  Hash  (cost=8.45..8.45 rows=1 width=22) (actual time=0.027..0.027 rows=1.00 loops=1)
+              Buckets: 1024  Batches: 1  Memory Usage: 9kB
+              Buffers: shared hit=8
+              ->  Index Scan using staff_sessions_pkey on staff_sessions s  (cost=0.42..8.45 rows=1 width=22) (actual time=0.025..0.025 rows=1.00 loops=1)
+                    Index Cond: (id = (InitPlan 2).col1)
+                    Filter: ((revoked_at IS NULL) AND (expires_at > now()) AND (last_seen_at > (now() - '01:00:00'::interval)))
+                    Index Searches: 1
+                    Buffers: shared hit=8
+        SubPlan 1
+          ->  Sort  (cost=5.25..5.25 rows=1 width=6) (actual time=0.017..0.017 rows=1.00 loops=1)
+                Sort Key: r.role
+                Sort Method: quicksort  Memory: 25kB
+                Buffers: shared hit=5
+                ->  Seq Scan on staff_roles r  (cost=0.00..5.24 rows=1 width=6) (actual time=0.003..0.009 rows=1.00 loops=1)
+                      Filter: (staff_account_id = a.id)
+                      Rows Removed by Filter: 258
+                      Buffers: shared hit=2
+Planning:
+  Buffers: shared hit=406
+Planning Time: 0.547 ms
+Execution Time: 0.115 ms

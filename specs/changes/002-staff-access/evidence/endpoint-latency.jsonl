@@ -1,0 +1,5 @@
+{"route": "GET /sessions/current", "samples": 1000, "codes": {"200": 1000}, "bytes": 186, "p50_ms": 0.44, "p95_ms": 1.09, "p99_ms": 1.63, "max_ms": 2.96}
+{"route": "GET /branches/{id}/staff (limit 25)", "samples": 1000, "codes": {"200": 1000}, "bytes": 6519, "p50_ms": 0.77, "p95_ms": 1.49, "p99_ms": 1.97, "max_ms": 7.77}
+{"route": "GET /branches/{id}/staff (limit 100)", "samples": 500, "codes": {"200": 500}, "bytes": 25246, "p50_ms": 1.89, "p95_ms": 2.79, "p99_ms": 3.49, "max_ms": 11.3}
+{"route": "POST /sessions/staff (argon2id)", "samples": 60, "codes": {"201": 60}, "bytes": 230, "p50_ms": 21.99, "p95_ms": 24.01, "p99_ms": 24.75, "max_ms": 24.62}
+{"route": "POST /sessions/staff, 64 parallel unknown-account attempts (dummy argon2id each)", "codes": {"401": 64}, "wall_ms": 352, "median_ms": 199.5, "max_ms": 348.9}

@@ -1,0 +1,19 @@
+Limit  (cost=0.27..144.24 rows=26 width=110) (actual time=0.025..0.182 rows=26.00 loops=1)
+  Buffers: shared hit=59
+  ->  Index Scan using staff_accounts_branch_page on staff_accounts a  (cost=0.27..554.02 rows=100 width=110) (actual time=0.025..0.180 rows=26.00 loops=1)
+        Index Cond: ((branch_id = '00000000-0000-7000-8000-000000000001'::uuid) AND (ROW(created_at, id) > ROW('1900-01-01 00:00:00+00'::timestamp with time zone, '00000000-0000-0000-0000-000000000000'::uuid)))
+        Index Searches: 1
+        Buffers: shared hit=59
+        SubPlan 1
+          ->  Sort  (cost=5.25..5.25 rows=1 width=6) (actual time=0.006..0.006 rows=1.27 loops=26)
+                Sort Key: r.role
+                Sort Method: quicksort  Memory: 25kB
+                Buffers: shared hit=55
+                ->  Seq Scan on staff_roles r  (cost=0.00..5.24 rows=1 width=6) (actual time=0.004..0.005 rows=1.27 loops=26)
+                      Filter: (staff_account_id = a.id)
+                      Rows Removed by Filter: 258
+                      Buffers: shared hit=52
+Planning:
+  Buffers: shared hit=221
+Planning Time: 0.257 ms
+Execution Time: 0.199 ms

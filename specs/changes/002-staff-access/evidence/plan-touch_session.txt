@@ -1,0 +1,17 @@
+Update on staff_sessions  (cost=8.86..16.89 rows=0 width=0) (actual time=0.026..0.027 rows=0.00 loops=1)
+  Buffers: shared hit=8
+  InitPlan 1
+    ->  Index Scan using staff_sessions_token_hash_key on staff_sessions staff_sessions_1  (cost=0.42..8.44 rows=1 width=16) (actual time=0.015..0.015 rows=1.00 loops=1)
+          Index Cond: (token_hash = sha256(convert_to('live-7'::text, 'UTF8'::name)))
+          Index Searches: 1
+          Buffers: shared hit=4
+  ->  Index Scan using staff_sessions_pkey on staff_sessions  (cost=0.42..8.45 rows=1 width=14) (actual time=0.025..0.025 rows=0.00 loops=1)
+        Index Cond: (id = (InitPlan 1).col1)
+        Filter: ((revoked_at IS NULL) AND (last_seen_at < (now() - '00:01:00'::interval)))
+        Rows Removed by Filter: 1
+        Index Searches: 1
+        Buffers: shared hit=8
+Planning:
+  Buffers: shared hit=143
+Planning Time: 0.367 ms
+Execution Time: 0.052 ms

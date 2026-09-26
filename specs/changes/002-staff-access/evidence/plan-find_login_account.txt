@@ -1,0 +1,8 @@
+Seq Scan on staff_accounts  (cost=0.00..6.50 rows=1 width=39) (actual time=0.006..0.015 rows=1.00 loops=1)
+  Filter: (email = 'staff7@perf.test'::text)
+  Rows Removed by Filter: 199
+  Buffers: shared hit=4
+Planning:
+  Buffers: shared hit=130
+Planning Time: 0.128 ms
+Execution Time: 0.030 ms

@@ -1,0 +1,11 @@
+Insert on auth_throttle t  (cost=0.00..0.01 rows=1 width=44) (actual time=0.118..0.119 rows=1.00 loops=1)
+  Conflict Resolution: UPDATE
+  Conflict Arbiter Indexes: auth_throttle_pkey
+  Tuples Inserted: 0
+  Conflicting Tuples: 1
+  Buffers: shared hit=33
+  ->  Result  (cost=0.00..0.01 rows=1 width=44) (actual time=0.001..0.001 rows=1.00 loops=1)
+Planning:
+  Buffers: shared hit=46
+Planning Time: 0.045 ms
+Execution Time: 0.150 ms

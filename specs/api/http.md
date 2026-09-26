@@ -1,6 +1,6 @@
 # MVP HTTP contract
 
-Status: design contract; only the health routes in [openapi.yaml](openapi.yaml) are implemented. Base path: `/api/v1`. All routes below are relative to that base. Wire schemas move to OpenAPI per [architecture](../architecture/system.md) before their implementation.
+Status: design contract; health and staff-identity routes are implemented and their wire schemas live in [openapi.yaml](openapi.yaml). Base path: `/api/v1`. All routes below are relative to that base. Wire schemas move to OpenAPI per [architecture](../architecture/system.md) before their implementation.
 
 ## Common conventions
 
@@ -21,8 +21,10 @@ Status: design contract; only the health routes in [openapi.yaml](openapi.yaml) 
 | POST `/sessions/capability` | Public, rate limited | `{token, kind: queue\|visit}` → guest cookie and resource ID/state; token appears only in body |
 | POST `/members` | Public, rate limited | `{email,password,locale}` → generic registration acknowledgement; verification email |
 | POST `/sessions/member` | Member credentials | `{email,password}` → member cookie and own identity |
-| POST `/sessions/staff` | Staff credentials | `{email,password}` → staff cookie, assigned branch/roles |
-| DELETE `/sessions/current` | Current principal | Empty → revoke current session, clear cookie |
+| POST `/sessions/staff` | Staff credentials, admin Origin, throttled | `{email,password}` → 201 staff cookie, assigned branch/roles (implemented) |
+| GET `/sessions/current` | Current principal | Own identity/roles (implemented for staff) |
+| DELETE `/sessions/current` | Current principal | Empty → revoke current session, clear cookie (implemented for staff; guest/member in MVP-03/04) |
+| POST `/staff/activate` | Manager-issued single-use token | `{token,password,display_name?}` → activates an invited staff account (implemented) |
 | POST `/members/verify` | Single-use token | `{token}` → verification acknowledgement |
 | POST `/members/password-reset/request` | Public, rate limited | `{email}` → neutral acknowledgement |
 | POST `/members/password-reset/confirm` | Single-use token | `{token,new_password}` → reset and revoke old sessions |
@@ -92,7 +94,7 @@ Manager-only, branch-authorized routes:
 - POST `/branches/{branch_id}/tables` and PATCH `/tables/{table_id}` → label/capacity/needs/active changes; forbid disabling/changing an actively claimed table incompatibly.
 - PUT `/branches/{branch_id}/menu` with `{expected_version,categories,items,option_groups,options}` → atomic bounded menu revision; use IDs to retain history, no destructive replacement of historical references. Maximum configuration body 1 MiB, manager routes only.
 - PATCH `/menu-items/{item_id}/availability` with `{expected_version,sold_out}` → revision bump.
-- GET/POST `/branches/{branch_id}/staff` → paginated accounts / create invitation; PATCH `/staff/{staff_id}/roles` with `{expected_version,roles}` → role update/session revocation.
+- GET/POST `/branches/{branch_id}/staff` → paginated accounts / create invitation with one-time activation token; POST `/staff/{staff_id}/activation` → replace an invited account's token; PATCH `/staff/{staff_id}/roles` with `{expected_version,roles}` → role update/session revocation; POST `/staff/{staff_id}/deactivate` with `{expected_version,reason}` → disable and revoke. Implemented in MVP-02; staff-admin writes use `expected_version` and natural uniqueness until the idempotency infrastructure of MVP-03 exists.
 - GET `/branches/{branch_id}/reports/daily` with `from,to` (max 31 days) → aggregates; GET `/branches/{branch_id}/audit-events` with bounded date range/cursor → redacted events.
 
 Before each route is implemented, its change plan must list exact request/response schemas, field constraints, role matrix, query count, indexes, errors, and mapped acceptance tests. No endpoint is delivery-ready just because it appears in this inventory.

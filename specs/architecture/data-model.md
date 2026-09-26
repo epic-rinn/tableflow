@@ -7,8 +7,11 @@ Status: logical design, not executed DDL. Goose migrations become the source for
 | Relation | Main fields and invariants | Candidate indexes tied to queries |
 | --- | --- | --- |
 | branches / branch_policies | timezone, business settings, versioned charge/loyalty/seating policy | Primary keys; unique branch/policy version |
-| accounts / staff_roles / member_profiles | normalized email, password hash, verified status; branch-scoped roles; member points/qualifying-spend totals | Unique normalized email; unique branch/account role; unique branch/member profile |
-| sessions / capabilities | principal kind, hashed random secret, expiry/revocation; guest visit/ticket + capability generation | Unique secret hash; expiry cleanup index; resource/generation lookup |
+| staff_accounts / staff_roles (implemented) | branch, normalized email, argon2id hash (NULL until activation), status invited/active/disabled, version; roles host/kitchen/cashier/manager | Unique email; (branch_id, created_at, id) keyset; PK (account, role) |
+| member accounts / member_profiles | normalized email, password hash, verified status; member points/qualifying-spend totals. Kept separate from staff credentials so a self-registered login never gains staff authority (MVP-02 decision) | Unique normalized email; unique branch/member profile |
+| staff_activation_tokens (implemented) | account, SHA-256 token hash, expiry, used/revoked time, issuer | Unique hash; one open token per account (partial unique) |
+| staff_sessions (implemented) / guest and member sessions, capabilities | hashed random secret, absolute expiry, idle `last_seen_at`, revocation; guest visit/ticket + capability generation later | Unique secret hash; partial (account) WHERE not revoked; resource/generation lookup |
+| auth_throttle (implemented) | fixed-window attempt counters keyed by hashed email or client IP | PK bucket; window_start for purge |
 | queue_counters | branch/business_date, last sequence | Unique branch/date; atomic increment |
 | queue_tickets | daily display_sequence, global monotonic join_order, business_date, party_size, seating_group, needs, state, called_until, version | Unique branch/date/display_sequence; unique join_order; partial branch/group/join_order for waiting; partial called-deadline for called |
 | dining_tables | label, capacity, supported needs, state, version | Unique branch/label; branch/state for board if measured useful |
@@ -21,7 +24,7 @@ Status: logical design, not executed DDL. Goose migrations become the source for
 | settlements / refunds | visit, snapshot version, amount, method, actor, verification/reference; full reversal reference | Unique settlement visit; unique refund settlement; branch/paid_at/id for reports |
 | loyalty_ledger | member, settlement, event kind, signed points and eligible-spend delta, policy version | Unique settlement/event kind; branch/member/created_at/id |
 | idempotency_requests | scope/principal/operation/key, body hash, safe replay result, expires_at | Unique scoped key; expiry cleanup index |
-| audit_events | branch, actor, action, resource, reason, request_id, occurred_at | Branch/occurred_at/id; resource lookup when justified |
+| audit_events (implemented) | branch, actor, action, resource type/id, reason, request_id, details (no secrets), occurred_at | Branch/occurred_at/id; resource lookup when justified |
 
 These are index candidates, not instructions to create every index unconditionally. Primary/unique constraints are mandatory where specified. Validate performance indexes against real query predicates, ordering, plan evidence, write overhead, and data distribution. PostgreSQL does not automatically create every referencing foreign-key index.
 
@@ -42,6 +45,8 @@ Default to PostgreSQL Read Committed with explicit row locks and guarded updates
 - Submit order: lock visit, validate open state, lock relevant menu revision/items while validating, insert header/lines and idempotent result, update bill version, commit. No external calls inside the transaction.
 - Begin settlement: lock visit, then member if claimed; validate states/version and snapshot charges/benefit. Confirm settlement repeats locks/revalidation, records payment and ledger changes in one transaction. Both order submission and settlement lock the same visit.
 - Refund: lock visit/member, enforce unique reversal, append negative ledger credit and refund/audit records. Do not delete or reopen the paid bill.
+- Staff administration (implemented): branch row `FOR UPDATE` → acting session/account `FOR SHARE` (re-validation) → target account `FOR UPDATE` → its tokens/sessions/roles. Activation locks the invited account, then its token. Without the branch lock, two managers acting on each other deadlock (demonstrated by `TestAdminLockOrderPreventsDeadlock`).
+- Every mutation re-validates its session/account/roles `FOR SHARE` inside its transaction, so revocation either waits for an in-flight mutation or the mutation fails.
 - Role/menu/config changes follow the same lock rules if touching visit state. Do not hold database locks during email, network, or human verification.
 
 Use bounded retries for deadlock/serialization failures only when the command is idempotent. A conflict from a changed business state is returned to the caller, not retried forever. Propagate request deadlines; set lock timeouts so polling is not starved by long transactions.

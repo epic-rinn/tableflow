@@ -1,6 +1,6 @@
 # Restaurant admin panel
 
-Status: specified, unimplemented. Runtime project: `src/admin/`. This is a distinct Next.js application, not a route group inside the customer PWA.
+Status: specified; ADM-001 implemented in MVP-02, workspaces ADM-002–006 unimplemented. Runtime project: `src/admin/`. This is a distinct Next.js application, not a route group inside the customer PWA.
 
 ## Requirements
 

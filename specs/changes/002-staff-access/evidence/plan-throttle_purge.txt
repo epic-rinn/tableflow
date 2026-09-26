@@ -1,0 +1,14 @@
+Delete on auth_throttle  (cost=141.13..481.62 rows=0 width=0) (actual time=2.278..2.279 rows=0.00 loops=1)
+  Buffers: shared hit=10027
+  ->  Bitmap Heap Scan on auth_throttle  (cost=141.13..481.62 rows=9914 width=6) (actual time=0.113..0.916 rows=9921.00 loops=1)
+        Recheck Cond: (window_start < (now() - '1 day'::interval))
+        Heap Blocks: exact=90
+        Buffers: shared hit=106
+        ->  Bitmap Index Scan on auth_throttle_window  (cost=0.00..138.65 rows=9914 width=0) (actual time=0.098..0.098 rows=9921.00 loops=1)
+              Index Cond: (window_start < (now() - '1 day'::interval))
+              Index Searches: 1
+              Buffers: shared hit=16
+Planning:
+  Buffers: shared hit=79
+Planning Time: 0.128 ms
+Execution Time: 2.304 ms

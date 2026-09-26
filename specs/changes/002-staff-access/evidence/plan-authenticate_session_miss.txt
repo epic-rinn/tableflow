@@ -1,0 +1,24 @@
+Hash Join  (cost=8.47..20.76 rows=1 width=108) (actual time=0.024..0.026 rows=0.00 loops=1)
+  Hash Cond: (a.id = s.staff_account_id)
+  Buffers: shared hit=6
+  ->  Seq Scan on staff_accounts a  (cost=0.00..6.50 rows=200 width=59) (actual time=0.003..0.003 rows=1.00 loops=1)
+        Filter: (status = 'active'::text)
+        Buffers: shared hit=2
+  ->  Hash  (cost=8.46..8.46 rows=1 width=40) (actual time=0.017..0.017 rows=0.00 loops=1)
+        Buckets: 1024  Batches: 1  Memory Usage: 8kB
+        Buffers: shared hit=4
+        ->  Index Scan using staff_sessions_token_hash_key on staff_sessions s  (cost=0.42..8.46 rows=1 width=40) (actual time=0.017..0.017 rows=0.00 loops=1)
+              Index Cond: (token_hash = sha256(convert_to('tok-99'::text, 'UTF8'::name)))
+              Filter: ((revoked_at IS NULL) AND (expires_at > now()) AND (last_seen_at > (now() - '01:00:00'::interval)))
+              Rows Removed by Filter: 1
+              Index Searches: 1
+              Buffers: shared hit=4
+  SubPlan 1
+    ->  Sort  (cost=5.25..5.25 rows=1 width=6) (never executed)
+          Sort Key: r.role
+          ->  Seq Scan on staff_roles r  (cost=0.00..5.24 rows=1 width=6) (never executed)
+                Filter: (staff_account_id = a.id)
+Planning:
+  Buffers: shared hit=406
+Planning Time: 0.491 ms
+Execution Time: 0.046 ms

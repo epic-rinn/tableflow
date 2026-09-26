@@ -1,0 +1,22 @@
+Delete on staff_sessions  (cost=286.23..6063.55 rows=0 width=0) (actual time=19.470..19.475 rows=0.00 loops=1)
+  Buffers: shared hit=8258
+  ->  Hash Semi Join  (cost=286.23..6063.55 rows=5000 width=46) (actual time=1.942..18.757 rows=5000.00 loops=1)
+        Hash Cond: (staff_sessions.id = "ANY_subquery".id)
+        Buffers: shared hit=3258
+        ->  Seq Scan on staff_sessions  (cost=0.00..5190.11 rows=202511 width=22) (actual time=0.002..8.870 rows=200400.00 loops=1)
+              Buffers: shared hit=3165
+        ->  Hash  (cost=223.73..223.73 rows=5000 width=56) (actual time=1.930..1.931 rows=5000.00 loops=1)
+              Buckets: 8192  Batches: 1  Memory Usage: 480kB
+              Buffers: shared hit=93
+              ->  Subquery Scan on "ANY_subquery"  (cost=0.00..223.73 rows=5000 width=56) (actual time=0.005..1.622 rows=5000.00 loops=1)
+                    Buffers: shared hit=93
+                    ->  Limit  (cost=0.00..173.73 rows=5000 width=16) (actual time=0.002..1.261 rows=5000.00 loops=1)
+                          Buffers: shared hit=93
+                          ->  Seq Scan on staff_sessions staff_sessions_1  (cost=0.00..6708.94 rows=193087 width=16) (actual time=0.002..1.084 rows=5000.00 loops=1)
+                                Filter: (expires_at < (now() - '30 days'::interval))
+                                Rows Removed by Filter: 831
+                                Buffers: shared hit=93
+Planning:
+  Buffers: shared hit=226
+Planning Time: 0.287 ms
+Execution Time: 19.507 ms

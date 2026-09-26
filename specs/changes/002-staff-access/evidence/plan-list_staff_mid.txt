@@ -1,0 +1,47 @@
+Limit  (cost=28.23..165.12 rows=26 width=110) (actual time=0.090..0.237 rows=26.00 loops=1)
+  Buffers: shared hit=73
+  InitPlan 2
+    ->  Limit  (cost=9.95..9.95 rows=1 width=24) (actual time=0.023..0.023 rows=1.00 loops=1)
+          Buffers: shared hit=4
+          ->  Sort  (cost=9.82..10.07 rows=100 width=24) (actual time=0.021..0.023 rows=51.00 loops=1)
+                Sort Key: staff_accounts.created_at, staff_accounts.id
+                Sort Method: quicksort  Memory: 32kB
+                Buffers: shared hit=4
+                ->  Seq Scan on staff_accounts  (cost=0.00..6.50 rows=100 width=24) (actual time=0.002..0.012 rows=100.00 loops=1)
+                      Filter: (branch_id = '00000000-0000-7000-8000-000000000001'::uuid)
+                      Rows Removed by Filter: 100
+                      Buffers: shared hit=4
+  InitPlan 3
+    ->  Limit  (cost=9.95..9.95 rows=1 width=24) (actual time=0.019..0.020 rows=1.00 loops=1)
+          Buffers: shared hit=4
+          ->  Sort  (cost=9.82..10.07 rows=100 width=24) (actual time=0.017..0.019 rows=51.00 loops=1)
+                Sort Key: staff_accounts_1.created_at, staff_accounts_1.id
+                Sort Method: quicksort  Memory: 32kB
+                Buffers: shared hit=4
+                ->  Seq Scan on staff_accounts staff_accounts_1  (cost=0.00..6.50 rows=100 width=24) (actual time=0.001..0.008 rows=100.00 loops=1)
+                      Filter: (branch_id = '00000000-0000-7000-8000-000000000001'::uuid)
+                      Rows Removed by Filter: 100
+                      Buffers: shared hit=4
+  ->  Result  (cost=8.33..182.08 rows=33 width=110) (actual time=0.089..0.234 rows=26.00 loops=1)
+        Buffers: shared hit=73
+        ->  Sort  (cost=8.33..8.41 rows=33 width=78) (actual time=0.069..0.070 rows=26.00 loops=1)
+              Sort Key: a.created_at, a.id
+              Sort Method: quicksort  Memory: 31kB
+              Buffers: shared hit=18
+              ->  Seq Scan on staff_accounts a  (cost=0.00..7.50 rows=33 width=78) (actual time=0.029..0.057 rows=49.00 loops=1)
+                    Filter: ((branch_id = '00000000-0000-7000-8000-000000000001'::uuid) AND (ROW(created_at, id) > ROW((InitPlan 2).col1, (InitPlan 3).col1)))
+                    Rows Removed by Filter: 151
+                    Buffers: shared hit=12
+        SubPlan 1
+          ->  Sort  (cost=5.25..5.25 rows=1 width=6) (actual time=0.006..0.006 rows=1.19 loops=26)
+                Sort Key: r.role
+                Sort Method: quicksort  Memory: 25kB
+                Buffers: shared hit=55
+                ->  Seq Scan on staff_roles r  (cost=0.00..5.24 rows=1 width=6) (actual time=0.002..0.005 rows=1.19 loops=26)
+                      Filter: (staff_account_id = a.id)
+                      Rows Removed by Filter: 258
+                      Buffers: shared hit=52
+Planning:
+  Buffers: shared hit=221
+Planning Time: 0.263 ms
+Execution Time: 0.257 ms

@@ -1,0 +1,17 @@
+Update on staff_sessions  (cost=6.79..59.28 rows=0 width=0) (actual time=0.182..0.183 rows=0.00 loops=1)
+  Buffers: shared hit=62
+  InitPlan 1
+    ->  Seq Scan on staff_accounts  (cost=0.00..6.50 rows=1 width=16) (actual time=0.006..0.013 rows=1.00 loops=1)
+          Filter: (email = 'staff7@perf.test'::text)
+          Rows Removed by Filter: 199
+          Buffers: shared hit=4
+  ->  Index Scan using staff_sessions_active_by_account on staff_sessions  (cost=0.29..52.78 rows=1 width=14) (actual time=0.073..0.073 rows=2.00 loops=1)
+        Index Cond: (staff_account_id = (InitPlan 1).col1)
+        Filter: ((revoked_at IS NULL) AND (expires_at > now()))
+        Rows Removed by Filter: 666
+        Index Searches: 1
+        Buffers: shared hit=24
+Planning:
+  Buffers: shared hit=197
+Planning Time: 0.236 ms
+Execution Time: 0.208 ms
