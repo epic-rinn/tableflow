@@ -18,6 +18,7 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 
+	"github.com/epic-rinn/tableflow/src/api/internal/identity"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/config"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/dbtest"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/health"
@@ -83,19 +84,31 @@ func do(h http.Handler, path string) *http.Response {
 	return rec.Result()
 }
 
-// HealthOpenApiValidation: the contract is valid OpenAPI 3.1, documents
-// exactly the implemented routes, and actual responses conform to it.
+// HealthOpenApiValidation / TestOpenApiValidation: the contract is valid
+// OpenAPI 3.1, documents exactly the implemented operations, and health
+// responses conform to it (identity responses: identity contract tests).
 func TestHealthOpenApiValidation(t *testing.T) {
 	doc := loadContract(t)
-	documented := doc.Paths.InMatchingOrder()
+	var documented, implemented []string
+	for path, item := range doc.Paths.Map() {
+		for method := range item.Operations() {
+			documented = append(documented, method+" "+path)
+		}
+	}
+	idHTTP := identity.NewHTTP(nil, nil, nil, discard) // handlers are not invoked
+	for path, methods := range Routes(health.New(fakePinger{}, time.Second, discard), idHTTP) {
+		for method := range methods {
+			implemented = append(implemented, method+" "+path)
+		}
+	}
 	slices.Sort(documented)
-	implemented := []string{"/api/v1/health/live", "/api/v1/health/ready"}
+	slices.Sort(implemented)
 	if !slices.Equal(documented, implemented) {
-		t.Fatalf("documented paths %v != implemented %v", documented, implemented)
+		t.Fatalf("documented operations %v\n!= implemented %v", documented, implemented)
 	}
 
-	up := NewHandler(discard, health.New(fakePinger{}, time.Second, discard))
-	down := NewHandler(discard, health.New(fakePinger{err: errors.New("down")}, time.Second, discard))
+	up := NewHandler(discard, Routes(health.New(fakePinger{}, time.Second, discard), nil))
+	down := NewHandler(discard, Routes(health.New(fakePinger{err: errors.New("down")}, time.Second, discard), nil))
 	conform(t, doc, "/api/v1/health/live", do(up, "/api/v1/health/live"))
 	conform(t, doc, "/api/v1/health/ready", do(up, "/api/v1/health/ready"))
 	conform(t, doc, "/api/v1/health/ready", do(down, "/api/v1/health/ready"))
@@ -103,7 +116,7 @@ func TestHealthOpenApiValidation(t *testing.T) {
 }
 
 func TestUnknownRoutesAreJSON404(t *testing.T) {
-	h := NewHandler(discard, health.New(fakePinger{}, time.Second, discard))
+	h := NewHandler(discard, Routes(health.New(fakePinger{}, time.Second, discard), nil))
 	for _, p := range []string{"/", "/api/v1/queue-tickets", "/api/v1/health/live/extra"} {
 		resp := do(h, p)
 		if resp.StatusCode != http.StatusNotFound || resp.Header.Get("Content-Type") != "application/json; charset=utf-8" {

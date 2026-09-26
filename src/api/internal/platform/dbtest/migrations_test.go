@@ -67,3 +67,24 @@ func assertVersion(t *testing.T, ctx context.Context, p *goose.Provider, want in
 		t.Fatalf("database version %d, want %d", got, want)
 	}
 }
+
+// TestUpgradeFromPreviousRelease: a database at the previous migration
+// version upgrades to the latest one.
+func TestUpgradeFromPreviousRelease(t *testing.T) {
+	u := NewDatabase(t)
+	p, _ := Provider(t, u)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+	sources := p.ListSources()
+	if len(sources) < 2 {
+		t.Skip("only one migration; no upgrade path yet")
+	}
+	previous := sources[len(sources)-2].Version
+	if _, err := p.UpTo(ctx, previous); err != nil {
+		t.Fatalf("up to previous release %d: %v", previous, err)
+	}
+	if _, err := p.Up(ctx); err != nil {
+		t.Fatalf("upgrade from %d: %v", previous, err)
+	}
+	assertVersion(t, ctx, p, sources[len(sources)-1].Version)
+}

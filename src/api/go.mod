@@ -8,6 +8,7 @@ require (
 	github.com/getkin/kin-openapi v0.149.0
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/pressly/goose/v3 v3.28.0
+	golang.org/x/crypto v0.57.0
 	golang.org/x/sync v0.23.0
 )
 
@@ -24,5 +25,6 @@ require (
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.3 // indirect
 	github.com/sethvargo/go-retry v0.4.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/text v0.41.0 // indirect
+	golang.org/x/sys v0.48.0 // indirect
+	golang.org/x/text v0.42.0 // indirect
 )

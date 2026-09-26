@@ -9,6 +9,8 @@ import (
 	"log/slog"
 	"net/http"
 	"runtime/debug"
+	"slices"
+	"strings"
 	"time"
 )
 
@@ -65,14 +67,36 @@ func NotFound(w http.ResponseWriter, r *http.Request) {
 
 // Method restricts a handler to one HTTP method with a JSON 405 response.
 func Method(method string, h http.HandlerFunc) http.HandlerFunc {
+	return Methods(map[string]http.HandlerFunc{method: h})
+}
+
+// Methods dispatches by HTTP method with a JSON 405 response for others.
+// HEAD is served by the GET handler when one exists.
+func Methods(handlers map[string]http.HandlerFunc) http.HandlerFunc {
+	allowed := make([]string, 0, len(handlers))
+	for m := range handlers {
+		allowed = append(allowed, m)
+	}
+	slices.Sort(allowed)
+	allow := strings.Join(allowed, ", ")
 	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != method && !(method == http.MethodGet && r.Method == http.MethodHead) {
-			w.Header().Set("Allow", method)
+		method := r.Method
+		if method == http.MethodHead {
+			method = http.MethodGet
+		}
+		h, ok := handlers[method]
+		if !ok {
+			w.Header().Set("Allow", allow)
 			WriteError(w, r, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Method not allowed")
 			return
 		}
 		h(w, r)
 	}
+}
+
+// Private marks a response as private and never stored by any cache.
+func Private(w http.ResponseWriter) {
+	w.Header().Set("Cache-Control", "private, no-store")
 }
 
 // validRequestID accepts short opaque IDs from a trusted proxy or client

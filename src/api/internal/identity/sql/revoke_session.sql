@@ -1,0 +1,1 @@
+UPDATE staff_sessions SET revoked_at = now() WHERE id = $1 AND revoked_at IS NULL

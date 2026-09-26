@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"net/netip"
 	"strings"
 	"testing"
 )
@@ -102,5 +103,33 @@ func TestMethodAndNotFoundUseErrorEnvelope(t *testing.T) {
 	}
 	if rec.Header().Get("Cache-Control") != "no-store" || rec.Header().Get("X-Content-Type-Options") != "nosniff" {
 		t.Fatalf("missing baseline headers: %v", rec.Header())
+	}
+}
+
+func TestClientIPTrustsOnlyConfiguredProxies(t *testing.T) {
+	proxy := []netip.Prefix{netip.MustParsePrefix("10.0.0.0/8")}
+	cases := []struct {
+		remote, xff string
+		trusted     []netip.Prefix
+		want        string
+	}{
+		{"203.0.113.5:1234", "6.6.6.6", nil, "203.0.113.5"},                 // untrusted peer: header ignored
+		{"127.0.0.1:1234", "6.6.6.6", nil, "127.0.0.1"},                     // default trusts nobody, even loopback
+		{"10.0.0.2:1234", "6.6.6.6, 198.51.100.7", proxy, "198.51.100.7"},   // right-most untrusted hop
+		{"10.0.0.2:1234", "198.51.100.7, 10.0.0.9", proxy, "198.51.100.7"},  // skip inner trusted hops
+		{"10.0.0.2:1234", "", proxy, "10.0.0.2"},                            // no header: the proxy itself
+		{"10.0.0.2:1234", "not-an-ip, 198.51.100.7", proxy, "198.51.100.7"}, // garbage left of real hop
+		{"10.0.0.2:1234", "198.51.100.7, garbage", proxy, "10.0.0.2"},       // garbage at the edge
+		{"[::ffff:203.0.113.5]:1234", "6.6.6.6", nil, "203.0.113.5"},        // IPv4-mapped normalised
+	}
+	for _, c := range cases {
+		r := httptest.NewRequest(http.MethodGet, "/", nil)
+		r.RemoteAddr = c.remote
+		if c.xff != "" {
+			r.Header.Set("X-Forwarded-For", c.xff)
+		}
+		if got := ClientIP(r, c.trusted).String(); got != c.want {
+			t.Errorf("remote=%s xff=%q: got %s want %s", c.remote, c.xff, got, c.want)
+		}
 	}
 }

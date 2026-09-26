@@ -5,10 +5,12 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"maps"
 	"net"
 	"net/http"
 	"time"
 
+	"github.com/epic-rinn/tableflow/src/api/internal/identity"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/config"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/database"
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/health"
@@ -16,14 +18,48 @@ import (
 	"github.com/epic-rinn/tableflow/src/api/internal/platform/server"
 )
 
+// Routes maps each implemented path pattern to its method handlers. The
+// OpenAPI contract test compares this set with the documented operations.
+func Routes(health *health.Handler, id *identity.HTTP) map[string]map[string]http.HandlerFunc {
+	routes := map[string]map[string]http.HandlerFunc{
+		"/api/v1/health/live":  {http.MethodGet: health.Live},
+		"/api/v1/health/ready": {http.MethodGet: health.Ready},
+	}
+	if id != nil {
+		maps.Copy(routes, id.Routes())
+	}
+	return routes
+}
+
 // NewHandler returns the API's root handler. Only implemented routes are
 // registered; everything else is a JSON 404.
-func NewHandler(logger *slog.Logger, health *health.Handler) http.Handler {
+func NewHandler(logger *slog.Logger, routes map[string]map[string]http.HandlerFunc) http.Handler {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/api/v1/health/live", httpx.Method(http.MethodGet, health.Live))
-	mux.HandleFunc("/api/v1/health/ready", httpx.Method(http.MethodGet, health.Ready))
+	for pattern, methods := range routes {
+		mux.HandleFunc(pattern, httpx.Methods(methods))
+	}
 	mux.HandleFunc("/", httpx.NotFound)
 	return httpx.Middleware(logger, mux)
+}
+
+// hashConcurrency bounds simultaneous argon2id operations (~19 MiB each).
+const hashConcurrency = 4
+
+func purgeIdentity(ctx context.Context, svc *identity.Service, logger *slog.Logger) {
+	t := time.NewTicker(time.Hour)
+	defer t.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+			if n, err := svc.Purge(ctx); err != nil && ctx.Err() == nil {
+				logger.Warn("identity purge failed", "error", err.Error())
+			} else if n > 0 {
+				logger.Info("identity purge", "deleted", n)
+			}
+		}
+	}
 }
 
 // Run serves the API on ln until ctx is cancelled, then drains requests and
@@ -38,7 +74,10 @@ func Run(ctx context.Context, cfg config.Config, logger *slog.Logger, ln net.Lis
 	if err != nil {
 		return err
 	}
-	h := NewHandler(logger, health.New(pool, cfg.ReadinessTimeout, logger))
+	svc := identity.NewService(pool, identity.NewHasher(hashConcurrency), cfg.StaffSessionIdle, cfg.StaffSessionAbsolute)
+	idHTTP := identity.NewHTTP(svc, cfg.AdminOrigins, cfg.TrustedProxies, logger)
+	h := NewHandler(logger, Routes(health.New(pool, cfg.ReadinessTimeout, logger), idHTTP))
+	go purgeIdentity(ctx, svc, logger)
 	logger.Info("api listening", "addr", ln.Addr().String())
 	err = server.Serve(ctx, ln, h, server.Timeouts{
 		ReadHeader: cfg.ReadHeaderTimeout,

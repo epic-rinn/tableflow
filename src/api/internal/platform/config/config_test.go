@@ -45,3 +45,26 @@ func TestLoadDoesNotEchoInvalidValue(t *testing.T) {
 		t.Fatalf("expected sanitized error, got %v", err)
 	}
 }
+
+func TestLoadIdentityDefaultsAndValidation(t *testing.T) {
+	cfg, err := Load(env(map[string]string{"DATABASE_URL": "x"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(cfg.AdminOrigins) != 2 || cfg.AdminOrigins[0] != "http://localhost:3001" {
+		t.Fatalf("admin origins %v", cfg.AdminOrigins)
+	}
+	if cfg.StaffSessionIdle != time.Hour || cfg.StaffSessionAbsolute != 12*time.Hour || len(cfg.TrustedProxies) != 0 {
+		t.Fatalf("identity defaults %+v", cfg)
+	}
+	for name, value := range map[string]string{
+		"ADMIN_ORIGINS":          "https://admin.example/path",
+		"TRUSTED_PROXY_CIDRS":    "not-a-cidr",
+		"STAFF_SESSION_ABSOLUTE": "48h",
+		"STAFF_SESSION_IDLE":     "13h",
+	} {
+		if _, err := Load(env(map[string]string{"DATABASE_URL": "x", name: value})); err == nil {
+			t.Errorf("%s=%q accepted", name, value)
+		}
+	}
+}
