@@ -2,10 +2,14 @@ import type { Metadata, Viewport } from "next";
 import "@fontsource-variable/inter";
 import "@fontsource-variable/noto-sans-thai";
 import "./globals.css";
+import { ServiceWorkerManager } from "@/components/ServiceWorkerManager";
 
 export const metadata: Metadata = {
   title: "TableFlow",
   description: "Restaurant queue and table ordering",
+  applicationName: "TableFlow",
+  appleWebApp: { capable: true, title: "TableFlow", statusBarStyle: "default" },
+  icons: { apple: "/icons/apple-touch-icon.png" },
 };
 
 export const viewport: Viewport = {
@@ -18,7 +22,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className="min-h-dvh bg-muted/40 font-sans">{children}</body>
+      <body className="min-h-dvh bg-muted/40 font-sans">
+        <ServiceWorkerManager />
+        {children}
+      </body>
     </html>
   );
 }

@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#006b4f">
+<title>Offline · TableFlow</title>
+<style>
+  body { margin: 0; min-height: 100dvh; display: grid; place-items: center; background: #f6f8fa; color: #1e2432;
+         font-family: system-ui, -apple-system, "Segoe UI", "Noto Sans Thai", sans-serif; }
+  main { max-width: 22rem; margin: 1.5rem; padding: 2rem 1.5rem; border-radius: 1.5rem; background: #fff; text-align: center;
+         box-shadow: 0 1px 3px rgb(0 0 0 / 8%); }
+  img { width: 3.5rem; height: 3.5rem; border-radius: 1rem; }
+  h1 { font-size: 1.35rem; margin: 1rem 0 .25rem; }
+  p { margin: .5rem 0; line-height: 1.6; color: #4b5563; }
+  button { margin-top: 1rem; min-height: 3rem; width: 100%; border: 0; border-radius: 1rem; background: #006b4f; color: #fff;
+           font: inherit; font-weight: 600; }
+</style>
+</head>
+<body>
+<main>
+  <img src="/icons/icon-192.png" alt="">
+  <h1>ออฟไลน์อยู่ · You are offline</h1>
+  <p lang="th">กรุณาเชื่อมต่ออินเทอร์เน็ตแล้วลองใหม่ ไม่มีการส่งคำสั่งซื้อระหว่างออฟไลน์</p>
+  <p>Reconnect and try again. Nothing is ordered or paid while offline, and nothing is sent later on its own.</p>
+  <button type="button" onclick="location.reload()">Try again · ลองใหม่</button>
+</main>
+</body>
+</html>

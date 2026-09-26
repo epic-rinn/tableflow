@@ -1,6 +1,6 @@
 # Customer PWA development
 
-Runtime location: `src/pwa/`. Guest screens implemented through M3 and redesigned in UI-02 (Tailwind CSS v4 + shadcn/ui, Grab-style mobile patterns); the service worker is MVP-17. Read [system architecture](../../specs/architecture/system.md) and [PWA requirements](../../specs/features/05-access-pwa.md).
+Runtime location: `src/pwa/`. Guest screens implemented through M3 and redesigned in UI-02 (Tailwind CSS v4 + shadcn/ui, Grab-style mobile patterns); the service worker, manifest and offline page arrived in MVP-17. Read [system architecture](../../specs/architecture/system.md) and [PWA requirements](../../specs/features/05-access-pwa.md).
 
 The project has its own `package.json`, pnpm lockfile, TypeScript/Next.js config, `app/`, and Playwright smoke tests (dev port 3000). Add `features/<domain>` for UI behavior, `components/` for shared UI, `lib/api/` for contract-derived transport, and `public/` for static PWA assets only as needed. These paths are relative to `src/pwa/`.
 
@@ -30,4 +30,16 @@ Stack and visual language: [ADR-0006](../../specs/decisions/0006-ui-stack.md) an
 - **Brand:** the look is Grab-like in patterns only. Use TableFlow tokens; never Grab's name, logo, colours or illustrations.
 - **Client JavaScript:** keep first-load JS within the budget in [performance](../../specs/quality/performance.md). Prefer Server Components for static parts and keep client components narrow. Do not import heavy components into the entry routes without measuring.
 - **Tests:** keep accessible names stable (tests use role, label and name). PWA journeys run at 390×844.
+
+## Service worker and install (MVP-17)
+
+- **Files:** `public/sw.js` is handwritten and small on purpose; read it before changing caching. `app/manifest.ts` is the manifest; `public/offline.html` is the generic offline page; `public/icons/` holds PNG icons rendered from the TableFlow mark.
+- **Registration:** `components/ServiceWorkerManager.tsx` registers `/sw.js?v=<NEXT_PUBLIC_BUILD_VERSION>` in production builds only. Each build therefore gets its own cache, and old caches are deleted on activate.
+- **Caching:** only `/_next/static/*` (content-hashed) and `/icons/*`, cache-first.
+  - Navigations are network-only, falling back to `/offline.html`.
+  - `/api/*`, RSC/data requests, non-GET requests and other origins are never intercepted.
+  - Never add a runtime cache for pages, QR routes, account pages or API responses (PWA-002).
+- **Updates:** a new worker waits; the banner's "Reload to update" posts `SKIP_WAITING` and reloads. Carts (sessionStorage) survive.
+- **Install guidance:** `components/InstallHint.tsx`, on the home page only.
+- **Admin:** the admin app has no service worker (ADM-006); its smoke test asserts that.
 

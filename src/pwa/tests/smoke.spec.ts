@@ -33,11 +33,3 @@ test("same-origin /api/v1 reaches the Go API", async ({ request }) => {
   expect(missing.status()).toBe(404);
   expect((await missing.json()).error.code).toBe("NOT_FOUND");
 });
-
-test("no service worker is registered", async ({ page }) => {
-  await page.goto("/");
-  const count = await page.evaluate(async () =>
-    "serviceWorker" in navigator ? (await navigator.serviceWorker.getRegistrations()).length : 0,
-  );
-  expect(count).toBe(0);
-});
