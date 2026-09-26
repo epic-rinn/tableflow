@@ -43,7 +43,7 @@ export function BillView({ lines, policy, totals }: { lines: BillLine[]; policy:
         <dd className="text-right tabular-nums">{formatTHB(totals.gross_satang)}</dd>
         {totals.discount_satang > 0 && (
           <>
-            <dt className="text-muted-foreground">Discount ({bpToPercent(totals.discount_bp)}%)</dt>
+            <dt className="text-muted-foreground">Member discount ({bpToPercent(totals.discount_bp)}%)</dt>
             <dd className="text-right tabular-nums">−{formatTHB(totals.discount_satang)}</dd>
           </>
         )}

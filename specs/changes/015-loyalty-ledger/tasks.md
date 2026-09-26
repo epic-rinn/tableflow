@@ -1,9 +1,9 @@
 # Tasks: 015-loyalty-ledger
 
-Status: in-progress (2026-09-27). Verification at the M4 gate (ADR-0004).
+Status: done (M4 gate, 2026-09-27).
 
 - [x] Plan.
-- [ ] Migration, Go (billing/loyalty), routes, OpenAPI.
-- [ ] Admin and PWA screens.
-- [ ] Tests.
-- [ ] M4 gate.
+- [x] Migration, Go (billing/loyalty), routes, OpenAPI.
+- [x] Admin and PWA screens.
+- [x] Tests.
+- [x] M4 gate.

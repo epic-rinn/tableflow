@@ -1,6 +1,6 @@
 # Optional loyalty
 
-Status: specified, unimplemented. Actors: authenticated member, cashier, manager.
+Status: specified; implemented and verified in M4 (MVP-14/15, gate passed 2026-09-27). Version 0 of the loyalty policy uses the documented pilot defaults until the operator confirms the economics. Actors: authenticated member, cashier, manager.
 
 ## Requirements
 

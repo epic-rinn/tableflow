@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api/client";
 import type { Member } from "@/lib/api/types";
 import { MobileShell } from "@/components/common/MobileShell";
+import { LoyaltySummary } from "@/components/LoyaltySummary";
 import { Notice } from "@/components/common/Notice";
 import { Button } from "@/components/ui/button";
 
@@ -51,6 +52,7 @@ export default function AccountPage() {
       {state.step === "member" && (
         <>
           <p>Signed in as {state.member.email}</p>
+          <LoyaltySummary />
           {state.member.email_verified ? (
             <p>Email confirmed.</p>
           ) : (

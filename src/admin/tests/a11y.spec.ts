@@ -5,7 +5,7 @@ import { expect, test, type Page } from "@playwright/test";
 // plus desktop/tablet screenshots kept as review evidence (not pixel diffs).
 const enabled = !!process.env.E2E_MANAGER_TOKEN;
 const SHOTS = "../../tmp/playwright/admin-screens";
-const PAGES = ["/", "/host", "/kitchen", "/cashier", "/receipts", "/menu", "/configuration", "/staff", "/charges"];
+const PAGES = ["/", "/host", "/kitchen", "/cashier", "/receipts", "/menu", "/configuration", "/staff", "/charges", "/loyalty"];
 
 async function scan(page: Page, name: string) {
   const result = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).analyze();

@@ -1,6 +1,6 @@
 "use client";
 
-import { QrCode, ReceiptText, Wallet } from "lucide-react";
+import { Award, QrCode, ReceiptText, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useState } from "react";
 import { BillView } from "@/components/cashier/BillView";
@@ -26,7 +26,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { api, type ApiResult } from "@/lib/api/client";
-import type { Bill, BillLine, PaymentMethod, Settlement, SettlementRef, Table } from "@/lib/api/types";
+import { type Bill, type BillLine, type PaymentMethod, type Settlement, type SettlementRef, type Table, TIER_LABELS } from "@/lib/api/types";
 import { bahtToSatang, formatTHB } from "@/lib/money";
 import { useIdempotent } from "@/lib/useIdempotent";
 import { usePolling } from "@/lib/usePolling";
@@ -118,6 +118,15 @@ export function CashierWorkspace({ branchId }: { branchId: string }) {
     bill.refresh();
   }
 
+  async function detach(target: Bill, reason: string) {
+    setBusy(true);
+    const res = await run(`detach:${target.visit_id}:${target.bill_version}`, (key) =>
+      api<Bill>(`/visits/${target.visit_id}/member-detach`, { method: "POST", key, body: { expected_version: target.bill_version, reason } }));
+    setBusy(false);
+    setNotice(res.ok ? { role: "status", text: "Member detached from this visit." } : { role: "alert", text: res.error.message });
+    bill.refresh();
+  }
+
   const b = bill.data;
   return (
     <>
@@ -174,6 +183,21 @@ export function CashierWorkspace({ branchId }: { branchId: string }) {
             </CardHeader>
             {b && (
               <CardContent className="grid gap-6">
+                {b.member_claim?.claimed && (
+                  <div className="flex flex-wrap items-center gap-3 rounded-lg border border-primary/30 bg-accent/60 p-3 text-sm">
+                    <Award className="size-4 text-primary" aria-hidden />
+                    <span className="flex-1">
+                      Member {b.member_claim.masked_email ?? ""} · {b.member_claim.tier ? TIER_LABELS[b.member_claim.tier] : ""} tier
+                      {b.frozen ? " (benefit fixed for this bill)" : " (discount previewed; fixed when settlement begins)"}
+                    </span>
+                    {b.visit_state === "open" && (
+                      <ReasonDialog trigger="Detach member" title="Detach the member from this visit?"
+                        description="Use when the wrong member claimed. The member at the table can then claim again from their phone."
+                        reasonLabel="Reason for detaching" confirmLabel="Detach member" destructive disabled={busy}
+                        onConfirm={(reason) => void detach(b, reason)} />
+                    )}
+                  </div>
+                )}
                 <BillView lines={b.lines} policy={b.policy} totals={b} />
                 {unresolved.length > 0 && (
                   <ul aria-label="Unresolved items" className="grid gap-1 rounded-lg border border-warning/40 bg-warning-soft p-3 text-sm">
@@ -197,7 +221,7 @@ export function CashierWorkspace({ branchId }: { branchId: string }) {
                 {b.visit_state === "settling" && (
                   <SettlingActions bill={b} busy={busy}
                     onConfirm={(body) => void command<Settlement>(`confirm:${visitId}:${b.bill_version}`, "confirm", body,
-                      (s) => `Payment recorded. Receipt ${s.receipt_reference}. The table stays occupied until the party departs.`)}
+                      (s) => `Payment recorded. Receipt ${s.receipt_reference}.${s.points_earned !== null ? ` Member earned ${s.points_earned} point(s).` : ""} The table stays occupied until the party departs.`)}
                     onReopen={(reason) => void command<Bill>(`reopen:${visitId}:${b.bill_version}`, "reopen", { expected_version: b.bill_version, reason },
                       () => "Bill reopened; guests can order again.")} />
                 )}

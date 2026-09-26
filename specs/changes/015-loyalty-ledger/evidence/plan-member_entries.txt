@@ -1,0 +1,26 @@
+BEGIN
+Limit  (cost=0.83..39.12 rows=3 width=63) (actual time=0.033..0.058 rows=4.00 loops=1)
+  Buffers: shared hit=27
+  ->  Nested Loop  (cost=0.83..39.12 rows=3 width=63) (actual time=0.032..0.056 rows=4.00 loops=1)
+        Join Filter: (b.id = l.branch_id)
+        Buffers: shared hit=27
+        ->  Nested Loop  (cost=0.83..38.06 rows=3 width=74) (actual time=0.023..0.045 rows=4.00 loops=1)
+              Buffers: shared hit=26
+              ->  Index Scan using loyalty_ledger_by_member on loyalty_ledger l  (cost=0.41..12.75 rows=3 width=77) (actual time=0.013..0.014 rows=4.00 loops=1)
+                    Index Cond: ((member_id = '01a0df31-382c-7972-be73-4b619ba8afa7'::uuid) AND (ROW(created_at, id) < ROW('9999-01-01 00:00:00+00'::timestamp with time zone, 'ffffffff-ffff-ffff-ffff-ffffffffffff'::uuid)))
+                    Index Searches: 1
+                    Buffers: shared hit=5
+              ->  Index Scan using settlements_pkey on settlements s  (cost=0.42..8.44 rows=1 width=29) (actual time=0.006..0.006 rows=1.00 loops=4)
+                    Index Cond: (id = l.settlement_id)
+                    Index Searches: 4
+                    Buffers: shared hit=19
+        ->  Materialize  (cost=0.00..1.01 rows=1 width=21) (actual time=0.002..0.002 rows=1.00 loops=4)
+              Storage: Memory  Maximum Storage: 17kB
+              Buffers: shared hit=1
+              ->  Seq Scan on branches b  (cost=0.00..1.01 rows=1 width=21) (actual time=0.006..0.006 rows=1.00 loops=1)
+                    Buffers: shared hit=1
+Planning:
+  Buffers: shared hit=308 read=5
+Planning Time: 0.422 ms
+Execution Time: 0.093 ms
+ROLLBACK

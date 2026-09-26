@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Pill } from "@/components/common/MobileShell";
 import { Notice, type NoticeValue } from "@/components/common/Notice";
 import { Freshness } from "@/components/Freshness";
+import { MemberPoints } from "@/components/MemberPoints";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -175,6 +176,7 @@ function DiningRoom({ visit }: { visit: Visit }) {
         </p>
       </section>
 
+      <MemberPoints visitId={visit.id} open={open} />
       <BillPanel visitId={visit.id} />
       <AssistancePanel visitId={visit.id} disabled={offline} />
 
@@ -297,7 +299,7 @@ function BillDetails({ visitId }: { visitId: string }) {
         <dd className="text-right tabular-nums">{formatTHB(b.gross_satang)}</dd>
         {b.discount_satang > 0 && (
           <>
-            <dt className="text-muted-foreground">Discount</dt>
+            <dt className="text-muted-foreground">Member discount</dt>
             <dd className="text-right tabular-nums">−{formatTHB(b.discount_satang)}</dd>
           </>
         )}

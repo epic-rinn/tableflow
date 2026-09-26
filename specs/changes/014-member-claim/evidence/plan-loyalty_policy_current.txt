@@ -1,0 +1,14 @@
+BEGIN
+Limit  (cost=0.01..0.02 rows=1 width=32) (actual time=0.019..0.021 rows=0.00 loops=1)
+  Buffers: shared hit=3
+  ->  Sort  (cost=0.01..0.02 rows=1 width=32) (actual time=0.019..0.019 rows=0.00 loops=1)
+        Sort Key: version DESC
+        Sort Method: quicksort  Memory: 25kB
+        Buffers: shared hit=3
+        ->  Seq Scan on loyalty_policies  (cost=0.00..0.00 rows=1 width=32) (actual time=0.006..0.006 rows=0.00 loops=1)
+              Filter: (branch_id = '00000000-0000-7000-8000-0000000000c1'::uuid)
+Planning:
+  Buffers: shared hit=92 read=1
+Planning Time: 0.216 ms
+Execution Time: 0.043 ms
+ROLLBACK

@@ -1,0 +1,18 @@
+BEGIN
+Hash Join  (cost=8.45..11.72 rows=1 width=53) (actual time=0.033..0.040 rows=1.00 loops=1)
+  Hash Cond: (t.id = v.table_id)
+  Buffers: shared hit=8
+  ->  Seq Scan on dining_tables t  (cost=0.00..3.00 rows=100 width=21) (actual time=0.002..0.006 rows=100.00 loops=1)
+        Buffers: shared hit=2
+  ->  Hash  (cost=8.44..8.44 rows=1 width=64) (actual time=0.017..0.017 rows=1.00 loops=1)
+        Buckets: 1024  Batches: 1  Memory Usage: 9kB
+        Buffers: shared hit=6
+        ->  Index Scan using visits_pkey on visits v  (cost=0.42..8.44 rows=1 width=64) (actual time=0.009..0.015 rows=1.00 loops=1)
+              Index Cond: (id = '01a0ddbb-78b4-7cb7-8202-eec1f30696ab'::uuid)
+              Index Searches: 1
+              Buffers: shared hit=6
+Planning:
+  Buffers: shared hit=341 read=6
+Planning Time: 0.525 ms
+Execution Time: 0.073 ms
+ROLLBACK

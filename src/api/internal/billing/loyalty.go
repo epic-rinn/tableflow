@@ -319,16 +319,16 @@ func (s *Service) Detach(ctx context.Context, tx pgx.Tx, p identity.Principal, v
 
 // MemberLoyalty is one branch profile as the member sees it.
 type MemberLoyalty struct {
-	BranchID             string `json:"branch_id"`
-	BranchName           string `json:"branch_name"`
-	Points               int64  `json:"points"`
-	QualifyingSpend      int64  `json:"qualifying_spend_satang"`
-	Tier                 string `json:"tier"`
-	DiscountBP           int    `json:"discount_bp"`
-	NextTier             *string `json:"next_tier"`
-	NextThresholdSatang  *int64 `json:"next_threshold_satang"`
-	SatangPerPoint       int64  `json:"satang_per_point"`
-	PolicyConfigured     bool   `json:"policy_configured"`
+	BranchID            string  `json:"branch_id"`
+	BranchName          string  `json:"branch_name"`
+	Points              int64   `json:"points"`
+	QualifyingSpend     int64   `json:"qualifying_spend_satang"`
+	Tier                string  `json:"tier"`
+	DiscountBP          int     `json:"discount_bp"`
+	NextTier            *string `json:"next_tier"`
+	NextThresholdSatang *int64  `json:"next_threshold_satang"`
+	SatangPerPoint      int64   `json:"satang_per_point"`
+	PolicyConfigured    bool    `json:"policy_configured"`
 }
 
 // MemberLoyalty lists the member's own profiles.

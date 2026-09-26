@@ -59,4 +59,13 @@ export type Bill = {
   visit_state: Visit["state"]; bill_version: number; frozen: boolean; lines: BillLine[]; unresolved_lines: number;
   policy: { version: number; tax_mode: "exclusive" | "inclusive"; tax_bp: number; service_bp: number; configured: boolean };
   gross_satang: number; discount_bp: number; discount_satang: number; service_satang: number; tax_satang: number; total_satang: number;
+  member_claim: { claimed: boolean } | null;
 };
+export type Tier = "base" | "silver" | "gold";
+export const TIER_LABELS: Record<Tier, string> = { base: "Base", silver: "Silver", gold: "Gold" };
+export type ClaimStatus = { claimed: boolean; mine: boolean; tier?: Tier; discount_bp?: number; bill_version: number; visit_state: Visit["state"] };
+export type MemberLoyalty = {
+  branch_id: string; branch_name: string; points: number; qualifying_spend_satang: number; tier: Tier; discount_bp: number;
+  next_tier: Tier | null; next_threshold_satang: number | null; satang_per_point: number; policy_configured: boolean;
+};
+export type LedgerEntry = { id: string; kind: "earn" | "reversal"; points: number; qualifying_satang: number; receipt_reference: string; branch_name: string; created_at: string };

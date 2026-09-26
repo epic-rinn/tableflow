@@ -1,0 +1,10 @@
+{"route": "GET /branches/{id}/settlements", "samples": 120, "rps": 1.0, "codes": {"200": 120}, "p50_ms": 3.06, "p95_ms": 5.86, "p99_ms": 16.08, "max_ms": 18.2}
+{"route": "GET /members/me/loyalty", "samples": 597, "rps": 5.0, "codes": {"200": 597}, "p50_ms": 2.24, "p95_ms": 4.19, "p99_ms": 5.69, "max_ms": 8.72}
+{"route": "GET /members/me/loyalty/entries", "samples": 597, "rps": 5.0, "codes": {"200": 597}, "p50_ms": 1.54, "p95_ms": 2.73, "p99_ms": 4.3, "max_ms": 15.38}
+{"route": "GET /settlements/{id}", "samples": 120, "rps": 1.0, "codes": {"200": 120}, "p50_ms": 1.82, "p95_ms": 3.17, "p99_ms": 3.61, "max_ms": 3.62}
+{"route": "GET /visits/{id}/bill (cashier)", "samples": 983, "rps": 8.2, "codes": {"200": 983}, "p50_ms": 4.97, "p95_ms": 8.04, "p99_ms": 9.94, "max_ms": 16.7}
+{"route": "GET /visits/{id}/bill (diner, claimed)", "samples": 2994, "rps": 24.9, "codes": {"200": 2550, "401": 444}, "p50_ms": 3.95, "p95_ms": 6.69, "p99_ms": 8.59, "max_ms": 18.31}
+{"route": "POST settlement/begin (member)", "samples": 572, "rps": 4.8, "codes": {"200": 572}, "p50_ms": 11.38, "p95_ms": 16.45, "p99_ms": 18.71, "max_ms": 30.82}
+{"route": "POST settlement/confirm (member)", "samples": 35, "rps": 0.3, "codes": {"201": 35}, "p50_ms": 12.98, "p95_ms": 17.5, "p99_ms": 18.2, "max_ms": 17.89}
+{"route": "POST settlement/reopen (member)", "samples": 537, "rps": 4.5, "codes": {"200": 537}, "p50_ms": 7.8, "p95_ms": 10.79, "p99_ms": 18.32, "max_ms": 24.47}
+{"total_rps": 54.6, "diners": 250, "served_visits": 35, "warmup_s": 30, "measure_s": 120}

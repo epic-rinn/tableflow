@@ -132,14 +132,23 @@ export type SettlementRef = { id: string; receipt_reference: string; paid_at: st
 export type Bill = Totals & {
   visit_id: string; branch_id: string; table_label: string; visit_state: Visit["state"]; bill_version: number;
   frozen: boolean; policy: Policy; lines: BillLine[]; unresolved_lines: number; settlement: SettlementRef | null; server_time: string;
+  member_claim: MemberClaim | null;
+};
+export type Tier = "base" | "silver" | "gold";
+export const TIER_LABELS: Record<Tier, string> = { base: "Base", silver: "Silver", gold: "Gold" };
+export type MemberClaim = { claimed: boolean; masked_email?: string; tier?: Tier };
+export type LoyaltyPolicy = {
+  version: number; satang_per_point: number; silver_threshold_satang: number; silver_discount_bp: number;
+  gold_threshold_satang: number; gold_discount_bp: number; configured: boolean;
 };
 export type PaymentMethod = "cash" | "bank_transfer" | "card" | "other";
-export type Settlement = { id: string; visit_id: string; receipt_reference: string; amount_satang: number; method: PaymentMethod; paid_at: string; bill: Bill };
+export type Settlement = { id: string; visit_id: string; receipt_reference: string; amount_satang: number; method: PaymentMethod; paid_at: string; points_earned: number | null; bill: Bill };
 export type Refund = { id: string; amount_satang: number; reason: string; external_reference: string; recorded_by: string; created_at: string };
 export type Receipt = Totals & {
   id: string; visit_id: string; receipt_reference: string; table_label: string; visit_state: "paid" | "departed";
   amount_satang: number; method: PaymentMethod; verification_note: string; external_reference: string | null;
   confirmed_by: string; paid_at: string; bill_version: number; policy: Policy; lines: BillLine[]; refund: Refund | null;
+  member: { tier: Tier; points_earned: number; eligible_satang: number } | null;
 };
 export type ReceiptSummary = { id: string; receipt_reference: string; amount_satang: number; method: PaymentMethod; paid_at: string; table_label: string; refunded: boolean };
 export type ReceiptPage = { items: ReceiptSummary[]; next_cursor: string | null };

@@ -1,26 +1,11 @@
-import { readdir, readFile } from "node:fs/promises";
-import { join } from "node:path";
 import { expect, test } from "@playwright/test";
+import { latestLink } from "./support/mail";
 
 // ACC-002 member journey. `make verify` runs the API with the test-only file
 // outbox (MAIL_ADAPTER=file); emails are read from E2E_MAIL_DIR.
 const MAIL_DIR = process.env.E2E_MAIL_DIR ?? "";
 const enabled = !!process.env.E2E_VISIT_TOKEN && !!MAIL_DIR;
 const PASSWORD = "member e2e password";
-
-async function latestLink(to: string, path: string): Promise<string> {
-  const pattern = new RegExp(`(${path.replace(/\//g, "\\/")}#[A-Za-z0-9_-]{43})`);
-  for (let i = 0; i < 50; i++) {
-    const files = (await readdir(MAIL_DIR)).sort().reverse();
-    for (const f of files) {
-      const m = JSON.parse(await readFile(join(MAIL_DIR, f), "utf8")) as { To: string; Text: string };
-      const match = m.To === to ? m.Text.match(pattern) : null;
-      if (match) return match[1];
-    }
-    await new Promise((r) => setTimeout(r, 200));
-  }
-  throw new Error(`no ${path} email for ${to}`);
-}
 
 test.describe.serial("member account", () => {
   test.skip(!enabled, "run through `make verify` (needs the E2E API and mail outbox)");

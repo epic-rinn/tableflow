@@ -25,9 +25,9 @@ const replayTTL = 72 * time.Hour
 
 // HTTP exposes billing, settlement and receipt routes.
 type HTTP struct {
-	svc    *Service
-	pool   *pgxpool.Pool
-	store  *idempotency.Store
+	svc       *Service
+	pool      *pgxpool.Pool
+	store     *idempotency.Store
 	staff     *identity.HTTP
 	guests    *access.HTTP
 	members   *members.HTTP

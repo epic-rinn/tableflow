@@ -1,0 +1,10 @@
+BEGIN
+Index Scan using member_profiles_branch_id_member_id_key on member_profiles  (cost=0.41..8.43 rows=1 width=37) (actual time=0.016..0.019 rows=1.00 loops=1)
+  Index Cond: ((branch_id = '00000000-0000-7000-8000-0000000000c1'::uuid) AND (member_id = '01a0df31-382c-7972-be73-4b619ba8afa7'::uuid))
+  Index Searches: 1
+  Buffers: shared hit=6
+Planning:
+  Buffers: shared hit=106
+Planning Time: 0.151 ms
+Execution Time: 0.036 ms
+ROLLBACK

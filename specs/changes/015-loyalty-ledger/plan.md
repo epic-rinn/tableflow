@@ -1,6 +1,6 @@
 # Change: 015-loyalty-ledger — Atomic loyalty and member history
 
-Status: in-progress. Date: 2026-09-27. Scope owner: Claude. Task: MVP-15. Verification: M4 gate (ADR-0004).
+Status: done (M4 gate passed 2026-09-27). Date: 2026-09-27. Scope owner: Claude. Task: MVP-15. Verification: M4 gate (ADR-0004).
 
 ## Problem and behavior
 
@@ -35,8 +35,8 @@ Maps LOY-004–007 and complete member behaviour for BIL-006/007.
 
 | Requirement | Test | Status |
 | --- | --- | --- |
-| LOY-004 fixtures (exclusive, inclusive, discount) | TestEligibleSpendFixtures | planned |
-| LOY-A2 concurrent paid visits for one member | TestConcurrentMemberSettlements | planned |
-| LOY-A4 / BIL-A6 refund reverses once with original amounts | TestMemberRefundReversesOnce | planned |
-| LOY-A3 tier threshold crossing | TestTierSnapshotAtBegin | planned |
-| Ledger reconciles to balance; history pagination and privacy | TestMemberLoyaltyHistory | planned |
+| LOY-004 fixtures (exclusive, inclusive, discount) | TestEligibleSpendFixtures | passed |
+| LOY-A2 concurrent paid visits for one member | TestConcurrentMemberSettlements | passed |
+| LOY-A4 / BIL-A6 refund reverses once with original amounts | TestMemberRefundReversesOnce | passed |
+| LOY-A3 tier threshold crossing | TestTierSnapshotAtBegin | passed |
+| Ledger reconciles to balance; history pagination and privacy | TestMemberLoyaltyHistory | passed |

@@ -15,6 +15,7 @@ const DESCRIPTIONS: Record<string, string> = {
   "/configuration": "Tables and seating groups",
   "/menu": "Categories, items, options and prices",
   "/charges": "Service charge and tax policy",
+  "/loyalty": "Points rate, tiers and member discounts",
   "/staff": "Invitations, roles and access",
 };
 

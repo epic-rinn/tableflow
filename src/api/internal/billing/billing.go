@@ -232,7 +232,7 @@ type Bill struct {
 	Settlement      *SettlementRef `json:"settlement"`
 	// Claim status only; staff also see a masked email and the tier (LOY-001).
 	MemberClaim *ClaimView `json:"member_claim"`
-	ServerTime  time.Time `json:"server_time"`
+	ServerTime  time.Time  `json:"server_time"`
 	Totals
 }
 

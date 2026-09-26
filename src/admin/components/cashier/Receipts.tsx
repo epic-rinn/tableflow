@@ -23,7 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { api } from "@/lib/api/client";
-import type { Receipt, ReceiptPage, ReceiptSummary } from "@/lib/api/types";
+import { type Receipt, type ReceiptPage, type ReceiptSummary, TIER_LABELS } from "@/lib/api/types";
 import { formatTHB } from "@/lib/money";
 import { useIdempotent } from "@/lib/useIdempotent";
 
@@ -168,6 +168,9 @@ export function ReceiptDetail({ id, isManager }: { id: string; isManager: boolea
     ["Confirmed by", receipt.confirmed_by],
     ["Verification", receipt.verification_note],
     ...(receipt.external_reference ? ([["External reference", receipt.external_reference]] as [string, React.ReactNode][]) : []),
+    ...(receipt.member
+      ? ([["Member", `${TIER_LABELS[receipt.member.tier]} tier · ${receipt.member.points_earned} point(s) earned on ${formatTHB(receipt.member.eligible_satang)}`]] as [string, React.ReactNode][])
+      : []),
   ];
   return (
     <>
@@ -237,7 +240,10 @@ export function ReceiptDetail({ id, isManager }: { id: string; isManager: boolea
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Record a full refund of {formatTHB(receipt.amount_satang)}?</AlertDialogTitle>
-            <AlertDialogDescription>Only one refund can ever be recorded for this receipt. The original receipt stays unchanged.</AlertDialogDescription>
+            <AlertDialogDescription>
+              Only one refund can ever be recorded for this receipt. The original receipt stays unchanged.
+              {receipt.member && ` The member's ${receipt.member.points_earned} point(s) and qualifying spend are reversed.`}
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Back</AlertDialogCancel>

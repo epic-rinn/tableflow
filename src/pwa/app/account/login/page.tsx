@@ -29,7 +29,9 @@ export default function MemberLoginPage() {
       setError(res.error.message);
       return;
     }
-    router.push("/account");
+    // Only same-site paths (e.g. back to the table page); never another origin.
+    const next = new URLSearchParams(window.location.search).get("next") ?? "";
+    router.push(/^\/(?![/\\])/.test(next) ? next : "/account");
   }
 
   return (

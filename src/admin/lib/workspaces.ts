@@ -15,6 +15,7 @@ export const WORKSPACES: readonly Workspace[] = [
   { href: "/configuration", label: "Tables & groups", role: "manager" },
   { href: "/menu", label: "Menu", role: "manager" },
   { href: "/charges", label: "Charges & tax", role: "manager" },
+  { href: "/loyalty", label: "Loyalty", role: "manager" },
   { href: "/staff", label: "Staff", role: "manager" },
 ];
 

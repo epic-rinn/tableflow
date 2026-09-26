@@ -1,6 +1,6 @@
 # Change: 014-member-claim — Member visit claim and tier snapshot
 
-Status: in-progress. Date: 2026-09-27. Scope owner: Claude. Task: MVP-14. Verification: M4 gate (ADR-0004), together with MVP-15.
+Status: done (M4 gate passed 2026-09-27). Date: 2026-09-27. Scope owner: Claude. Task: MVP-14. Verification: M4 gate (ADR-0004), together with MVP-15.
 
 ## Problem and behavior
 
@@ -40,7 +40,7 @@ Maps LOY-001–003 and the loyalty-policy subset of OPS-001/ADM-005 ([loyalty](.
 
 | Requirement | Test | Status |
 | --- | --- | --- |
-| LOY-A1 shared QR cannot claim or read member data | TestClaimNeedsBothSessions | planned |
-| No silent replacement; detach with reason; immutable once settling | TestClaimConflictsAndDetach | planned |
-| LOY-A3 threshold crossing uses previous tier | TestTierSnapshotAtBegin (in 015 tests) | planned |
-| Policy versions and bounds | TestLoyaltyPolicyVersions | planned |
+| LOY-A1 shared QR cannot claim or read member data | TestClaimNeedsBothSessions | passed |
+| No silent replacement; detach with reason; immutable once settling | TestClaimConflictsAndDetach | passed |
+| LOY-A3 threshold crossing uses previous tier | TestTierSnapshotAtBegin (in 015 tests) | passed |
+| Policy versions and bounds | TestLoyaltyPolicyVersions | passed |

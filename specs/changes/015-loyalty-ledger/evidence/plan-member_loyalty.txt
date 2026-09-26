@@ -1,0 +1,28 @@
+BEGIN
+Sort  (cost=9.50..9.50 rows=1 width=74) (actual time=0.043..0.045 rows=1.00 loops=1)
+  Sort Key: b.name, p.branch_id
+  Sort Method: quicksort  Memory: 25kB
+  Buffers: shared hit=14
+  ->  Nested Loop Left Join  (cost=0.42..9.49 rows=1 width=74) (actual time=0.031..0.032 rows=1.00 loops=1)
+        Buffers: shared hit=8
+        ->  Nested Loop  (cost=0.41..9.45 rows=1 width=42) (actual time=0.021..0.021 rows=1.00 loops=1)
+              Buffers: shared hit=5
+              ->  Seq Scan on branches b  (cost=0.00..1.01 rows=1 width=21) (actual time=0.008..0.008 rows=1.00 loops=1)
+                    Buffers: shared hit=1
+              ->  Index Scan using member_profiles_branch_id_member_id_key on member_profiles p  (cost=0.41..8.43 rows=1 width=37) (actual time=0.011..0.011 rows=1.00 loops=1)
+                    Index Cond: ((branch_id = b.id) AND (member_id = '01a0df31-382c-7972-be73-4b619ba8afa7'::uuid))
+                    Index Searches: 1
+                    Buffers: shared hit=4
+        ->  Limit  (cost=0.01..0.02 rows=1 width=72) (actual time=0.008..0.008 rows=0.00 loops=1)
+              Buffers: shared hit=3
+              ->  Sort  (cost=0.01..0.02 rows=1 width=72) (actual time=0.007..0.008 rows=0.00 loops=1)
+                    Sort Key: l.version DESC
+                    Sort Method: quicksort  Memory: 25kB
+                    Buffers: shared hit=3
+                    ->  Seq Scan on loyalty_policies l  (cost=0.00..0.00 rows=1 width=72) (actual time=0.002..0.002 rows=0.00 loops=1)
+                          Filter: (branch_id = p.branch_id)
+Planning:
+  Buffers: shared hit=207 read=1
+Planning Time: 0.332 ms
+Execution Time: 0.069 ms
+ROLLBACK

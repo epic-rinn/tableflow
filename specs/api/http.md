@@ -90,10 +90,12 @@ Menu responses are capped at the pilot's configured maximum 500 items, with boun
 | POST `/visits/{visit_id}/member-detach` | Cashier/manager, open visit only | `{expected_version,reason}` → detached claim; LOY-002 |
 | GET `/members/me/loyalty` | Member | Own points/tier/qualifying spend/next threshold; LOY-007 |
 | GET `/members/me/loyalty/entries` | Member | Cursor → own ledger history; LOY-007 |
+| GET `/visits/{visit_id}/member-claim` | Member plus matching visit guest access | `{claimed, mine, tier?, discount_bp?, bill_version, visit_state}`; tier/discount only when mine; LOY-001 (MVP-14) |
+| GET/PUT `/branches/{branch_id}/loyalty-policy` | Staff read / manager write | Versioned points rate and Silver/Gold thresholds/discounts; version 0 = pilot defaults (MVP-14) |
 
 Payment confirmation authenticates staff again on every retry, even if the idempotency result exists. After guest access is revoked at payment, receipt retrieval remains staff-mediated in MVP.
 
-Settlement conflicts use stable codes: `BILL_VERSION_CONFLICT` (body also carries the fresh `bill`), `UNRESOLVED_LINES` (body carries `lines`), `ALREADY_PAID` (body carries `settlement`, `fields.receipt_reference`), `VISIT_STATE_CONFLICT`, `NOTHING_TO_SETTLE` (no chargeable lines; use close-empty), `AMOUNT_MISMATCH` (422) and `ALREADY_REFUNDED`. The visit gains the `settling` state between begin and confirm/reopen.
+Settlement conflicts use stable codes: `BILL_VERSION_CONFLICT` (body also carries the fresh `bill`), `UNRESOLVED_LINES` (body carries `lines`), `ALREADY_PAID` (body carries `settlement`, `fields.receipt_reference`), `VISIT_STATE_CONFLICT`, `NOTHING_TO_SETTLE` (no chargeable lines; use close-empty), `ALREADY_CLAIMED` / `NOT_CLAIMED` (member claims), `AMOUNT_MISMATCH` (422) and `ALREADY_REFUNDED`. The visit gains the `settling` state between begin and confirm/reopen.
 
 ## Configuration and reports
 
@@ -101,7 +103,7 @@ Manager-only, branch-authorized routes:
 
 - GET `/branches/{branch_id}/configuration` → current seating/charge/loyalty policies and versions.
 - PUT `/branches/{branch_id}/configuration` with `{expected_version,seating,charges,loyalty}` → validated new policy version; historical snapshots unchanged.
-- Implemented as separately versioned resources: seating groups (`/branches/{branch_id}/seating-groups`, MVP-06) and charges (GET/PUT `/branches/{branch_id}/charge-policy` with `{expected_version,tax_mode,tax_bp,service_bp}`, rates in basis points, append-only versions, MVP-11). Loyalty policy follows in MVP-14/15. GET charge-policy is readable by branch staff; PUT is manager-only.
+- Implemented as separately versioned resources: seating groups (`/branches/{branch_id}/seating-groups`, MVP-06) and charges (GET/PUT `/branches/{branch_id}/charge-policy` with `{expected_version,tax_mode,tax_bp,service_bp}`, rates in basis points, append-only versions, MVP-11). Loyalty policy is `/branches/{branch_id}/loyalty-policy` (MVP-14). GET charge-policy is readable by branch staff; PUT is manager-only.
 - POST `/branches/{branch_id}/tables` and PATCH `/tables/{table_id}` → label/capacity/needs/active changes; forbid disabling/changing an actively claimed table incompatibly.
 - PUT `/branches/{branch_id}/menu` with `{expected_version,categories,items,option_groups,options}` → atomic bounded menu revision; use IDs to retain history, no destructive replacement of historical references. Maximum configuration body 1 MiB, manager routes only.
 - PATCH `/menu-items/{item_id}/availability` with `{expected_version,sold_out}` → revision bump.
