@@ -1,0 +1,87 @@
+name: Runtime
+
+on:
+  pull_request:
+  push:
+
+permissions:
+  contents: read
+
+jobs:
+  api:
+    name: Go API (format, vet, race tests, PostgreSQL)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18.6
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres_ci_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: src/api/go.mod
+          cache-dependency-path: src/api/go.sum
+      - run: make api-check
+      - run: make api-test-db
+        env:
+          TEST_DATABASE_URL: postgres://postgres:postgres_ci_only@127.0.0.1:5432/postgres?sslmode=disable
+
+  frontends:
+    name: Frontends, browser smoke and artifact boundary
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18.6
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres_dev_only
+        ports:
+          - 54318:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
+      PGPASSWORD: postgres_dev_only
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: src/api/go.mod
+          cache-dependency-path: src/api/go.sum
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: src/pwa/.node-version
+      - run: corepack enable
+      - name: Create local roles and database
+        run: psql -h 127.0.0.1 -p 54318 -U postgres -v ON_ERROR_STOP=1 -f src/api/db/local/init.sql
+      - run: make migrate-up
+      - run: make frontends-check
+      - name: Install Playwright Chromium
+        run: cd src/admin && corepack pnpm exec playwright install --with-deps chromium
+      - name: Start API
+        run: |
+          make api-build
+          DATABASE_URL='postgres://tableflow_app:app_dev_only@127.0.0.1:54318/tableflow?sslmode=disable' \
+            ./tmp/tableflow-api > tmp/api.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:8080/api/v1/health/ready && exit 0; sleep 1; done
+          cat tmp/api.log; exit 1
+      - run: make smoke
+      - run: make artifact-check
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-reports
+          path: |
+            tmp/api.log
+            src/*/playwright-report
+            src/*/test-results
+          retention-days: 7
