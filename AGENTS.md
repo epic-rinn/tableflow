@@ -20,7 +20,7 @@
 
 ## Code Review Rules
 
-- After implementation and tests, and before reporting a feature delivered, run `.agents/skills/tableflow-code-review/SKILL.md`. Re-review fixes.
+- Reviews run at each milestone gate ([ADR-0004](specs/decisions/0004-milestone-verification.md)). After implementation and tests, and before reporting a feature delivered, run `.agents/skills/tableflow-code-review/SKILL.md`. Re-review fixes.
 - If an endpoint, SQL query, schema, transaction, polling flow, or data-fetching path changed, also run `.agents/skills/tableflow-db-api-review/SKILL.md` and record evidence.
 - Review the final diff plus callers, permissions, migrations, and tests. Flag concrete correctness, security, reliability, and measured performance issues with file/line and reproduction conditions.
 - Block delivery on cross-visit access, double seating, duplicate orders/payments/points, unverified payment closure, destructive migration risk, and demonstrated serious regressions.

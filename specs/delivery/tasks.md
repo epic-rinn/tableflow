@@ -6,11 +6,11 @@ This is the implementation queue for Claude. Codex maintains task scope and the 
 
 ## Execution rules
 
-1. Pick one task with all dependencies `done`; do not begin a downstream task on unverified foundations.
+1. Pick one task whose dependencies are `done`, or `implemented-unverified` within the same milestone ([ADR-0004](../decisions/0004-milestone-verification.md)). Do not start a new milestone before the previous milestone gate passed.
 2. Create `specs/changes/<change-id>/plan.md`, `tasks.md`, and `review.md` before implementation. MVP-01 already has a prepared packet. Expand each task into file-level work after inspecting the code, not guessed scaffolds.
 3. Deliver API, database, and appropriate UI together where specified. Include error/stale/offline states and authorization from the first slice, not only during final hardening.
 4. Map named tests to the listed requirement IDs and acceptance scenarios. Follow [workflow](workflow.md), [testing gates](../quality/testing.md), and [performance evidence](../quality/performance.md).
-5. Every task requires post-implementation [code review](../../.agents/skills/tableflow-code-review/SKILL.md). Changes to SQL, migrations, endpoints, or frontend requests also require [DB/API review](../../.agents/skills/tableflow-db-api-review/SKILL.md). Record whether review is self-review; never imply an independent reviewer ran.
+5. Tests and reviews run at the milestone gate ([ADR-0004](../decisions/0004-milestone-verification.md)); each task still requires post-implementation [code review](../../.agents/skills/tableflow-code-review/SKILL.md). Changes to SQL, migrations, endpoints, or frontend requests also require [DB/API review](../../.agents/skills/tableflow-db-api-review/SKILL.md). Record whether review is self-review; never imply an independent reviewer ran.
 6. Use `planned`, `in-progress`, `implemented-unverified`, `reviewed`, `done`, or `blocked`. For blocked work record the exact dependency and next action. `done` requires evidence, not checked boxes alone.
 
 ## Queue and dependencies
