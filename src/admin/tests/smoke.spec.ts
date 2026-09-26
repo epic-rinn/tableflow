@@ -17,7 +17,9 @@ test("home page renders without console errors", async ({ page }) => {
   expect(headers["referrer-policy"]).toBe("no-referrer");
   expect(headers["x-powered-by"]).toBeUndefined();
 
-  await expect(page.getByRole("heading", { level: 1, name: "TableFlow Admin", exact: true })).toBeVisible();
+  // Anonymous visitors are sent to sign-in.
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole("heading", { level: 1, name: "Staff sign in", exact: true })).toBeVisible();
   expect(errors).toEqual([]);
 });
 

@@ -7,6 +7,8 @@ const baseURL = `http://127.0.0.1:${port}`;
 // running at API_INTERNAL_URL (see docs/development/setup.md).
 export default defineConfig({
   testDir: "./tests",
+  // Failure artifacts (including Markdown error context) stay out of src/.
+  outputDir: "../../tmp/playwright/admin",
   forbidOnly: true,
   retries: 0,
   // Fail fast instead of hanging if the server or a browser stalls.

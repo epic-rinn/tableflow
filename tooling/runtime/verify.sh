@@ -38,9 +38,13 @@ make api-test-db
 step "Frontends"
 make frontends-check
 
-step "Browser smoke (API on $API_ADDR)"
+step "Browser tests (disposable tableflow_e2e database, API on $API_ADDR)"
+E2E_MANAGER_TOKEN="$(tooling/runtime/e2e-db.sh)"
+[[ -n "$E2E_MANAGER_TOKEN" ]] || { echo "E2E bootstrap produced no activation token" >&2; exit 1; }
+export E2E_MANAGER_TOKEN
 make api-build
-DATABASE_URL="postgres://tableflow_app:app_dev_only@127.0.0.1:${DB_PORT}/tableflow?sslmode=disable" \
+DATABASE_URL="postgres://tableflow_app:app_dev_only@127.0.0.1:${DB_PORT}/tableflow_e2e?sslmode=disable" \
+  ADMIN_ORIGINS="http://127.0.0.1:3001" \
   HTTP_ADDR="$API_ADDR" ./tmp/tableflow-api >"$LOG_DIR/api.log" 2>&1 &
 api_pid=$!
 trap 'kill -TERM "$api_pid" 2>/dev/null || true; wait "$api_pid" 2>/dev/null || true' EXIT
