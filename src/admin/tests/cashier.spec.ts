@@ -78,4 +78,17 @@ test.describe.serial("cashier", () => {
     await table.getByRole("button", { name: "Mark ready" }).click();
     await expect(table).toContainText("available");
   });
+
+  test("offline disables payment actions (ADM-006)", async ({ page }) => {
+    await signIn(page);
+    await page.goto("/cashier");
+    await page.getByRole("button", { name: "Table E2E-1" }).click();
+    await expect(page.getByRole("heading", { name: /^Table E2E-1 — / })).toBeVisible();
+    // The bill poll now fails at the network level (e.g. Wi-Fi drop).
+    await page.route(/\/api\/v1\/visits\/[^/]+\/bill/, (route) => route.abort("internetdisconnected"));
+    await expect(page.getByRole("main").getByRole("alert").filter({ hasText: "payment actions are disabled" })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("button", { name: "Begin settlement" })).toBeDisabled();
+    await page.unroute(/\/api\/v1\/visits\/[^/]+\/bill/);
+    await expect(page.getByRole("main").getByRole("alert").filter({ hasText: "payment actions are disabled" })).toHaveCount(0, { timeout: 30_000 });
+  });
 });

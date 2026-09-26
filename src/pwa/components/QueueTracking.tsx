@@ -19,6 +19,7 @@ import { api } from "@/lib/api/client";
 import type { Ticket } from "@/lib/api/types";
 import { useIdempotent } from "@/lib/useIdempotent";
 import { usePolling } from "@/lib/usePolling";
+import { useI18n } from "@/lib/i18n";
 
 const POLL_MS = 10_000;
 
@@ -31,43 +32,43 @@ function time(iso: string | null) {
 export function QueueTracking({ ticketId }: { ticketId: string }) {
   const poll = usePolling(useCallback((signal: AbortSignal) => api<Ticket>(`/queue-tickets/${ticketId}`, { signal }), [ticketId]), POLL_MS);
   const run = useIdempotent();
+  const { t, errorText } = useI18n();
   const [confirming, setConfirming] = useState(false);
   const [message, setMessage] = useState("");
-  const t = poll.data;
+  const tk = poll.data;
   const offline = poll.error?.code === "NETWORK";
 
   async function cancel() {
-    if (!t) return;
-    const res = await run(`cancel:${t.id}:${t.version}`, (key) =>
-      api<Ticket>(`/queue-tickets/${t.id}/cancel`, { method: "POST", key, body: { expected_version: t.version } }),
+    if (!tk) return;
+    const res = await run(`cancel:${tk.id}:${tk.version}`, (key) =>
+      api<Ticket>(`/queue-tickets/${tk.id}/cancel`, { method: "POST", key, body: { expected_version: tk.version } }),
     );
     setConfirming(false);
-    setMessage(res.ok ? "Your ticket is cancelled." : res.error.message);
+    setMessage(res.ok ? t("ticket.cancelledNow") : errorText(res.error));
     poll.refresh();
   }
 
-  if (!t) {
-    return poll.error ? <Notice notice={{ role: "alert", text: poll.error.message }} /> : <p role="status" className="py-6 text-center text-sm text-muted-foreground">Loading your ticket…</p>;
+  if (!tk) {
+    return poll.error ? <Notice notice={{ role: "alert", text: errorText(poll.error) }} /> : <p role="status" className="py-6 text-center text-sm text-muted-foreground">{t("ticket.loading")}</p>;
   }
-  const step = t.state === "waiting" ? 0 : t.state === "called" ? 1 : t.state === "seated" ? 2 : -1;
+  const step = tk.state === "waiting" ? 0 : tk.state === "called" ? 1 : tk.state === "seated" ? 2 : -1;
   return (
     <section aria-labelledby="ticket-title" className="grid gap-4">
       <div className="grid justify-items-center gap-1 rounded-3xl border bg-card p-6 text-center shadow-sm">
-        <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Your queue number</p>
+        <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{t("ticket.number")}</p>
         <h2 id="ticket-title" className="text-5xl font-extrabold tracking-tight tabular-nums">
-          <span className="sr-only">Ticket </span>
-          <span aria-hidden>#</span>
-          {t.display_number}
+          <span className="sr-only">{t("ticket.heading", { n: tk.display_number })}</span>
+          <span aria-hidden>#{tk.display_number}</span>
         </h2>
         <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
-          <Users className="size-4" aria-hidden /> Party of {t.party_size}
-          {t.seating_group ? ` · group ${t.seating_group.label}` : " · staff will seat you"}
+          <Users className="size-4" aria-hidden /> {t("ticket.party", { n: tk.party_size })}
+          {tk.seating_group ? t("ticket.group", { label: tk.seating_group.label }) : t("ticket.staffSeat")}
         </p>
       </div>
 
       {step >= 0 && (
-        <ol className="grid grid-cols-3 gap-2" aria-label="Progress">
-          {["Waiting", "Table ready", "Seated"].map((label, i) => (
+        <ol className="grid grid-cols-3 gap-2" aria-label={t("ticket.progress")}>
+          {[t("ticket.stepWaiting"), t("ticket.stepReady"), t("ticket.stepSeated")].map((label, i) => (
             <li key={label} aria-current={i === step ? "step" : undefined} className="grid justify-items-center gap-1.5 text-center text-xs">
               <span className={`h-1.5 w-full rounded-full ${i <= step ? "bg-primary" : "bg-muted"}`} aria-hidden />
               <span className={i === step ? "font-semibold text-foreground" : "text-muted-foreground"}>{label}</span>
@@ -76,44 +77,44 @@ export function QueueTracking({ ticketId }: { ticketId: string }) {
         </ol>
       )}
 
-      {t.state === "waiting" && (
+      {tk.state === "waiting" && (
         <p className="rounded-2xl bg-accent p-4 text-sm text-accent-foreground">
           <strong className="block text-base">
-            {t.parties_ahead === 0 ? "You are next in your group." : `${t.parties_ahead} ${t.parties_ahead === 1 ? "party" : "parties"} ahead in your group.`}
+            {tk.parties_ahead === 0 ? t("ticket.next") : tk.parties_ahead === 1 ? t("ticket.aheadOne") : t("ticket.aheadMany", { n: tk.parties_ahead ?? 0 })}
           </strong>
-          <small>This is your place among parties of a similar size, not an exact order or wait time.</small>
+          <small>{t("ticket.positionNote")}</small>
         </p>
       )}
-      {t.state === "called" && (
+      {tk.state === "called" && (
         <p role="alert" className="flex gap-3 rounded-2xl bg-success-soft p-4 text-sm text-success">
           <BellRing className="mt-0.5 size-5 shrink-0" aria-hidden />
           <span>
-            <strong className="block text-base">Your table is ready</strong>
-            Please come to the host stand for table {t.called_table_label} by {time(t.called_until)}.
+            <strong className="block text-base">{t("ticket.readyTitle")}</strong>
+            {t("ticket.readyBody", { table: tk.called_table_label ?? "", time: time(tk.called_until) })}
           </span>
         </p>
       )}
-      {t.state === "seated" && <p className="rounded-2xl bg-success-soft p-4 text-sm text-success">You have been seated. Enjoy your meal!</p>}
-      {t.state === "cancelled" && <p className="rounded-2xl bg-muted p-4 text-sm">This ticket was cancelled. You can join again from the entrance QR code.</p>}
-      {t.state === "no_show" && <p className="rounded-2xl bg-muted p-4 text-sm">We could not find you when your table was ready. Please ask staff or join again.</p>}
+      {tk.state === "seated" && <p className="rounded-2xl bg-success-soft p-4 text-sm text-success">{t("ticket.seated")}</p>}
+      {tk.state === "cancelled" && <p className="rounded-2xl bg-muted p-4 text-sm">{t("ticket.cancelled")}</p>}
+      {tk.state === "no_show" && <p className="rounded-2xl bg-muted p-4 text-sm">{t("ticket.noShow")}</p>}
 
       <Freshness updatedAt={poll.updatedAt} error={poll.error} intervalMs={POLL_MS} className="justify-self-center" />
       <Notice notice={message ? { role: "status", text: message } : null} />
-      {(t.state === "waiting" || t.state === "called") && (
+      {(tk.state === "waiting" || tk.state === "called") && (
         <>
           <Button type="button" variant="ghost" size="lg" disabled={offline} onClick={() => setConfirming(true)} className="h-12 text-destructive">
-            Cancel ticket
+            {t("ticket.cancel")}
           </Button>
           <AlertDialog open={confirming} onOpenChange={setConfirming}>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Leave the queue?</AlertDialogTitle>
-                <AlertDialogDescription>You will lose your place. You can join again from the entrance QR code.</AlertDialogDescription>
+                <AlertDialogTitle>{t("ticket.leaveTitle")}</AlertDialogTitle>
+                <AlertDialogDescription>{t("ticket.leaveBody")}</AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Keep my place</AlertDialogCancel>
+                <AlertDialogCancel>{t("ticket.keep")}</AlertDialogCancel>
                 <AlertDialogAction variant="destructive" disabled={offline} onClick={() => void cancel()}>
-                  Yes, cancel my ticket
+                  {t("ticket.confirmCancel")}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

@@ -3,11 +3,13 @@
 import { RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/lib/i18n";
 
 // Registers the guest service worker (production only) and offers updates
 // instead of applying them silently: carts live in sessionStorage per visit,
 // so "Reload to update" keeps them (PWA-A3).
 export function ServiceWorkerManager() {
+  const { t } = useI18n();
   const [waiting, setWaiting] = useState<ServiceWorker | null>(null);
 
   useEffect(() => {
@@ -41,9 +43,9 @@ export function ServiceWorkerManager() {
   if (!waiting) return null;
   return (
     <div role="status" className="fixed inset-x-0 top-0 z-50 mx-auto flex max-w-md items-center gap-3 bg-foreground px-4 py-3 text-sm text-background shadow-lg">
-      <span className="flex-1">An update is available. Your cart is kept.</span>
+      <span className="flex-1">{t("update.available")}</span>
       <Button type="button" size="sm" variant="secondary" onClick={() => waiting.postMessage("SKIP_WAITING")}>
-        <RefreshCw aria-hidden /> Reload to update
+        <RefreshCw aria-hidden /> {t("update.reload")}
       </Button>
     </div>
   );

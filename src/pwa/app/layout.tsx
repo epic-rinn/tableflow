@@ -3,6 +3,7 @@ import "@fontsource-variable/inter";
 import "@fontsource-variable/noto-sans-thai";
 import "./globals.css";
 import { ServiceWorkerManager } from "@/components/ServiceWorkerManager";
+import { LocaleProvider } from "@/lib/i18n";
 
 export const metadata: Metadata = {
   title: "TableFlow",
@@ -21,10 +22,12 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="th">
       <body className="min-h-dvh bg-muted/40 font-sans">
-        <ServiceWorkerManager />
-        {children}
+        <LocaleProvider>
+          <ServiceWorkerManager />
+          {children}
+        </LocaleProvider>
       </body>
     </html>
   );

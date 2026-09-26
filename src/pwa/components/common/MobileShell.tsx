@@ -1,3 +1,4 @@
+import { LanguageSwitch } from "@/components/common/LanguageSwitch";
 import { cn } from "@/lib/utils";
 
 // Phone-first page frame: coloured hero header, then content on a sheet-like
@@ -8,7 +9,10 @@ export function MobileShell({ eyebrow = "TableFlow", title, hero, children, clas
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col bg-background shadow-sm">
       <header className="bg-primary px-5 pt-[max(1.25rem,env(safe-area-inset-top))] pb-10 text-primary-foreground">
-        <p className="text-xs font-semibold tracking-wide uppercase">{eyebrow}</p>
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs font-semibold tracking-wide uppercase">{eyebrow}</p>
+          <LanguageSwitch />
+        </div>
         <h1 className="mt-1 text-2xl font-bold">{title}</h1>
         {hero}
       </header>

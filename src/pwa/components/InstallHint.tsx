@@ -3,6 +3,7 @@
 import { Download, Share, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/lib/i18n";
 
 type InstallEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> };
 
@@ -12,6 +13,7 @@ const DISMISSED = "tableflow.install-dismissed";
 // via beforeinstallprompt; iOS Safari gets Share → Add to Home Screen. Normal
 // browser use is always fine, so this is optional and dismissible.
 export function InstallHint() {
+  const { t } = useI18n();
   const [prompt, setPrompt] = useState<InstallEvent | null>(null);
   const [ios, setIos] = useState(false);
   const [hidden, setHidden] = useState(true);
@@ -53,18 +55,19 @@ export function InstallHint() {
     <section aria-labelledby="install-title" className="flex items-start gap-3 rounded-2xl border bg-card p-4">
       <Download className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden />
       <div className="grid flex-1 gap-2 text-sm">
-        <h2 id="install-title" className="font-semibold">Add TableFlow to your home screen</h2>
+        <h2 id="install-title" className="font-semibold">{t("install.title")}</h2>
         {ios ? (
           <p>
-            Tap <Share className="inline size-4" aria-label="Share" /> then “Add to Home Screen”.
+            <Share className="mr-1 inline size-4" aria-hidden />
+            {t("install.ios")}
           </p>
         ) : (
           <Button type="button" size="sm" className="justify-self-start" onClick={() => void prompt?.prompt().then(() => setHidden(true))}>
-            Install app
+            {t("install.button")}
           </Button>
         )}
       </div>
-      <Button type="button" variant="ghost" size="icon" aria-label="Dismiss install hint" onClick={dismiss}>
+      <Button type="button" variant="ghost" size="icon" aria-label={t("install.dismiss")} onClick={dismiss}>
         <X aria-hidden />
       </Button>
     </section>

@@ -9,8 +9,10 @@ import type { Member } from "@/lib/api/types";
 import { MobileShell } from "@/components/common/MobileShell";
 import { Notice } from "@/components/common/Notice";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/lib/i18n";
 
 export default function MemberLoginPage() {
+  const { t, errorText } = useI18n();
   const router = useRouter();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -26,7 +28,7 @@ export default function MemberLoginPage() {
     });
     setBusy(false);
     if (!res.ok) {
-      setError(res.error.message);
+      setError(errorText(res.error));
       return;
     }
     // Only same-site paths (e.g. back to the table page); never another origin.
@@ -35,17 +37,17 @@ export default function MemberLoginPage() {
   }
 
   return (
-    <MobileShell eyebrow="Member account" title="Member sign in">
+    <MobileShell eyebrow={t("account.eyebrow")} title={t("login.title")}>
       <form onSubmit={onSubmit} noValidate className="grid gap-4">
-        <Field id="email" label="Email" type="email" autoComplete="username" required />
-        <Field id="password" label="Password" type="password" autoComplete="current-password" required />
+        <Field id="email" label={t("login.email")} type="email" autoComplete="username" required />
+        <Field id="password" label={t("login.password")} type="password" autoComplete="current-password" required />
         <Notice notice={error ? { role: "alert", text: error } : null} />
         <Button type="submit" size="lg" className="h-12 w-full rounded-2xl text-base" disabled={busy}>
-          Sign in
+          {t("login.submit")}
         </Button>
       </form>
       <p>
-        <Link href="/account/reset">Forgot your password?</Link> · <Link href="/account/signup">Create an account</Link>
+        <Link href="/account/reset">{t("login.forgot")}</Link> · <Link href="/account/signup">{t("login.create")}</Link>
       </p>
     </MobileShell>
   );

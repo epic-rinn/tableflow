@@ -103,6 +103,9 @@ export function CashierWorkspace({ branchId }: { branchId: string }) {
           setUnresolved(c.lines ?? []);
           setNotice({ role: "alert", text: "Some items are not served, rejected or cancelled yet. Resolve them with the kitchen first." });
           break;
+        case "IDEMPOTENCY_CONFLICT":
+          setNotice({ role: "alert", text: "An earlier attempt with different details may already have been recorded. Check the bill before collecting again." });
+          break;
         case "ALREADY_PAID":
           setNotice({ role: "alert", text: `This bill is already paid (receipt ${c.settlement?.receipt_reference ?? res.error.fields.receipt_reference}). Do not collect again.` });
           break;
@@ -127,10 +130,16 @@ export function CashierWorkspace({ branchId }: { branchId: string }) {
     bill.refresh();
   }
 
+  // ADM-006: payment actions are disabled while the bill cannot be refreshed.
+  const offline = bill.error?.code === "NETWORK" || floor.error?.code === "NETWORK";
+  const blocked = busy || offline;
   const b = bill.data;
   return (
     <>
       <PageHeader title="Cashier" description="Settle bills after verifying payment with the restaurant's own records." />
+      {offline && (
+        <Notice className="mb-4" notice={{ role: "alert", text: "Offline — payment actions are disabled until the connection returns. Do not collect money for a bill you cannot see." }} />
+      )}
       <Notice notice={notice} className="mb-4" />
       <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
         <Card role="region" aria-labelledby="find-title" className="self-start">
@@ -193,7 +202,7 @@ export function CashierWorkspace({ branchId }: { branchId: string }) {
                     {b.visit_state === "open" && (
                       <ReasonDialog trigger="Detach member" title="Detach the member from this visit?"
                         description="Use when the wrong member claimed. The member at the table can then claim again from their phone."
-                        reasonLabel="Reason for detaching" confirmLabel="Detach member" destructive disabled={busy}
+                        reasonLabel="Reason for detaching" confirmLabel="Detach member" destructive disabled={blocked}
                         onConfirm={(reason) => void detach(b, reason)} />
                     )}
                   </div>
@@ -211,7 +220,7 @@ export function CashierWorkspace({ branchId }: { branchId: string }) {
                 {b.visit_state === "open" && (
                   <div className="flex flex-wrap items-center justify-end gap-3 border-t pt-4">
                     {b.unresolved_lines > 0 && <p className="text-sm text-warning">{b.unresolved_lines} item(s) still with the kitchen.</p>}
-                    <Button type="button" size="lg" disabled={busy || b.lines.length === 0}
+                    <Button type="button" size="lg" disabled={blocked || b.lines.length === 0}
                       onClick={() => void command<Bill>(`begin:${visitId}:${b.bill_version}`, "begin", { expected_version: b.bill_version },
                         (s) => `Ordering is frozen. Collect ${formatTHB(s.total_satang)}.`)}>
                       <Wallet aria-hidden /> Begin settlement
@@ -219,7 +228,7 @@ export function CashierWorkspace({ branchId }: { branchId: string }) {
                   </div>
                 )}
                 {b.visit_state === "settling" && (
-                  <SettlingActions bill={b} busy={busy}
+                  <SettlingActions bill={b} busy={blocked}
                     onConfirm={(body) => void command<Settlement>(`confirm:${visitId}:${b.bill_version}`, "confirm", body,
                       (s) => `Payment recorded. Receipt ${s.receipt_reference}.${s.points_earned !== null ? ` Member earned ${s.points_earned} point(s).` : ""} The table stays occupied until the party departs.`)}
                     onReopen={(reason) => void command<Bill>(`reopen:${visitId}:${b.bill_version}`, "reopen", { expected_version: b.bill_version, reason },

@@ -4,9 +4,11 @@ import { RefreshCw, WifiOff } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { ApiError } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 
 // Shows when data was last refreshed and warns when it may be stale (PWA-003).
 export function Freshness({ updatedAt, error, intervalMs, className }: { updatedAt: Date | null; error: ApiError | null; intervalMs: number; className?: string }) {
+  const { t, errorText } = useI18n();
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
@@ -24,8 +26,8 @@ export function Freshness({ updatedAt, error, intervalMs, className }: { updated
       aria-live="polite"
     >
       {stale ? <WifiOff className="size-3.5" aria-hidden /> : <RefreshCw className="size-3.5" aria-hidden />}
-      {updatedAt ? `Updated ${updatedAt.toLocaleTimeString()}` : "Loading…"}
-      {stale && <strong> — data may be out of date{error ? ` (${error.message})` : ""}</strong>}
+      {updatedAt ? t("common.updated", { time: updatedAt.toLocaleTimeString() }) : t("common.loading")}
+      {stale && <strong>{t("common.stale")}{error ? ` (${errorText(error)})` : ""}</strong>}
     </p>
   );
 }

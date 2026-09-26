@@ -160,3 +160,14 @@ func TestCloseEmptyAndReady(t *testing.T) {
 		t.Fatalf("close twice: %d", r.status)
 	}
 }
+
+// TestRotateAccessOnlyBeforePayment: a new dining QR cannot restore guest
+// access to a paid visit (BIL-008).
+func TestRotateAccessOnlyBeforePayment(t *testing.T) {
+	e := newEnv(t)
+	visit, _ := e.seatWalkIn(e.table("P", 2), 2)
+	e.exec("UPDATE visits SET state = 'paid', paid_at = now() WHERE id = $1", visit)
+	if r := e.visitPost(visit, "rotate-access", map[string]any{"reason": "guest lost the QR"}); r.status != 409 {
+		t.Fatalf("rotate after payment: %d %s", r.status, r.raw)
+	}
+}

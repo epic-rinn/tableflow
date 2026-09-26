@@ -1,9 +1,10 @@
 "use client";
 
-import { Accessibility, Baby, BellRing, Check, Copy, Users, X } from "lucide-react";
+import { Accessibility, Baby, BellRing, Check, Copy, Printer, Users, X } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useState } from "react";
 import { NativeSelect } from "@/components/common/NativeSelect";
+import { QrCode } from "@/components/common/QrCode";
 import { Notice } from "@/components/common/Notice";
 import { PageHeader } from "@/components/common/PageHeader";
 import { ReasonDialog } from "@/components/common/ReasonDialog";
@@ -205,20 +206,28 @@ export function HostWorkspace({ branchId, isManager }: { branchId: string; isMan
   );
 }
 
-// One-time capability link (tracking or dining QR) to show, print or read out.
+// One-time capability link (tracking or dining QR) to show, scan, print or
+// read out. It is shown once; printing uses print-only styles.
 function SharePanel({ link, onDone }: { link: { label: string; url: string }; onDone: () => void }) {
   const [copied, setCopied] = useState(false);
   return (
-    <div role="status" className="grid gap-2 rounded-xl border border-primary/30 bg-accent/60 p-4">
-      <p className="text-sm font-medium">{link.label} — show, print or read out this link; it is not shown again:</p>
-      <div className="flex flex-wrap gap-2">
-        <Input aria-label={link.label} readOnly value={link.url} onFocus={(e) => e.currentTarget.select()} className="min-w-0 flex-1 font-mono text-xs" />
-        <Button type="button" variant="outline" onClick={() => void navigator.clipboard?.writeText(link.url).then(() => setCopied(true))}>
-          {copied ? <Check aria-hidden /> : <Copy aria-hidden />} {copied ? "Copied" : "Copy"}
-        </Button>
-        <Button type="button" onClick={onDone}>
-          Done
-        </Button>
+    <div role="status" className="print-area grid gap-3 rounded-xl border border-primary/30 bg-accent/60 p-4 sm:grid-cols-[auto_1fr]">
+      <QrCode value={link.url} label="Scannable QR code" />
+      <div className="grid content-start gap-2">
+        <p className="text-sm font-medium">{link.label} — show, print or read out this link; it is not shown again:</p>
+        <div className="flex flex-wrap gap-2 print:hidden">
+          <Input aria-label={link.label} readOnly value={link.url} onFocus={(e) => e.currentTarget.select()} className="min-w-0 flex-1 font-mono text-xs" />
+          <Button type="button" variant="outline" onClick={() => void navigator.clipboard?.writeText(link.url).then(() => setCopied(true))}>
+            {copied ? <Check aria-hidden /> : <Copy aria-hidden />} {copied ? "Copied" : "Copy"}
+          </Button>
+          <Button type="button" variant="outline" onClick={() => window.print()}>
+            <Printer aria-hidden /> Print
+          </Button>
+          <Button type="button" onClick={onDone}>
+            Done
+          </Button>
+        </div>
+        <p className="hidden text-lg font-semibold print:block">Scan to open your table · สแกนเพื่อเปิดโต๊ะของคุณ</p>
       </div>
     </div>
   );

@@ -154,3 +154,20 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+/* Printing a share panel prints only the QR card (host workspace). */
+@media print {
+  body:has(.print-area) * {
+    visibility: hidden;
+  }
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+  .print-area {
+    position: absolute;
+    inset: 0;
+    border: 0;
+    background: #fff;
+  }
+}

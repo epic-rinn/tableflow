@@ -8,8 +8,10 @@ import { useFragmentToken } from "@/lib/useFragmentToken";
 import { MobileShell } from "@/components/common/MobileShell";
 import { Notice } from "@/components/common/Notice";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/lib/i18n";
 
 export default function ResetConfirmPage() {
+  const { t, errorText } = useI18n();
   const token = useFragmentToken();
   const [fields, setFields] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
@@ -20,7 +22,7 @@ export default function ResetConfirmPage() {
     const form = new FormData(e.currentTarget);
     const password = String(form.get("new_password") ?? "");
     if (password !== String(form.get("confirm") ?? "")) {
-      setFields({ confirm: "Passwords do not match" });
+      setFields({ confirm: t("resetConfirm.mismatch") });
       return;
     }
     setFields({});
@@ -31,29 +33,29 @@ export default function ResetConfirmPage() {
       return;
     }
     setFields(res.error.fields ?? {});
-    setError(res.error.message);
+    setError(errorText(res.error));
   }
 
   if (done) {
     return (
-      <MobileShell eyebrow="Member account" title="Password changed">
+      <MobileShell eyebrow={t("account.eyebrow")} title={t("resetConfirm.doneTitle")}>
         <p role="status">
-          You were signed out everywhere. <Link href="/account/login">Sign in with your new password</Link>
+          {t("resetConfirm.doneBody")} <Link href="/account/login">{t("resetConfirm.signIn")}</Link>
         </p>
       </MobileShell>
     );
   }
   return (
-    <MobileShell eyebrow="Member account" title="Choose a new password">
+    <MobileShell eyebrow={t("account.eyebrow")} title={t("resetConfirm.title")}>
       {token === "" ? (
-        <p role="alert">Open the full link from your email.</p>
+        <p role="alert">{t("verify.missing")}</p>
       ) : (
         <form onSubmit={onSubmit} noValidate className="grid gap-4">
-          <Field id="new_password" label="New password (at least 12 characters)" type="password" autoComplete="new-password" required error={fields.new_password} />
-          <Field id="confirm" label="Confirm new password" type="password" autoComplete="new-password" required error={fields.confirm} />
+          <Field id="new_password" label={t("resetConfirm.new")} type="password" autoComplete="new-password" required error={fields.new_password} />
+          <Field id="confirm" label={t("resetConfirm.confirm")} type="password" autoComplete="new-password" required error={fields.confirm} />
           <Notice notice={error ? { role: "alert", text: error } : null} />
           <Button type="submit" size="lg" className="h-12 w-full rounded-2xl text-base" disabled={!token}>
-            Change password
+            {t("resetConfirm.submit")}
           </Button>
         </form>
       )}

@@ -43,3 +43,11 @@ Stack and visual language: [ADR-0006](../../specs/decisions/0006-ui-stack.md) an
 - **Install guidance:** `components/InstallHint.tsx`, on the home page only.
 - **Admin:** the admin app has no service worker (ADM-006); its smoke test asserts that.
 
+## Language (MVP-18)
+
+- **Where strings live:** guest strings are in `lib/i18n.tsx` (Thai and English). Use `const { t, errorText } = useI18n()`; never hard-code visible text.
+- **Adding a string:** add the English key first; TypeScript then requires the Thai entry.
+- **Errors:** show API errors with `errorText(error)`, which translates known codes. In effects, store the raw `ApiError` and translate at render.
+- **Default language:** Thai renders first, then the saved choice or the browser language applies. The TH/EN switch is in every page header, and `<html lang>` follows the choice.
+- **Tests:** they run with an English browser locale; `journey.spec.ts` covers Thai.
+

@@ -236,7 +236,9 @@ func (s *Service) RotateAccess(ctx context.Context, tx pgx.Tx, p identity.Princi
 	if v.version != expectedVersion {
 		return SeatResult{}, ErrVersionConflict
 	}
-	if v.state != "open" && v.state != "settling" && v.state != "paid" {
+	// Only before payment: payment revokes dining access (BIL-006), and a new
+	// QR must never restore it afterwards (BIL-008).
+	if v.state != "open" && v.state != "settling" {
 		return SeatResult{}, ErrVisitState
 	}
 	token, _, err := access.RotateCapability(ctx, tx, access.KindVisit, visitID)

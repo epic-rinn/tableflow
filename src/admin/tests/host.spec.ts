@@ -58,6 +58,9 @@ test.describe.serial("host workspace", () => {
 
     await ticket.getByRole("button", { name: "Seat" }).click();
     await expect(page.getByLabel(/Dining QR for table H2/)).toHaveValue(/\/t#[A-Za-z0-9_-]{43}$/);
+    // MVP-18: the one-time link is also a scannable QR code with a print action.
+    await expect(page.getByRole("img", { name: "Scannable QR code" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Print" })).toBeVisible();
     await page.getByRole("button", { name: "Done" }).click();
 
     const h2 = page.getByRole("article", { name: "Table H2" });

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Pill } from "@/components/common/MobileShell";
 import { Notice, type NoticeValue } from "@/components/common/Notice";
 import { Freshness } from "@/components/Freshness";
+import { type MessageKey, useI18n } from "@/lib/i18n";
 import { MemberPoints } from "@/components/MemberPoints";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,9 +20,9 @@ import { useIdempotent } from "@/lib/useIdempotent";
 import { usePolling } from "@/lib/usePolling";
 
 const POLL_MS = 10_000;
-const STATE_LABELS: Record<string, string> = {
-  submitted: "Sent", accepted: "Accepted", preparing: "Preparing", ready: "Ready", served: "Served",
-  rejected: "Not available — not charged", cancelled: "Cancelled — not charged",
+const STATE_LABELS: Record<string, MessageKey> = {
+  submitted: "line.submitted", accepted: "line.accepted", preparing: "line.preparing", ready: "line.ready", served: "line.served",
+  rejected: "line.rejected", cancelled: "line.cancelled",
 };
 
 type CartLine = { key: string; itemId: string; name_th: string; name_en: string; quantity: number; optionIds: string[]; unit: number; label: string };
@@ -58,6 +59,7 @@ export function Dining({ visitId }: { visitId: string }) {
 }
 
 function DiningRoom({ visit }: { visit: Visit }) {
+  const { t, errorText, locale } = useI18n();
   const run = useIdempotent();
   const [cart, setCart] = useCart(visit.id);
   const [notice, setNotice] = useState<NoticeValue>(null);
@@ -82,18 +84,18 @@ function DiningRoom({ visit }: { visit: Visit }) {
     if (res.ok) {
       setCart([]);
       setChanged([]);
-      setNotice({ role: "status", text: "Your order was sent to the kitchen." });
+      setNotice({ role: "status", text: t("dining.sent") });
       orders.refresh();
       return;
     }
     if (res.error.code === "MENU_CHANGED") {
       setChanged(Object.keys(res.error.fields ?? {}));
       menu.refresh();
-      setNotice({ role: "alert", text: "Some items changed or sold out. Nothing was ordered — please review the highlighted items." });
+      setNotice({ role: "alert", text: t("dining.menuChanged") });
       return;
     }
     const unknown = res.status === 0 || res.status >= 500;
-    setNotice({ role: "alert", text: unknown ? `${res.error.message} Tap “Send order” again — it will not be ordered twice.` : res.error.message });
+    setNotice({ role: "alert", text: unknown ? t("dining.retry", { message: errorText(res.error) }) : errorText(res.error) });
   }
 
   const total = cart.reduce((sum, c) => sum + c.unit * c.quantity, 0);
@@ -107,19 +109,19 @@ function DiningRoom({ visit }: { visit: Visit }) {
           <Utensils className="size-6" aria-hidden />
         </span>
         <div className="grid flex-1 gap-0.5">
-          <h2 id="table-title" className="text-lg font-bold">Table {visit.table.label}</h2>
+          <h2 id="table-title" className="text-lg font-bold">{t("dining.table", { label: visit.table.label })}</h2>
           <Freshness updatedAt={orders.updatedAt} error={orders.error} intervalMs={POLL_MS} />
         </div>
-        <Pill tone={open ? "success" : visit.state === "settling" ? "warning" : "muted"}>{open ? "Ordering open" : visit.state === "settling" ? "Settling" : "Closed"}</Pill>
+        <Pill tone={open ? "success" : visit.state === "settling" ? "warning" : "muted"}>{open ? t("dining.open") : visit.state === "settling" ? t("dining.settlingPill") : t("dining.closedPill")}</Pill>
       </section>
-      {visit.state === "settling" && <p role="status" className="rounded-2xl bg-warning-soft p-3 text-sm text-warning">Your bill is being settled at the counter, so ordering is paused.</p>}
-      {!open && visit.state !== "settling" && <p role="status" className="rounded-2xl bg-muted p-3 text-sm">Ordering is closed for this table.</p>}
+      {visit.state === "settling" && <p role="status" className="rounded-2xl bg-warning-soft p-3 text-sm text-warning">{t("dining.settling")}</p>}
+      {!open && visit.state !== "settling" && <p role="status" className="rounded-2xl bg-muted p-3 text-sm">{t("dining.closed")}</p>}
       <Notice notice={notice} />
 
       {open && (
         <section aria-labelledby="menu-title" className="grid gap-3">
-          <h3 id="menu-title" className="text-lg font-bold">Menu</h3>
-          <nav aria-label="Menu categories" className="no-scrollbar sticky top-0 z-10 -mx-4 flex gap-2 overflow-x-auto bg-background/95 px-4 py-2 backdrop-blur">
+          <h3 id="menu-title" className="text-lg font-bold">{t("dining.menu")}</h3>
+          <nav aria-label={t("dining.categories")} className="no-scrollbar sticky top-0 z-10 -mx-4 flex gap-2 overflow-x-auto bg-background/95 px-4 py-2 backdrop-blur">
             {categories.map((c) => (
               <Button key={c.id} type="button" variant="outline" size="sm" className="h-9 shrink-0 rounded-full"
                 onClick={() => document.getElementById(`cat-${c.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}>
@@ -145,14 +147,14 @@ function DiningRoom({ visit }: { visit: Visit }) {
       )}
 
       <section aria-labelledby="orders-title" className="grid gap-3">
-        <h3 id="orders-title" className="text-lg font-bold">Table orders</h3>
+        <h3 id="orders-title" className="text-lg font-bold">{t("dining.orders")}</h3>
         {(orders.data?.items ?? []).length === 0 ? (
-          <p className="rounded-2xl border border-dashed p-4 text-center text-sm text-muted-foreground">No orders yet.</p>
+          <p className="rounded-2xl border border-dashed p-4 text-center text-sm text-muted-foreground">{t("dining.noOrders")}</p>
         ) : (
           <ol className="grid gap-3">
             {(orders.data?.items ?? []).map((o) => (
               <li key={o.id} className="rounded-2xl border bg-card p-3">
-                <p className="mb-2 text-xs text-muted-foreground">Ordered {new Date(o.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</p>
+                <p className="mb-2 text-xs text-muted-foreground">{t("dining.orderedAt", { time: new Date(o.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) })}</p>
                 <ul className="grid gap-2">
                   {o.lines.map((l) => (
                     <li key={l.id} className={cn("flex items-start gap-2 text-sm", !l.chargeable && "text-muted-foreground")}>
@@ -160,7 +162,7 @@ function DiningRoom({ visit }: { visit: Visit }) {
                       <span className="min-w-0 flex-1">
                         <span lang="th" className={cn(!l.chargeable && "line-through")}>{l.name_th}</span> <small className="text-muted-foreground">{l.name_en}</small>
                         <span className="block">
-                          <Pill tone={LINE_TONES[l.state] ?? "muted"}>{STATE_LABELS[l.state] ?? l.state}</Pill>
+                          <Pill tone={LINE_TONES[l.state] ?? "muted"}>{STATE_LABELS[l.state] ? t(STATE_LABELS[l.state]) : l.state}</Pill>
                         </span>
                       </span>
                       <span className="tabular-nums">{formatTHB(l.line_total_satang)}</span>
@@ -172,7 +174,7 @@ function DiningRoom({ visit }: { visit: Visit }) {
           </ol>
         )}
         <p className="flex items-center justify-between rounded-2xl bg-muted p-3 text-sm">
-          Table total so far: <strong className="text-base tabular-nums">{formatTHB(orders.data?.chargeable_total_satang ?? 0)}</strong>
+          {t("dining.totalSoFar")} <strong className="text-base tabular-nums">{formatTHB(orders.data?.chargeable_total_satang ?? 0)}</strong>
         </p>
       </section>
 
@@ -186,7 +188,7 @@ function DiningRoom({ visit }: { visit: Visit }) {
             className={cn("h-14 w-full justify-between rounded-2xl px-4 text-base shadow-lg", changed.length > 0 && "bg-warning hover:bg-warning/90")}>
             <span className="flex items-center gap-2">
               {changed.length > 0 ? <TriangleAlert aria-hidden /> : <ShoppingBag aria-hidden />}
-              View cart · {count} {count === 1 ? "item" : "items"}
+              {t("dining.viewCart", { n: count, items: count === 1 ? t("dining.item") : t("dining.items") })}
             </span>
             <span className="tabular-nums">{formatTHB(total)}</span>
           </Button>
@@ -195,13 +197,13 @@ function DiningRoom({ visit }: { visit: Visit }) {
       <Sheet open={cartOpen} onOpenChange={setCartOpen}>
         <SheetContent side="bottom" className="mx-auto max-h-[85dvh] max-w-md rounded-t-3xl">
           <SheetHeader>
-            <SheetTitle>Your cart</SheetTitle>
-            <SheetDescription>Only on this phone until you send it. Everyone at the table sees sent orders.</SheetDescription>
+            <SheetTitle>{t("dining.cartTitle")}</SheetTitle>
+            <SheetDescription>{t("dining.cartHint")}</SheetDescription>
           </SheetHeader>
           <section aria-labelledby="cart-title" className="grid gap-3 overflow-y-auto px-4">
-            <h3 id="cart-title" className="sr-only">Your cart (this phone)</h3>
+            <h3 id="cart-title" className="sr-only">{t("dining.cartRegion")}</h3>
             {cart.length === 0 ? (
-              <p className="py-6 text-center text-sm text-muted-foreground">Nothing added yet.</p>
+              <p className="py-6 text-center text-sm text-muted-foreground">{t("dining.cartEmpty")}</p>
             ) : (
               <ul className="grid gap-3">
                 {cart.map((c) => (
@@ -209,14 +211,14 @@ function DiningRoom({ visit }: { visit: Visit }) {
                     <div className="flex items-start gap-2">
                       <span className="min-w-0 flex-1 text-sm">
                         <span lang="th" className="font-medium">{c.name_th}</span> <small className="text-muted-foreground">{c.label}</small>
-                        {changed.includes(c.itemId) && <strong className="block text-warning">Changed or sold out — remove or re-add it</strong>}
+                        {changed.includes(c.itemId) && <strong className="block text-warning">{t("dining.changedLine")}</strong>}
                       </span>
                       <span className="text-sm font-semibold tabular-nums">{formatTHB(c.unit * c.quantity)}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Stepper value={c.quantity} label={c.name_en} onChange={(q) => setQuantity(c.key, q)} />
+                      <Stepper value={c.quantity} label={locale === "th" ? c.name_th : c.name_en} onChange={(q) => setQuantity(c.key, q)} />
                       <Button type="button" variant="ghost" size="sm" className="ml-auto text-destructive" onClick={() => setCart(cart.filter((x) => x.key !== c.key))}>
-                        <Trash2 aria-hidden /> Remove {c.name_en}
+                        <Trash2 aria-hidden /> {t("dining.remove", { name: locale === "th" ? c.name_th : c.name_en })}
                       </Button>
                     </div>
                   </li>
@@ -226,7 +228,7 @@ function DiningRoom({ visit }: { visit: Visit }) {
           </section>
           <SheetFooter>
             <Button type="button" size="lg" className="h-14 w-full justify-between rounded-2xl px-4 text-base" disabled={busy || offline || cart.length === 0} onClick={() => void submit()}>
-              <span>{busy ? "Sending…" : "Send order"}</span>
+              <span>{busy ? t("dining.sending") : t("dining.send")}</span>
               <span className="tabular-nums">{formatTHB(total)}</span>
             </Button>
           </SheetFooter>
@@ -241,13 +243,14 @@ const LINE_TONES: Record<string, "success" | "warning" | "info" | "destructive" 
 };
 
 function Stepper({ value, label, onChange }: { value: number; label: string; onChange: (v: number) => void }) {
+  const { t } = useI18n();
   return (
-    <div className="flex items-center gap-1" role="group" aria-label={`Quantity of ${label}`}>
-      <Button type="button" variant="outline" size="icon" className="size-11 rounded-full" aria-label="Decrease quantity" disabled={value <= 1} onClick={() => onChange(value - 1)}>
+    <div className="flex items-center gap-1" role="group" aria-label={t("dining.qty", { name: label })}>
+      <Button type="button" variant="outline" size="icon" className="size-11 rounded-full" aria-label={t("dining.decrease")} disabled={value <= 1} onClick={() => onChange(value - 1)}>
         <Minus aria-hidden />
       </Button>
       <span className="w-8 text-center font-semibold tabular-nums" aria-live="polite">{value}</span>
-      <Button type="button" variant="outline" size="icon" className="size-11 rounded-full" aria-label="Increase quantity" disabled={value >= 20} onClick={() => onChange(value + 1)}>
+      <Button type="button" variant="outline" size="icon" className="size-11 rounded-full" aria-label={t("dining.increase")} disabled={value >= 20} onClick={() => onChange(value + 1)}>
         <Plus aria-hidden />
       </Button>
     </div>
@@ -259,15 +262,16 @@ const percent = (bp: number) => (bp / 100).toFixed(2).replace(/\.?0+$/, "");
 // The itemised bill as Go calculated it (BIL-001/003); read-only. Paying
 // happens with staff at the counter — nothing here can settle the bill.
 function BillPanel({ visitId }: { visitId: string }) {
+  const { t } = useI18n();
   const [shown, setShown] = useState(false);
   return (
     <section aria-labelledby="bill-title" className="grid gap-3 rounded-2xl border bg-card p-4">
       <div className="flex items-center justify-between">
         <h3 id="bill-title" className="flex items-center gap-2 text-lg font-bold">
-          <ReceiptText className="size-5 text-muted-foreground" aria-hidden /> Bill
+          <ReceiptText className="size-5 text-muted-foreground" aria-hidden /> {t("bill.title")}
         </h3>
         <Button type="button" variant="ghost" size="sm" aria-expanded={shown} onClick={() => setShown(!shown)}>
-          {shown ? "Hide bill" : "View bill"} <ChevronRight className={cn("transition-transform", shown && "rotate-90")} aria-hidden />
+          {shown ? t("bill.hide") : t("bill.view")} <ChevronRight className={cn("transition-transform", shown && "rotate-90")} aria-hidden />
         </Button>
       </div>
       {shown && <BillDetails visitId={visitId} />}
@@ -276,9 +280,10 @@ function BillPanel({ visitId }: { visitId: string }) {
 }
 
 function BillDetails({ visitId }: { visitId: string }) {
+  const { t, errorText } = useI18n();
   const bill = usePolling(useCallback((s: AbortSignal) => api<Bill>(`/visits/${visitId}/bill`, { signal: s }), [visitId]), POLL_MS);
   const b = bill.data;
-  if (!b) return bill.error ? <Notice notice={{ role: "alert", text: bill.error.message }} /> : <p role="status" className="text-sm text-muted-foreground">Loading bill…</p>;
+  if (!b) return bill.error ? <Notice notice={{ role: "alert", text: errorText(bill.error) }} /> : <p role="status" className="text-sm text-muted-foreground">{t("bill.loading")}</p>;
   return (
     <div className="grid gap-3">
       <Freshness updatedAt={bill.updatedAt} error={bill.error} intervalMs={POLL_MS} />
@@ -295,29 +300,30 @@ function BillDetails({ visitId }: { visitId: string }) {
       </ul>
       <Separator className="border-dashed" />
       <dl className="grid grid-cols-[1fr_auto] gap-y-1 text-sm">
-        <dt className="text-muted-foreground">Subtotal</dt>
+        <dt className="text-muted-foreground">{t("bill.subtotal")}</dt>
         <dd className="text-right tabular-nums">{formatTHB(b.gross_satang)}</dd>
         {b.discount_satang > 0 && (
           <>
-            <dt className="text-muted-foreground">Member discount</dt>
+            <dt className="text-muted-foreground">{t("bill.discount")}</dt>
             <dd className="text-right tabular-nums">−{formatTHB(b.discount_satang)}</dd>
           </>
         )}
-        <dt className="text-muted-foreground">Service charge ({percent(b.policy.service_bp)}%)</dt>
+        <dt className="text-muted-foreground">{t("bill.service", { p: percent(b.policy.service_bp) })}</dt>
         <dd className="text-right tabular-nums">{formatTHB(b.service_satang)}</dd>
-        <dt className="text-muted-foreground">{b.policy.tax_mode === "inclusive" ? `Tax included (${percent(b.policy.tax_bp)}%)` : `Tax (${percent(b.policy.tax_bp)}%)`}</dt>
+        <dt className="text-muted-foreground">{b.policy.tax_mode === "inclusive" ? t("bill.taxIncluded", { p: percent(b.policy.tax_bp) }) : t("bill.tax", { p: percent(b.policy.tax_bp) })}</dt>
         <dd className="text-right tabular-nums">{formatTHB(b.tax_satang)}</dd>
-        <dt className="pt-2 text-base font-bold">Total</dt>
+        <dt className="pt-2 text-base font-bold">{t("bill.total")}</dt>
         <dd className="pt-2 text-right text-base font-bold tabular-nums">{formatTHB(b.total_satang)}</dd>
       </dl>
-      {!b.frozen && b.unresolved_lines > 0 && <p className="text-xs text-muted-foreground">{b.unresolved_lines} item(s) are still being prepared; the total may change.</p>}
-      <p className="rounded-xl bg-accent p-3 text-sm text-accent-foreground">Please pay a staff member at the counter. Showing a transfer slip here does not complete payment.</p>
+      {!b.frozen && b.unresolved_lines > 0 && <p className="text-xs text-muted-foreground">{t("bill.pending", { n: b.unresolved_lines })}</p>}
+      <p className="rounded-xl bg-accent p-3 text-sm text-accent-foreground">{t("bill.payAtCounter")}</p>
     </div>
   );
 }
 
 // One menu row: tap "+" to add plain items at once or open the options sheet.
 function ItemRow({ item, disabled, changed, onAdd }: { item: MenuItem; disabled: boolean; changed: boolean; onAdd: (l: CartLine) => void }) {
+  const { t, locale } = useI18n();
   const [open, setOpen] = useState(false);
   const add = (optionIds: string[], qty: number) => {
     const opts = item.option_groups.flatMap((g) => g.options.filter((o) => optionIds.includes(o.id)));
@@ -335,11 +341,11 @@ function ItemRow({ item, disabled, changed, onAdd }: { item: MenuItem; disabled:
         <p className="text-sm text-muted-foreground">{item.name_en}</p>
         <p className="text-sm font-semibold tabular-nums">
           {formatTHB(item.price_satang)}
-          {item.sold_out && <Pill tone="destructive"> sold out</Pill>}
+          {item.sold_out && <Pill tone="destructive"> {t("dining.soldOut")}</Pill>}
         </p>
       </div>
       {!item.sold_out && (
-        <Button type="button" size="icon" className="size-11 shrink-0 rounded-full" aria-label={`Add ${item.name_en}`} disabled={disabled}
+        <Button type="button" size="icon" className="size-11 shrink-0 rounded-full" aria-label={t("dining.add", { name: locale === "th" ? item.name_th : item.name_en })} disabled={disabled}
           onClick={() => (item.option_groups.length === 0 ? add([], 1) : setOpen(true))}>
           <Plus className="size-5" aria-hidden />
         </Button>
@@ -354,6 +360,7 @@ function ItemRow({ item, disabled, changed, onAdd }: { item: MenuItem; disabled:
 function OptionSheet({ item, open, onOpenChange, onAdd }: {
   item: MenuItem; open: boolean; onOpenChange: (o: boolean) => void; onAdd: (optionIds: string[], qty: number) => void;
 }) {
+  const { t, locale } = useI18n();
   const [chosen, setChosen] = useState<Record<string, string[]>>({});
   const [qty, setQty] = useState(1);
   const valid = item.option_groups.every((g) => {
@@ -374,7 +381,7 @@ function OptionSheet({ item, open, onOpenChange, onAdd }: {
             <fieldset key={g.id} className="grid gap-2">
               <legend className="mb-2 flex w-full items-center justify-between text-sm font-semibold">
                 <span><span lang="th">{g.name_th}</span> / {g.name_en}</span>
-                <Pill tone={g.min_choices > 0 ? "warning" : "muted"}>{g.min_choices > 0 ? "(required)" : "(optional)"}{g.max_choices > 1 ? ` · up to ${g.max_choices}` : ""}</Pill>
+                <Pill tone={g.min_choices > 0 ? "warning" : "muted"}>{g.min_choices > 0 ? t("dining.required") : t("dining.optional")}{g.max_choices > 1 ? t("dining.upTo", { n: g.max_choices }) : ""}</Pill>
               </legend>
               {g.options.map((o) => (
                 <label key={o.id} className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border px-3 has-checked:border-primary has-checked:bg-accent">
@@ -398,13 +405,13 @@ function OptionSheet({ item, open, onOpenChange, onAdd }: {
             </fieldset>
           ))}
           <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold">Quantity for {item.name_en}</span>
-            <Stepper value={qty} label={item.name_en} onChange={(v) => setQty(Math.min(20, Math.max(1, v)))} />
+            <span className="text-sm font-semibold">{t("dining.qtyFor", { name: locale === "th" ? item.name_th : item.name_en })}</span>
+            <Stepper value={qty} label={locale === "th" ? item.name_th : item.name_en} onChange={(v) => setQty(Math.min(20, Math.max(1, v)))} />
           </div>
         </div>
         <SheetFooter>
           <Button type="button" size="lg" className="h-14 w-full justify-between rounded-2xl px-4 text-base" disabled={!valid} onClick={() => onAdd(opts.map((o) => o.id), qty)}>
-            <span>Add to cart</span>
+            <span>{t("dining.addToCart")}</span>
             <span className="tabular-nums">{formatTHB(unit * qty)}</span>
           </Button>
         </SheetFooter>
@@ -413,16 +420,17 @@ function OptionSheet({ item, open, onOpenChange, onAdd }: {
   );
 }
 
-const TOPICS: { topic: Assistance["topic"]; label: string; icon: typeof BellRing }[] = [
-  { topic: "help", label: "Call staff", icon: BellRing },
-  { topic: "allergy", label: "Allergy question", icon: CircleHelp },
-  { topic: "checkout", label: "Ask for the bill", icon: ReceiptText },
+const TOPICS: { topic: Assistance["topic"]; label: MessageKey; icon: typeof BellRing }[] = [
+  { topic: "help", label: "help.help", icon: BellRing },
+  { topic: "allergy", label: "help.allergy", icon: CircleHelp },
+  { topic: "checkout", label: "help.checkout", icon: ReceiptText },
 ];
-const ASSIST_STATE: Record<Assistance["state"], string> = {
-  open: "waiting for staff", acknowledged: "staff are on the way", resolved: "done",
+const ASSIST_STATE: Record<Assistance["state"], MessageKey> = {
+  open: "help.open", acknowledged: "help.acknowledged", resolved: "help.resolved",
 };
 
 function AssistancePanel({ visitId, disabled }: { visitId: string; disabled: boolean }) {
+  const { t, errorText } = useI18n();
   const run = useIdempotent();
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
@@ -430,38 +438,38 @@ function AssistancePanel({ visitId, disabled }: { visitId: string; disabled: boo
   async function raise(topic: Assistance["topic"]) {
     const body = { topic, note: topic === "allergy" && note.trim() ? note.trim() : null };
     const res = await run(`assist:${topic}:${body.note ?? ""}`, (key) => api(`/visits/${visitId}/assistance`, { method: "POST", key, body }));
-    setError(res.ok ? "" : res.error.message);
+    setError(res.ok ? "" : errorText(res.error));
     requests.refresh();
   }
   const outstanding = (requests.data?.items ?? []).filter((a) => a.state !== "resolved");
   return (
     <section aria-labelledby="help-title" className="grid gap-3 rounded-2xl border bg-card p-4">
-      <h3 id="help-title" className="text-lg font-bold">Need something?</h3>
+      <h3 id="help-title" className="text-lg font-bold">{t("help.title")}</h3>
       <div className="grid grid-cols-3 gap-2">
-        {TOPICS.map((t) => {
-          const Icon = t.icon;
+        {TOPICS.map((topic) => {
+          const Icon = topic.icon;
           return (
-            <Button key={t.topic} type="button" variant="outline" disabled={disabled} onClick={() => void raise(t.topic)}
+            <Button key={topic.topic} type="button" variant="outline" disabled={disabled} onClick={() => void raise(topic.topic)}
               className="h-auto flex-col gap-1.5 rounded-2xl py-3 text-xs whitespace-normal">
               <Icon className="size-5 text-primary" aria-hidden />
-              {t.label}
+              {t(topic.label)}
             </Button>
           );
         })}
       </div>
       <div className="grid gap-2">
-        <Label htmlFor="allergy-note" className="text-sm">Allergy details (optional)</Label>
+        <Label htmlFor="allergy-note" className="text-sm">{t("help.allergyDetails")}</Label>
         <Input id="allergy-note" value={note} maxLength={500} onChange={(e) => setNote(e.target.value)} className="h-11" />
       </div>
-      <p className="text-xs text-muted-foreground">Staff will talk to you about allergies; the app cannot confirm that a dish is safe.</p>
+      <p className="text-xs text-muted-foreground">{t("help.allergyNote")}</p>
       <Notice notice={error ? { role: "alert", text: error } : null} />
       <ul aria-live="polite" className="grid gap-2">
         {outstanding.map((a) => (
           <li key={a.id} className="flex items-center justify-between rounded-xl bg-muted px-3 py-2 text-sm">
             <span>
-              {TOPICS.find((t) => t.topic === a.topic)?.label}: {ASSIST_STATE[a.state]}
+              {t(TOPICS.find((x) => x.topic === a.topic)?.label ?? "help.help")}: {t(ASSIST_STATE[a.state])}
             </span>
-            <Pill tone={a.state === "open" ? "warning" : "primary"}>{a.state === "open" ? "Sent" : "On the way"}</Pill>
+            <Pill tone={a.state === "open" ? "warning" : "primary"}>{a.state === "open" ? t("help.sentPill") : t("help.onWayPill")}</Pill>
           </li>
         ))}
       </ul>
