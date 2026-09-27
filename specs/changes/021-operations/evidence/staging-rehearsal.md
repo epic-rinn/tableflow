@@ -42,3 +42,20 @@ Both Next.js images are mostly the Node base plus a 43 MB standalone output.
 ## Environment note
 
 The first image build failed with "no space left on device" in the Docker VM. My `qualify.sh` runs had left five anonymous PostgreSQL volumes (about 6.3 GB). I removed those after matching their creation times to my runs, and fixed the script to use `docker rm -fv`. Other projects' images and volumes were left untouched.
+
+## Live email via Resend test mode (2026-09-27)
+
+The user supplied an existing Resend API key in the git-ignored `staging.env`; it never passed through chat, files under version control, or logs. There is no verified domain: sender `onboarding@resend.dev` (Resend test mode).
+
+| Step | Result |
+| --- | --- |
+| API start with `SMTP_USERNAME=resend` + key | No "delivery not configured" error; configuration accepted |
+| Signup to an address that is not the account owner | HTTP 202 (generic response). Resend completed STARTTLS and authentication, then refused the recipient: `550 You can only send testing emails to your own email address`. Logged as `WARN mail send failed`, no token in the log |
+| Signup (verification) and password-reset request to the Resend account's own address | HTTP 202 / 202; Resend accepted both messages (0 send failures) |
+| Logs scanned for API keys or 43-character capability tokens | 0 matches |
+| Inbox receipt | **Confirmed by the user**: both the verification and password-reset emails arrived |
+
+**Limits:**
+- Test mode delivers only to the Resend account owner's address, so production still needs a verified sending domain (MVP-22 checklist item 10).
+- Staff activation is not emailed in this system; managers copy the one-time link from the Staff page.
+- Disabling open and click tracking is a Resend dashboard setting for the user to confirm once a domain exists.

@@ -1,6 +1,6 @@
 # Review: 021-operations
 
-Date: 2026-09-27 (M6 milestone gate, ADR-0004). Reviewer: Claude — **self-review**. Scope: images, staging stack, Caddy HTTPS, API health probe, restore drill, deployed-origin checks, runbook. Result: **pass for the delivered scope; task blocked on live email**.
+Date: 2026-09-27 (M6 milestone gate, ADR-0004). Reviewer: Claude — **self-review**. Scope: images, staging stack, Caddy HTTPS, API health probe, restore drill, deployed-origin checks, runbook. Result: **pass**.
 
 ## Findings
 
@@ -9,7 +9,7 @@ Date: 2026-09-27 (M6 milestone gate, ADR-0004). Reviewer: Claude — **self-revi
 | P2 | `deploy/staging/Caddyfile` | First HTTPS probe: no `Strict-Transport-Security` | Browsers could be downgraded before HSTS is learned | HSTS added; the deployed-origin check asserts it |
 | P2 | `staging.env.example` | Set `SMTP_USERNAME=resend` without a password; the API refused to start | Broken first deployment | Both empty until the key exists; the runbook explains |
 | P3 | Rehearsal TLS | Chrome refuses service workers under a local-CA certificate error | Rehearsal-only | `STAGING_INSECURE_TLS=1` launches Chrome without verification; real certificates need no override |
-| — | Live email (ADR-0005) | Not possible without the user's verified domain and API key | Member verification, reset and staff activation emails cannot be delivered | **Blocked**; next action is the user providing the domain and key via a secret store |
+| P2 (launch) | Live email (ADR-0005) | Test mode (`onboarding@resend.dev`) delivers only to the Resend account owner; the user has no domain | In production, members could not receive verification or reset emails | Delivery verified end to end in test mode (user confirmed receipt); a verified domain is a launch blocker in MVP-22 |
 
 **Checked:**
 - **Restore drill:** reconciles settlements, snapshot totals, refunds, claims, ledger and profiles, the app role and the migration version on the E2E and 1M-line databases.
@@ -27,4 +27,4 @@ Date: 2026-09-27 (M6 milestone gate, ADR-0004). Reviewer: Claude — **self-revi
 
 ## Delivery decision
 
-No open P0/P1 in the delivered scope. Status: **blocked** (live email only); everything else is verified.
+No open P0/P1 in the delivered scope. Status: **done** (M6 gate plus the live email test, 2026-09-27).

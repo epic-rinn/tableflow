@@ -66,6 +66,7 @@ Supply configuration as environment variables from the platform's secret store. 
 
 - **Configuration:** `SMTP_ADDR=smtp.resend.com:587`, `SMTP_TLS=starttls`, `SMTP_USERNAME=resend`, and `SMTP_PASSWORD=<API key>` from the secret store.
 - **Sender:** `MAIL_FROM` must use the verified domain.
+- **Without a domain (test mode):** `MAIL_FROM=TableFlow <onboarding@resend.dev>` works, but Resend delivers only to the Resend account owner's address. Other recipients fail with a 550, logged as `mail send failed`. That is fine for staging and not usable for guests.
 - **Before launch:**
   1. Verify the domain in Resend.
   2. Disable open and click tracking for these messages.
@@ -77,6 +78,6 @@ Supply configuration as environment variables from the platform's secret store. 
 - Hosting provider and region, and managed PostgreSQL versus a self-run container.
 - Public hostnames and DNS for the admin and PWA.
 - Backup storage, retention and who can restore.
-- Resend sending domain, verification and API key.
+- Resend sending domain and verification (the API key works; delivery verified in test mode).
 - Log retention and alerting destination.
 - Data retention and deletion procedures (security spec) for members, guest sessions and audit.

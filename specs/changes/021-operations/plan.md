@@ -1,6 +1,6 @@
 # Change: 021-operations — Deployment and restore rehearsal
 
-Status: **blocked** on live email only (the user's Resend domain and key); everything else was verified at the M6 gate (2026-09-27). Date: 2026-09-27. Scope owner: Claude. Task: MVP-21. Verification: M6 gate (ADR-0004).
+Status: done (2026-09-27). Live email was verified in Resend **test mode**. The user has no sending domain yet, so a verified domain for production is a launch blocker tracked in [MVP-22](../022-pilot/plan.md). Date: 2026-09-27. Scope owner: Claude. Task: MVP-21. Verification: M6 gate (ADR-0004).
 
 ## Problem and behavior
 
@@ -25,7 +25,7 @@ Maps ACC-002/004, PWA-001, the release gates and [repository boundaries](../../a
 | Fresh and upgrade migrations | `TestFreshMigrationAndDatabaseSmoke`, `TestUpgradeFromPreviousRelease` (in `make verify`) | passing |
 | Staged artifacts exclude specs, docs and AI files | [image-inspection.json](evidence/image-inspection.json) + `make artifact-check` | passing |
 | Security, session and cache checks on deployed HTTPS origins | `src/pwa/deploy-checks/origins.spec.ts` on the local HTTPS staging stack ([results](evidence/staging-rehearsal.md)) | passing |
-| Production email (ADR-0005) | Live test sends | **blocked**: needs the user's domain and key |
+| Production email (ADR-0005) | Live sends through Resend test mode; both delivered ([evidence](evidence/staging-rehearsal.md)) | passing in test mode; production needs a verified domain (MVP-22) |
 
 ## Implementation notes
 

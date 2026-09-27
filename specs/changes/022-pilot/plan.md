@@ -19,7 +19,7 @@ The operator reviews the real working journey and records actual outcomes. Open 
 | 7 | Language: staff UI is English with Thai item names; guest UI is Thai/English. Is English acceptable for staff? | — | English staff UI |
 | 8 | Members with unconfirmed email may claim points. Is that acceptable? | — | Allowed |
 | 9 | Hosting, public hostnames, backups (storage, retention, who restores), log and alert destinations | [Runbook](../../../docs/operations/deployment.md) | Open |
-| 10 | Resend sending domain verified and API key provisioned; test emails delivered with tracking off | ADR-0005, runbook | Blocked (MVP-21) |
+| 10 | **Launch blocker:** a verified Resend sending domain (the user has none yet). Until then only the account owner receives email, so member verification and password reset do not work for guests. Also turn tracking off | ADR-0005, runbook | Delivery path verified in test mode (MVP-21) |
 | 11 | Data retention and deletion for members, guest sessions and audit | Security spec | Open |
 | 12 | Pilot issue list recorded from the walkthrough | This packet | — |
 

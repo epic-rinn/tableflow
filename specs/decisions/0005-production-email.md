@@ -28,3 +28,11 @@ Under MVP-21, document production variables without values, validate TLS/authent
 
 - [Resend SMTP configuration](https://resend.com/docs/send-with-smtp)
 - [Resend domain verification and tracking](https://resend.com/docs/dashboard/domains/introduction)
+
+## Live verification (2026-09-27)
+
+The user has no sending domain, so delivery was verified in Resend **test mode** (sender `onboarding@resend.dev`, key in the git-ignored staging env).
+- Mail to a non-owner address was refused by Resend after TLS and authentication (`550 … only send testing emails to your own email address`). The API logged a warning without tokens.
+- Verification and password-reset emails to the account owner's address were delivered (confirmed by the user).
+- Production still requires a verified domain before launch (MVP-22 checklist).
+

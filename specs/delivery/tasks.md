@@ -1,6 +1,6 @@
 # MVP implementation tasks
 
-Status: M0–M5, MU and MVP-19/20 done. MVP-21 is blocked only on live Resend email (the user's domain and key). MVP-22 is blocked on the operator walkthrough and decisions ([022 checklist](../changes/022-pilot/plan.md)). UI track added 2026-09-27 at the owner's request ([ADR-0006](../decisions/0006-ui-stack.md)). Created: 2026-09-26.
+Status: M0–M5, MU and MVP-19/20 done. MVP-21 is done (live email verified in Resend test mode; production needs a verified domain). MVP-22 is blocked on the operator walkthrough and decisions ([022 checklist](../changes/022-pilot/plan.md)). UI track added 2026-09-27 at the owner's request ([ADR-0006](../decisions/0006-ui-stack.md)). Created: 2026-09-26.
 
 This is the implementation queue for Claude. Codex maintains task scope and the Word report; Claude maintains execution status and evidence. The [roadmap](roadmap.md) groups milestones, while this file owns task order and status. Canonical feature specs remain the authority for behavior.
 
@@ -41,7 +41,7 @@ All implementation tasks are owned by Claude. MVP-22 additionally requires the r
 | MVP-18 Accessibility, locale and recovery audit | M5 | `018-journey-hardening` | MVP-17 | done |
 | MVP-19 Complete journey regression suite | M6 | `019-e2e` | MVP-18 | done |
 | MVP-20 Representative performance qualification | M6 | `020-performance` | MVP-19 | done |
-| MVP-21 Deployment and restore rehearsal | M6 | `021-operations` | MVP-20 | blocked |
+| MVP-21 Deployment and restore rehearsal | M6 | `021-operations` | MVP-20 | done |
 | MVP-22 Operator pilot sign-off | M6 | `022-pilot` | MVP-21 | blocked |
 
 ## Task briefs
